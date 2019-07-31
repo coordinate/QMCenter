@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QTabWidget, QWidget, \
-    QVBoxLayout, QGridLayout, QStackedWidget
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel
 
 from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot
 
@@ -54,20 +54,34 @@ class UIForm():
         self.widget_info = QWidget()
         self.layout = QVBoxLayout(self.widget_info)
 
+        self.state_groupbox = QGroupBox()
+        self.state_groupbox.setTitle("State")
+        self.gridlayout_state = QGridLayout(self.state_groupbox)
+
         self.btn = QPushButton()
         self.btn.setText("Connect")
-        self.layout.addWidget(self.btn, alignment=Qt.AlignTop)
+        self.gridlayout_state.addWidget(self.btn, 0, 0, 1, 1)
 
         self.static_btn = QPushButton()
         self.static_btn.setText('Scaled')
-        self.layout.addWidget(self.static_btn, alignment=Qt.AlignTop)
+        self.gridlayout_state.addWidget(self.static_btn, 1, 0, 1, 1)
 
-        self.checkbox = QCheckBox()
-        self.checkbox.setChecked(True)
-        self.layout.addWidget(self.checkbox, alignment=Qt.AlignTop)
+        self.graphs_chbx = QCheckBox()
+        self.graphs_chbx.setChecked(True)
+        self.gridlayout_state.addWidget(self.graphs_chbx, 0, 1, 1, 1)
+
+        self.graphs_label = QLabel()
+        self.graphs_label.setText("Graphs")
+        self.gridlayout_state.addWidget(self.graphs_label, 0, 2, 1, 1)
 
         self.enlarge_chbx = QCheckBox()
-        self.layout.addWidget(self.enlarge_chbx, alignment=Qt.AlignTop)
+        self.gridlayout_state.addWidget(self.enlarge_chbx, 1, 1, 1, 1)
+
+        self.enlarge_label = QLabel()
+        self.enlarge_label.setText("Enlarge")
+        self.gridlayout_state.addWidget(self.enlarge_label, 1, 2, 1, 1)
+
+        self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
 
         self.dockwidget_info.setWidget(self.widget_info)
 

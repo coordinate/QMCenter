@@ -46,8 +46,8 @@ class MainWindow(QMainWindow, UIForm):
         self.visual_btn.clicked.connect(self.add_visual)
         self.update_btn.triggered.connect(self.add_update)
         self.tabwidget.tabCloseRequested.connect(lambda i: self.close_tab(i))
-        self.client.signal_data.connect(lambda freq, time, sig1, sig2: self.stream.update(freq, time, checkbox=self.checkbox.isChecked()))
-        self.client.signal_data.connect(lambda freq, time, sig1, sig2: self.signals.update(sig1, time, sig2, checkbox=self.checkbox.isChecked()))
+        self.client.signal_data.connect(lambda freq, time, sig1, sig2: self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked()))
+        self.client.signal_data.connect(lambda freq, time, sig1, sig2: self.signals.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked()))
         self.enlarge_chbx.stateChanged.connect(lambda v: self.set_main_graph(v))
 
     def add_graphs(self):
