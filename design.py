@@ -2,10 +2,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QTabWidget, QWidget, \
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel
 
-from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot
+from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
 
 
-class UIForm():
+class UIForm:
     def setupUI(self, Form):
         Form.setObjectName('MainWindow')
         self.setWindowTitle("QMCenter")
@@ -89,9 +89,11 @@ class UIForm():
 
         self.graphs_widget = QWidget()
         self.graphs_gridlayout = QGridLayout(self.graphs_widget)
+        self.graphs_gridlayout.setVerticalSpacing(50)
+        self.graphs_gridlayout.setHorizontalSpacing(20)
 
         self.stream = FrequencyPlot()
-        self.static = MainPlot()
+        self.dc = DCPlot()
         self.static1 = MainPlot()
         self.three_d_visual = ThreeDVisual()
         self.signals = SignalsPlot()
@@ -99,7 +101,7 @@ class UIForm():
         self.graphs_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
         self.graphs_gridlayout.addWidget(self.signals, 1, 0, 1, 1)
         self.graphs_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
-        self.graphs_gridlayout.addWidget(self.static, 1, 1, 1, 1)
+        self.graphs_gridlayout.addWidget(self.dc, 1, 1, 1, 1)
 
         self.stream_widget = QWidget()
         self.stream_lay = QGridLayout(self.stream_widget)

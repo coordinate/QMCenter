@@ -62,6 +62,7 @@ class MainPlot(pg.PlotWidget):
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
         self.item.setTitle('Some data from server')
+        self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.item.showGrid(x=1, y=1, alpha=0.5)
         self.item.hideButtons()
         self.item.setLimits(xMin=0)
@@ -92,91 +93,6 @@ class MainPlot(pg.PlotWidget):
         self.view.setRange(yRange=(self.left_axis[-1] - 10000, self.left_axis[-1] + 10000))
 
 
-# class StreamPlot(pg.PlotWidget):
-#     signal = pyqtSignal()
-#
-#     def __init__(self, **kwargs):
-#         pg.PlotWidget.__init__(self, axisItems={'left': NonScientificYLeft(orientation='left'),
-#                                                 'bottom': NonScientificX(orientation='bottom'),
-#                                                 'right': NonScientificYRight(orientation='right')})
-#         self.setBackground(background=pg.mkColor('w'))
-#         self.item = self.getPlotItem()
-#         self.item.setTitle('Some data from server')
-#         self.item.showGrid(x=1, y=1, alpha=0.5)
-#         self.item.hideButtons()
-#         self.item.setLimits(xMin=0)
-#
-#         self.item.setLabel('left', 'Value(v)', **{'font-size': '12pt'})
-#
-#         self.item.setDownsampling(mode='subsample')
-#         self.item.setClipToView(True)
-#         # self.item.setRange(xRange=[-100, 50], yRange=[80, 300])
-#         # self.item.setRange(yRange=[84448020, 84449520])
-#
-#         # self.data = pg.PlotDataItem(symbolSize=5, symbolPen=pg.mkPen(color='r'))
-#         self.data = pg.PlotDataItem()
-#         self.data.setPen(pg.mkPen(width=1.5, color='r'))
-#         self.data.sigClicked.connect(lambda: self.test())
-#
-#         self.view = self.item.getViewBox()
-#         self.view.addItem(self.data)
-#         self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
-#
-#         self.arr_freq = np.empty(60000)
-#         self.arr_time = np.empty(60000)
-#         self.ptr = 0
-#
-#     def scaled(self):
-#         # self.view.setRange(xRange=(self.arr_time[-1]-5000, self.arr_time[-1] + 10000), yRange=(self.arr_freq[-1], self.arr_freq[-1]))
-#         self.view.setRange(yRange=(self.arr_freq[-1] - 10000, self.arr_freq[-1] + 10000))
-#         # self.setXRange(self.arr_time[self.ptr - 1] - 1000, self.arr_time[self.ptr - 1] + 100)
-#
-#     def update(self, freq=1, time=None):
-#         self.arr_freq[self.ptr] = freq
-#         self.arr_time[self.ptr] = time
-#         self.ptr += 1
-#         if self.ptr >= self.arr_freq.shape[0]:
-#             tmp = self.arr_freq
-#             tmp2 = self.arr_time
-#             self.arr_freq = np.empty(self.arr_freq.shape[0] * 2)
-#             self.arr_freq[:tmp.shape[0]] = tmp
-#             self.arr_time = np.empty(self.arr_freq.shape[0] * 2)
-#             self.arr_time[:tmp2.shape[0]] = tmp2
-#         self.data.setData(x=self.arr_time[:self.ptr], y=self.arr_freq[:self.ptr])
-#
-#         # if check:
-#         #     self.setXRange(self.arr_time[self.ptr-1]-1000, self.arr_time[self.ptr-1]+100)
-#         # else:
-#         #     pass
-#
-#         # self.data.setPos(-self.arr_time[self.ptr-1], 0)  # graphs staying near zero
-#
-#         # self.item.setRange(xRange=[self.arr_time[self.ptr-1], -100])
-#         # self.setXRange(self.arr_time[self.ptr-1]-1000, self.arr_time[self.ptr-1]+100)
-#         # self.view.setAutoVisible(x=True, y=None)
-#
-#     def update_new(self, freq: list, time: list, checkbox=True):
-#         lenght = len(time)
-#
-#         if checkbox:
-#             self.ptr += lenght
-#             self.arr_freq[:-lenght] = self.arr_freq[lenght:]
-#             self.arr_freq[-lenght:] = freq
-#
-#             self.arr_time[:-lenght] = self.arr_time[lenght:]
-#             self.arr_time[-lenght:] = time
-#
-#             self.data.setData(x=self.arr_time[-self.ptr:], y=self.arr_freq[-self.ptr:])
-#             self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
-#             self.view.setMouseEnabled(x=False, y=True)
-#
-#         else:
-#             self.view.disableAutoRange(axis=self.view.XAxis)
-#             self.view.setMouseEnabled(x=True, y=True)
-#
-#     def test(self):
-#         # print(x[0].__dir__())
-#         print('hello')
 class FrequencyPlot(MainPlot):
     def __init__(self):
         MainPlot.__init__(self)
@@ -206,16 +122,16 @@ class SignalsPlot(MainPlot):
         MainPlot.__init__(self)
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
 
-        self.item.setLabel('left', 'Sig1', **{'font-size': '12pt'})
-        left_axis = self.item.getAxis('left')
+        self.item.setLabel('left', 'Sig1', **{'font-size': '12pt', 'color': 'red'})
+        self.view.setYRange(-20, 20)
         right_axis = self.item.getAxis('right')
         right_axis.setLabel('Sig2', **{'font-size': '12pt'})
         right_axis.label.rotate(180)
-        self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.item.getAxis('right').setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
 
         self.viewbox = pg.ViewBox()   # create new viewbox for sig2
+        self.viewbox.setYRange(600, 1000)
         self.item.scene().addItem(self.viewbox)
         right_axis.linkToView(self.viewbox)
         right_axis.setGrid(False)
@@ -239,11 +155,39 @@ class SignalsPlot(MainPlot):
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             self.data2.setData(x=self.bottom_axis[-self.ptr:], y=self.right_axis[-self.ptr:])
             self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            self.viewbox.enableAutoRange(axis=self.viewbox.YAxis, enable=False)
             self.view.setMouseEnabled(x=False, y=True)
             self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
+
+
+class DCPlot(MainPlot):
+    def __init__(self):
+        MainPlot.__init__(self)
+        self.item.setLabel('left', 'dc', **{'font-size': '12pt', 'color': 'red'})
+        self.item.getAxis('left').setPen(pg.mkPen(color='r'))
+
+    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
+        length = len(bottom_ax)
+
+        if checkbox:
+            self.ptr += length
+            self.left_axis[:-length] = self.left_axis[length:]
+            self.left_axis[-length:] = left_ax
+
+            self.bottom_axis[:-length] = self.bottom_axis[length:]
+            self.bottom_axis[-length:] = bottom_ax
+
+            self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
+            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            self.view.setMouseEnabled(x=False, y=True)
+
+        else:
+            self.view.disableAutoRange(axis=self.view.XAxis)
+            self.view.setMouseEnabled(x=True, y=True)
+
 
 
 class ThreeDVisual(gl.GLViewWidget):

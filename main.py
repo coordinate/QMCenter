@@ -5,7 +5,7 @@ import requests
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from PyQt5 import QtCore, QtWebSockets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QDockWidget, QGridLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QDockWidget, QGridLayout, QSizePolicy
 
 from design import UIForm
 from Clients.client_socket import Client
@@ -37,22 +37,23 @@ class MainWindow(QMainWindow, UIForm):
         # self.client.signal_disconnect.connect(lambda: self.connect())
 
         self.btn.clicked.connect(lambda: self.client.connect())
-        # self.btn.clicked.connect(self.one)
 
-        # self.static_btn.clicked.connect(self.two)
         self.static_btn.clicked.connect(self.stream.scaled)
 
         self.graphs_btn.clicked.connect(self.add_graphs)
         self.visual_btn.clicked.connect(self.add_visual)
         self.update_btn.triggered.connect(self.add_update)
         self.tabwidget.tabCloseRequested.connect(lambda i: self.close_tab(i))
-        self.client.signal_data.connect(lambda freq, time, sig1, sig2: self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked()))
-        self.client.signal_data.connect(lambda freq, time, sig1, sig2: self.signals.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked()))
+        self.client.signal_data.connect(lambda *args: self.plot_graphs(*args))
         self.enlarge_chbx.stateChanged.connect(lambda v: self.set_main_graph(v))
 
     def add_graphs(self):
         self.tabwidget.addTab(self.stack_widget, "Stream")
-        print(self.graphs_widget.children(), self.stack_widget.count())
+
+    def plot_graphs(self, freq, time, sig1, sig2, dc):
+        self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
+        self.signals.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
+        self.dc.update(dc, time, checkbox=self.graphs_chbx.isChecked())
 
     def set_main_graph(self, check):
         if self.tabwidget.indexOf(self.stack_widget) > -1 and check == 2:
@@ -60,18 +61,11 @@ class MainWindow(QMainWindow, UIForm):
             self.stack_widget.setCurrentWidget(self.stream_widget)
 
         elif self.tabwidget.indexOf(self.stack_widget) > -1:
+            self.stream.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
             self.graphs_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
             self.stack_widget.setCurrentWidget(self.graphs_widget)
         else:
             return
-
-    def one(self):
-        self.stream_lay.addWidget(self.stream)
-        self.stack_widget.setCurrentWidget(self.stream_widget)
-
-    def two(self):
-        self.graphs_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-        self.stack_widget.setCurrentWidget(self.graphs_widget)
 
     def add_visual(self):
         self.tabwidget.addTab(self.three_d_visual, "3D visual")
@@ -104,6 +98,7 @@ class MainWindow(QMainWindow, UIForm):
 
     def test(self):
         pass
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
