@@ -18,6 +18,7 @@ parts/
 sdist/
 var/
 workdocs/
+data/raw_magnet_data.txt
 *.egg-info/
 .installed.cfg
 *.egg

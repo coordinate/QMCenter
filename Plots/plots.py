@@ -7,7 +7,7 @@ from datetime import datetime
 from OpenGL.GL import *
 
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QPointF
 from PyQt5.QtGui import QVector3D
 
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
@@ -18,17 +18,28 @@ from Utils.transform import project, magnet_color
 class NonScientificYLeft(pg.AxisItem):
     def __init__(self, *args, **kwargs):
         super(NonScientificYLeft, self).__init__(*args, **kwargs)
+        self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
-        return [int(value*1) for value in values]
+        return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
 
 class NonScientificYRight(pg.AxisItem):
     def __init__(self, *args, **kwargs):
         super(NonScientificYRight, self).__init__(*args, **kwargs)
+        self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
-        return [int(value*1) for value in values]
+        return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
+
+    def resizeEvent(self, ev=None):
+        # Set correct position of rotated (180 deg) label
+        br = self.label.boundingRect()
+        p = QPointF(0, 0)
+        p.setX(int(self.size().width()/2 + br.height() + 10))
+        p.setY(int(self.size().height() / 2 - br.width() / 2))
+        self.label.setPos(p)
+        self.picture = None
 
 
 class NonScientificX(pg.AxisItem):
@@ -196,15 +207,18 @@ class SignalsPlot(MainPlot):
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
 
         self.item.setLabel('left', 'Sig1', **{'font-size': '12pt'})
-        self.item.setLabel('right', 'Sig2', **{'font-size': '12pt'})
+        left_axis = self.item.getAxis('left')
+        right_axis = self.item.getAxis('right')
+        right_axis.setLabel('Sig2', **{'font-size': '12pt'})
+        right_axis.label.rotate(180)
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.item.getAxis('right').setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
 
-        self.right_pen = pg.mkPen(color='b', width=1.0)
         self.viewbox = pg.ViewBox()   # create new viewbox for sig2
         self.item.scene().addItem(self.viewbox)
-        self.item.getAxis('right').linkToView(self.viewbox)
+        right_axis.linkToView(self.viewbox)
+        right_axis.setGrid(False)
         self.viewbox.setXLink(self.item)
         self.viewbox.addItem(self.data2)
 
