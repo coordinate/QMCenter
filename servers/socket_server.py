@@ -72,7 +72,7 @@ it = iter(read_lines())
 def read():
     for i in range(100):
         n = next(it).split()
-        data_json['jsons']['json{}'.format(i)] = [int(n[1]), float(n[3]), int(n[5]), int(n[7]), int(n[13]), ]  # (time, freq, sig1, sig2, dc)
+        data_json['jsons']['json{}'.format(i)] = [int(n[1]), float(n[3]), int(n[5]), int(n[7]), int(n[13]), int(n[15])]  # (time, freq, sig1, sig2, dc, temp)
 
     return json.dumps(data_json)
 

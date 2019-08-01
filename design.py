@@ -1,13 +1,13 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QTabWidget, QWidget, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog
 
 from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
 
 
 class UIForm:
     def setupUI(self, Form):
-        Form.setObjectName('MainWindow')
+        Form.setObjectName("MainWindow")
         self.setWindowTitle("QMCenter")
         self.setMinimumSize(1000, 500)
 
@@ -16,20 +16,20 @@ class UIForm:
         self.menu.addMenu("&File")
 
         self.graphs_btn = QPushButton()
-        self.graphs_btn.setText('Graphs')
+        self.graphs_btn.setText("Graphs")
         self.graphs_btn.setMinimumSize(100, 30)
 
         self.config_btn = QPushButton()
-        self.config_btn.setText('Config')
+        self.config_btn.setText("Config")
 
         self.visual_btn = QPushButton()
-        self.visual_btn.setText('3D Visualization')
+        self.visual_btn.setText("3D Visualization")
 
         # self.update_btn = QPushButton()
-        # self.update_btn.setText('Update')
+        # self.update_btn.setText("Update")
 
         self.update_btn = QAction()
-        self.update_btn.setText('Update')
+        self.update_btn.setText("Update")
 
         self.toolbar = QToolBar()
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -58,12 +58,10 @@ class UIForm:
         self.state_groupbox.setTitle("State")
         self.gridlayout_state = QGridLayout(self.state_groupbox)
 
-        self.btn = QPushButton()
-        self.btn.setText("Connect")
+        self.btn = QPushButton("Connect")
         self.gridlayout_state.addWidget(self.btn, 0, 0, 1, 1)
 
-        self.static_btn = QPushButton()
-        self.static_btn.setText('Scaled')
+        self.static_btn = QPushButton("Scaled")
         self.gridlayout_state.addWidget(self.static_btn, 1, 0, 1, 1)
 
         self.graphs_chbx = QCheckBox()
@@ -77,11 +75,24 @@ class UIForm:
         self.enlarge_chbx = QCheckBox()
         self.gridlayout_state.addWidget(self.enlarge_chbx, 1, 1, 1, 1)
 
-        self.enlarge_label = QLabel()
-        self.enlarge_label.setText("Enlarge")
+        self.enlarge_label = QLabel("Enlarge")
         self.gridlayout_state.addWidget(self.enlarge_label, 1, 2, 1, 1)
 
+        self.temp_label = QLabel("Temperature:")
+        self.deg_label = QLabel("°C")
+        self.deg_num_label = QLabel("0")
+        self.deg_num_label.setAlignment(Qt.AlignRight)
+
+        self.gridlayout_state.addWidget(self.temp_label, 2, 0, 1, 1)
+        self.gridlayout_state.addWidget(self.deg_num_label, 2, 1, 1, 1)
+        self.gridlayout_state.addWidget(self.deg_label, 2, 2, 1, 1)
+
+        self.test_btn = QPushButton('Test')
+        self.gridlayout_state.addWidget(self.test_btn, 3, 0, 1, 1)
+
         self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
+
+        self.file_dialog = QFileDialog()
 
         self.dockwidget_info.setWidget(self.widget_info)
 

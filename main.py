@@ -37,6 +37,7 @@ class MainWindow(QMainWindow, UIForm):
         # self.client.signal_disconnect.connect(lambda: self.connect())
 
         self.btn.clicked.connect(lambda: self.client.connect())
+        self.test_btn.clicked.connect(lambda: self.test())
 
         self.static_btn.clicked.connect(self.stream.scaled)
 
@@ -50,10 +51,11 @@ class MainWindow(QMainWindow, UIForm):
     def add_graphs(self):
         self.tabwidget.addTab(self.stack_widget, "Stream")
 
-    def plot_graphs(self, freq, time, sig1, sig2, dc):
+    def plot_graphs(self, freq, time, sig1, sig2, dc, temp):
         self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
         self.signals.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
         self.dc.update(dc, time, checkbox=self.graphs_chbx.isChecked())
+        self.deg_num_label.setText(str(temp/10))
 
     def set_main_graph(self, check):
         if self.tabwidget.indexOf(self.stack_widget) > -1 and check == 2:
@@ -97,7 +99,7 @@ class MainWindow(QMainWindow, UIForm):
             f.write(res.content.decode("utf-8"))
 
     def test(self):
-        pass
+        self.file_dialog.show()
 
 
 if __name__ == '__main__':

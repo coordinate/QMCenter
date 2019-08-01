@@ -96,6 +96,7 @@ class MainPlot(pg.PlotWidget):
 class FrequencyPlot(MainPlot):
     def __init__(self):
         MainPlot.__init__(self)
+        self.view.setYRange(0, 140000)
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
@@ -127,11 +128,11 @@ class SignalsPlot(MainPlot):
         right_axis = self.item.getAxis('right')
         right_axis.setLabel('Sig2', **{'font-size': '12pt'})
         right_axis.label.rotate(180)
-        self.item.getAxis('right').setPen(pg.mkPen(color='b'))
+        right_axis.setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
 
         self.viewbox = pg.ViewBox()   # create new viewbox for sig2
-        self.viewbox.setYRange(600, 1000)
+        self.viewbox.setYRange(0, 900)
         self.item.scene().addItem(self.viewbox)
         right_axis.linkToView(self.viewbox)
         right_axis.setGrid(False)
@@ -168,6 +169,7 @@ class DCPlot(MainPlot):
         MainPlot.__init__(self)
         self.item.setLabel('left', 'dc', **{'font-size': '12pt', 'color': 'red'})
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
+        self.view.setYRange(0, 900)
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
@@ -187,7 +189,6 @@ class DCPlot(MainPlot):
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
-
 
 
 class ThreeDVisual(gl.GLViewWidget):
