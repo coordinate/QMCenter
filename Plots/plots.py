@@ -2,8 +2,10 @@ import numpy as np
 import random
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
+from pyqtgraph.Qt import QtCore, QtGui
 
 from datetime import datetime
+from math import sqrt
 from OpenGL.GL import *
 
 from PyQt5.QtWidgets import QLabel
@@ -12,7 +14,7 @@ from PyQt5.QtGui import QVector3D
 
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
-from Utils.transform import project, magnet_color
+from Utils.transform import project, unproject, magnet_color
 
 
 class NonScientificYLeft(pg.AxisItem):
@@ -192,10 +194,12 @@ class DCPlot(MainPlot):
 
 
 class ThreeDVisual(gl.GLViewWidget):
+    set_label_signal = pyqtSignal(object, object, object)
     def __init__(self):
         gl.GLViewWidget.__init__(self)
 
         self.opts['distance'] = 3000
+        self.gradient_scale = []
 
         self.setBackgroundColor(pg.mkColor((0, 0, 0)))
         self.gridx = gl.GLGridItem()
@@ -223,10 +227,12 @@ class ThreeDVisual(gl.GLViewWidget):
         with open('data\mag_track.magnete') as file:
             lst = file.readlines()
 
-        lenght = len(lst)
-        points = np.empty((lenght, 3))
-        size = np.empty((lenght, ))
-        color = np.empty((lenght, 4))
+        self.length = len(lst)
+        self.lat_lon_arr = []
+        self.local_scene_points = np.empty((self.length, 4))
+        self.points = np.empty((self.length, 3))
+        size = np.empty((self.length, ))
+        color = np.empty((self.length, 4))
         time, latitude, longitude, height0, magnet = lst[0].split()
         x0, y0 = project((float(latitude), float(longitude)))
         # self.pan(dx=0, dy=0, dz=500, relative=False)
@@ -235,16 +241,19 @@ class ThreeDVisual(gl.GLViewWidget):
             time, latitude, longitude, height, magnet = s.split()
             # x, y = project((float(latitude), float(longitude)))
             x, y = project((float(latitude), float(longitude)))
-            points[i] = (x-x0, y-y0, float(height))
+            self.points[i] = (x-x0, y-y0, float(height))
             color[i] = magnet_color(float(magnet))
             # color[i] = (107, 107, 255)
             size[i] = 5
+            self.gradient_scale.append(float(magnet))
+            self.lat_lon_arr.append([latitude, longitude, magnet])
 
-        fly = gl.GLScatterPlotItem(pos=points, size=size, color=color, pxMode=True)
-        fly.scale(1, 1, 1)
-        fly.translate(0, 0, 0)
-        fly.setGLOptions('opaque')
-        self.addItem(fly)
+        self.gradient_scale.sort(reverse=True)
+        self.fly = gl.GLScatterPlotItem(pos=self.points, size=size, color=color, pxMode=True)
+        self.fly.scale(1, 1, 1)
+        self.fly.translate(0, 0, 0)
+        self.fly.setGLOptions('opaque')
+        self.addItem(self.fly)
 
         ax = gl.GLAxisItem(size=QVector3D(1000, 1000, 1000))
         # self.addItem(ax)
@@ -271,4 +280,38 @@ class ThreeDVisual(gl.GLViewWidget):
 
         axis_line = gl.GLScatterPlotItem(pos=axis, size=size_ax, color=color_axis, pxMode=True)
         # self.addItem(axis_line)
+
+    def get_scale_magnet(self):
+        self.length = len(self.gradient_scale)
+        return [self.gradient_scale[0], self.gradient_scale[int(self.length*0.2)], self.gradient_scale[int(self.length*0.4)],
+                self.gradient_scale[int(self.length*0.6)], self.gradient_scale[int(self.length*0.8)], self.gradient_scale[-1]]
+
+    def mouseDoubleClickEvent(self, ev):
+        m = self.projectionMatrix() * self.viewMatrix()
+        mouse_pos = (ev.pos().x()/self.size().width(), ev.pos().y()/self.size().height())
+        T_matrix = np.array(m.data()).reshape((4, 4)).T
+        p = np.array(m.data()).reshape((4, 4)).T @ np.array(self.points[0].tolist() + [1])
+        distance = 1
+        print_index = None
+        for i in range(self.length):
+            point = T_matrix @ np.array(self.points[i].tolist() + [1])
+            point /= point[3]
+            point[0] = 0.5 + point[0]/2
+            point[1] = 0.5 - point[1]/2
+            self.local_scene_points[i] = point
+            dis = sqrt(pow(mouse_pos[0]-point[0], 2) + pow(mouse_pos[1] - point[1], 2))
+            if dis <= 0.007:
+                distance = dis
+                print_index = i
+
+        if print_index is not None:
+            lat, lon, magnet = self.lat_lon_arr[print_index]
+            self.set_label_signal.emit(lat, lon, magnet)
+        else:
+            self.set_label_signal.emit('', '', '')
+        p /= p[3]
+        p[0] = 0.5 + p[0]/2
+        p[1] = 0.5 - p[1]/2
+        print(print_index, '\n', distance)
+        print(mouse_pos)
 

@@ -1,6 +1,7 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QTabWidget, QWidget, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog, QSizePolicy, QStyle
 
 from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
 
@@ -43,7 +44,7 @@ class UIForm:
         self.setCentralWidget(self.tabwidget)
         self.tabwidget.setTabsClosable(True)
         self.tabwidget.setMovable(True)
-        # self.tabwidget.addTab(self.stream_main, "Stream")
+
 
         self.dockwidget_info = QDockWidget()
         self.dockwidget_info.setWindowTitle("Info")
@@ -92,6 +93,12 @@ class UIForm:
 
         self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
 
+        self.update_widget = QWidget()
+        self.gridlayout_update = QGridLayout(self.update_widget)
+
+        self.browse_btn = QPushButton("Browse")
+        self.gridlayout_update.addWidget(self.browse_btn, 0, 3, 1, 1)
+
         self.file_dialog = QFileDialog()
 
         self.dockwidget_info.setWidget(self.widget_info)
@@ -104,15 +111,15 @@ class UIForm:
         self.graphs_gridlayout.setHorizontalSpacing(20)
 
         self.stream = FrequencyPlot()
-        self.dc = DCPlot()
+        self.dc_plot = DCPlot()
         self.static1 = MainPlot()
-        self.three_d_visual = ThreeDVisual()
-        self.signals = SignalsPlot()
+        self.three_d_plot = ThreeDVisual()
+        self.signals_plot = SignalsPlot()
 
         self.graphs_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-        self.graphs_gridlayout.addWidget(self.signals, 1, 0, 1, 1)
+        self.graphs_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
         self.graphs_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
-        self.graphs_gridlayout.addWidget(self.dc, 1, 1, 1, 1)
+        self.graphs_gridlayout.addWidget(self.dc_plot, 1, 1, 1, 1)
 
         self.stream_widget = QWidget()
         self.stream_lay = QGridLayout(self.stream_widget)
@@ -120,6 +127,55 @@ class UIForm:
 
         self.stack_widget.addWidget(self.graphs_widget)
         self.stack_widget.addWidget(self.stream_widget)
+
+        self.three_d_widget = QWidget()
+        self.grid_3d = QGridLayout(self.three_d_widget)
+        self.grid_3d.setHorizontalSpacing(0)
+        self.grid_3d.setVerticalSpacing(0)
+
+        header = QLabel("Info")
+        header.setStyleSheet("QLabel { background-color : black, color: white}")
+        gradient = QLabel()
+        pixmap = QPixmap('images/red-blue.jpg')
+        gradient.setPixmap(pixmap)
+        self.grid_3d.addWidget(self.three_d_plot, 0, 0, 100, 100)
+        # self.grid_3d.addWidget(header, 0, 0, 1, 3)
+        self.grid_3d.addWidget(gradient, 1, 2, 6, 1)
+
+        self.gradient_tick_lst = []
+        gradient_scale = self.three_d_plot.get_scale_magnet()
+        for i, g in enumerate(gradient_scale):
+            grad_tic = QLabel('{}'.format(int(g)))
+            if i == 0:
+                grad_tic.setAlignment(Qt.AlignTop)
+            elif i == 5:
+                grad_tic.setAlignment(Qt.AlignBottom)
+
+            grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+            self.grid_3d.addWidget(grad_tic, i+1, 1, 1, 1)
+            self.gradient_tick_lst.append(grad_tic)
+
+        self.longitude_label = QLabel("Longitude:")
+        self.longitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+        self.longitude_value_label = QLabel()
+        self.longitude_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+        self.latitude_label = QLabel("Latitude:")
+        self.latitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+        self.latitude_value_label = QLabel()
+        self.latitude_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+        self.magnet_label = QLabel("Magnet:")
+        self.magnet_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+        self.magnet_value_label = QLabel()
+        self.magnet_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+
+        self.grid_3d.addWidget(self.longitude_label, 95, 1, 1, 2)
+        self.grid_3d.addWidget(self.longitude_value_label, 95, 3, 1, 5)
+        self.grid_3d.addWidget(self.latitude_label, 96, 1, 1, 2)
+        self.grid_3d.addWidget(self.latitude_value_label, 96, 3, 1, 5)
+        self.grid_3d.addWidget(self.magnet_label, 97, 1, 1, 2)
+        self.grid_3d.addWidget(self.magnet_value_label, 97, 3, 1, 5)
+
+
 
 
 
