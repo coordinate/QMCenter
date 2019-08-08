@@ -3,8 +3,10 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QTabWidget, QWidget, \
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog, QSizePolicy, QStyle
 
-from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
+from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot, CesiumPlot
+import cesiumpy
 
+_ = lambda x: x
 
 class UIForm:
     def setupUI(self, Form):
@@ -14,23 +16,23 @@ class UIForm:
 
         self.menu = QMenuBar()
         self.setMenuBar(self.menu)
-        self.menu.addMenu("&File")
+        self.menu.addMenu(_("&File"))
 
         self.graphs_btn = QPushButton()
-        self.graphs_btn.setText("Graphs")
+        self.graphs_btn.setText(_("Graphs"))
         self.graphs_btn.setMinimumSize(100, 30)
 
         self.config_btn = QPushButton()
-        self.config_btn.setText("Config")
+        self.config_btn.setText(_("Config"))
 
         self.visual_btn = QPushButton()
-        self.visual_btn.setText("3D Visualization")
+        self.visual_btn.setText(_("3D Visualization"))
 
         # self.update_btn = QPushButton()
         # self.update_btn.setText("Update")
 
         self.update_btn = QAction()
-        self.update_btn.setText("Update")
+        self.update_btn.setText(_("Update"))
 
         self.toolbar = QToolBar()
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -47,7 +49,7 @@ class UIForm:
 
 
         self.dockwidget_info = QDockWidget()
-        self.dockwidget_info.setWindowTitle("Info")
+        self.dockwidget_info.setWindowTitle(_("Info"))
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget_info)
         self.dockwidget_info.setMinimumSize(200, 500)
         # self.dockwidget_info.setAllowedAreas(Qt.LeftDockWidgetArea)
@@ -56,13 +58,13 @@ class UIForm:
         self.layout = QVBoxLayout(self.widget_info)
 
         self.state_groupbox = QGroupBox()
-        self.state_groupbox.setTitle("State")
+        self.state_groupbox.setTitle(_("State"))
         self.gridlayout_state = QGridLayout(self.state_groupbox)
 
-        self.btn = QPushButton("Connect")
+        self.btn = QPushButton(_("Connect"))
         self.gridlayout_state.addWidget(self.btn, 0, 0, 1, 1)
 
-        self.static_btn = QPushButton("Scaled")
+        self.static_btn = QPushButton(_("Scaled"))
         self.gridlayout_state.addWidget(self.static_btn, 1, 0, 1, 1)
 
         self.graphs_chbx = QCheckBox()
@@ -70,16 +72,16 @@ class UIForm:
         self.gridlayout_state.addWidget(self.graphs_chbx, 0, 1, 1, 1)
 
         self.graphs_label = QLabel()
-        self.graphs_label.setText("Graphs")
+        self.graphs_label.setText(_("Graphs"))
         self.gridlayout_state.addWidget(self.graphs_label, 0, 2, 1, 1)
 
         self.enlarge_chbx = QCheckBox()
         self.gridlayout_state.addWidget(self.enlarge_chbx, 1, 1, 1, 1)
 
-        self.enlarge_label = QLabel("Enlarge")
+        self.enlarge_label = QLabel(_("Enlarge"))
         self.gridlayout_state.addWidget(self.enlarge_label, 1, 2, 1, 1)
 
-        self.temp_label = QLabel("Temperature:")
+        self.temp_label = QLabel(_("Temperature:"))
         self.deg_label = QLabel("°C")
         self.deg_num_label = QLabel("0")
         self.deg_num_label.setAlignment(Qt.AlignRight)
@@ -96,7 +98,7 @@ class UIForm:
         self.update_widget = QWidget()
         self.gridlayout_update = QGridLayout(self.update_widget)
 
-        self.browse_btn = QPushButton("Browse")
+        self.browse_btn = QPushButton(_("Browse"))
         self.gridlayout_update.addWidget(self.browse_btn, 0, 3, 1, 1)
 
         self.file_dialog = QFileDialog()
@@ -155,15 +157,15 @@ class UIForm:
             self.grid_3d.addWidget(grad_tic, i+1, 1, 1, 1)
             self.gradient_tick_lst.append(grad_tic)
 
-        self.longitude_label = QLabel("Longitude:")
+        self.longitude_label = QLabel(_("Longitude:"))
         self.longitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
         self.longitude_value_label = QLabel()
         self.longitude_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.latitude_label = QLabel("Latitude:")
+        self.latitude_label = QLabel(_("Latitude:"))
         self.latitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
         self.latitude_value_label = QLabel()
         self.latitude_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.magnet_label = QLabel("Magnet:")
+        self.magnet_label = QLabel(_("Magnet:"))
         self.magnet_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
         self.magnet_value_label = QLabel()
         self.magnet_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
@@ -174,6 +176,8 @@ class UIForm:
         self.grid_3d.addWidget(self.latitude_value_label, 96, 3, 1, 5)
         self.grid_3d.addWidget(self.magnet_label, 97, 1, 1, 2)
         self.grid_3d.addWidget(self.magnet_value_label, 97, 3, 1, 5)
+
+        self.earth_widget = CesiumPlot()
 
 
 

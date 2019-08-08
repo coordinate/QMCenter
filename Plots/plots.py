@@ -2,12 +2,14 @@ import numpy as np
 import random
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
+import cesiumpy
 from pyqtgraph.Qt import QtCore, QtGui
 
 from datetime import datetime
 from math import sqrt
 from OpenGL.GL import *
 
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtCore import pyqtSignal, QPointF
 from PyQt5.QtGui import QVector3D
@@ -195,12 +197,11 @@ class DCPlot(MainPlot):
 
 class ThreeDVisual(gl.GLViewWidget):
     set_label_signal = pyqtSignal(object, object, object)
+
     def __init__(self):
         gl.GLViewWidget.__init__(self)
 
         self.opts['distance'] = 3000
-        self.gradient_scale = []
-
         self.setBackgroundColor(pg.mkColor((0, 0, 0)))
         self.gridx = gl.GLGridItem()
         self.gridx.scale(0.1, 0.1, 0.1)
@@ -228,6 +229,7 @@ class ThreeDVisual(gl.GLViewWidget):
             lst = file.readlines()
 
         self.length = len(lst)
+        self.gradient_scale = []
         self.lat_lon_arr = []
         self.local_scene_points = np.empty((self.length, 4))
         self.points = np.empty((self.length, 3))
@@ -290,8 +292,6 @@ class ThreeDVisual(gl.GLViewWidget):
         m = self.projectionMatrix() * self.viewMatrix()
         mouse_pos = (ev.pos().x()/self.size().width(), ev.pos().y()/self.size().height())
         T_matrix = np.array(m.data()).reshape((4, 4)).T
-        p = np.array(m.data()).reshape((4, 4)).T @ np.array(self.points[0].tolist() + [1])
-        distance = 1
         print_index = None
         for i in range(self.length):
             point = T_matrix @ np.array(self.points[i].tolist() + [1])
@@ -301,7 +301,6 @@ class ThreeDVisual(gl.GLViewWidget):
             self.local_scene_points[i] = point
             dis = sqrt(pow(mouse_pos[0]-point[0], 2) + pow(mouse_pos[1] - point[1], 2))
             if dis <= 0.007:
-                distance = dis
                 print_index = i
 
         if print_index is not None:
@@ -309,9 +308,23 @@ class ThreeDVisual(gl.GLViewWidget):
             self.set_label_signal.emit(lat, lon, magnet)
         else:
             self.set_label_signal.emit('', '', '')
-        p /= p[3]
-        p[0] = 0.5 + p[0]/2
-        p[1] = 0.5 - p[1]/2
-        print(print_index, '\n', distance)
-        print(mouse_pos)
 
+
+class CesiumPlot(QWebEngineView):
+    def __init__(self):
+        QWebEngineView.__init__(self)
+
+        #url = '//assets.agi.com/stk-terrain/world'
+        #terrainProvider = cesiumpy.CesiumTerrainProvider(url=url)
+        viewer = cesiumpy.Viewer()
+
+        with open('data/mag_track.magnete') as file:
+            lst = file.readlines()
+
+        for i, s in enumerate(lst):
+            time, latitude, longitude, height, magnet = s.split()
+            color_p = magnet_color(float(magnet))
+            point = cesiumpy.Point(position=[float(longitude), float(latitude), float(height)], color=color_p)
+            viewer.entities.add(point)
+
+        self.setHtml(viewer.to_html())

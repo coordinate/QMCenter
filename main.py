@@ -11,6 +11,9 @@ from design import UIForm
 from Clients.client_socket import Client
 
 
+_ = lambda x: x
+
+
 class API(QtCore.QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,7 +58,7 @@ class MainWindow(QMainWindow, UIForm):
         self.test_btn.clicked.connect(self.test)
 
     def add_graphs(self):
-        self.tabwidget.addTab(self.stack_widget, "Stream")
+        self.tabwidget.addTab(self.stack_widget, _("Stream"))
 
     def plot_graphs(self, freq, time, sig1, sig2, dc, temp):
         self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
@@ -76,7 +79,7 @@ class MainWindow(QMainWindow, UIForm):
             return
 
     def add_visual(self):
-        self.tabwidget.addTab(self.three_d_widget, "3D visual")
+        self.tabwidget.addTab(self.three_d_widget, _("3D visual"))
 
     def set_labels(self, lat, lon, magnet):
         self.latitude_value_label.setText(str(lat))
@@ -87,7 +90,7 @@ class MainWindow(QMainWindow, UIForm):
         self.tabwidget.removeTab(index)
 
     def add_update(self):
-        self.tabwidget.addTab(self.update_widget, "Update")
+        self.tabwidget.addTab(self.update_widget, _("Update"))
 
     def connect(self):
         self.btn.setText("connect")
@@ -110,7 +113,7 @@ class MainWindow(QMainWindow, UIForm):
             f.write(res.content.decode("utf-8"))
 
     def test(self):
-        print(self.three_d_plot.size())
+        self.earth_widget.show()
 
 
 if __name__ == '__main__':

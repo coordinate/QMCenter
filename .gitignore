@@ -18,16 +18,18 @@ parts/
 sdist/
 var/
 workdocs/
-data/raw_magnet_data.txt
+data/*
 *.egg-info/
 .installed.cfg
 *.egg
 
-# PyInstaller
+# PyInstaller, cx_Freeze
+# with pyistaller use PyQt 5.12.1
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+setup.py
 
 # Installer logs
 pip-log.txt

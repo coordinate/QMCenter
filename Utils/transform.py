@@ -43,7 +43,7 @@ def unproject(z, l, x, y):
 
 
 def magnet_color(magnet):
-    min_magnet = 67458
+    min_magnet = 67454.73292486792
     max_magnet = 67516
     middle_mag = (max_magnet - min_magnet)/2 + min_magnet
     res = (magnet-min_magnet)/(max_magnet-min_magnet)
