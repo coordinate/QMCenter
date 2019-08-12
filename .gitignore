@@ -18,7 +18,6 @@ parts/
 sdist/
 var/
 workdocs/
-data/*
 *.egg-info/
 .installed.cfg
 *.egg

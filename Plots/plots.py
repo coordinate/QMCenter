@@ -2,7 +2,7 @@ import numpy as np
 import random
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
-import cesiumpy
+# import cesiumpy
 from pyqtgraph.Qt import QtCore, QtGui
 
 from datetime import datetime
@@ -310,21 +310,21 @@ class ThreeDVisual(gl.GLViewWidget):
             self.set_label_signal.emit('', '', '')
 
 
-class CesiumPlot(QWebEngineView):
-    def __init__(self):
-        QWebEngineView.__init__(self)
-
-        #url = '//assets.agi.com/stk-terrain/world'
-        #terrainProvider = cesiumpy.CesiumTerrainProvider(url=url)
-        viewer = cesiumpy.Viewer()
-
-        with open('data/mag_track.magnete') as file:
-            lst = file.readlines()
-
-        for i, s in enumerate(lst):
-            time, latitude, longitude, height, magnet = s.split()
-            color_p = magnet_color(float(magnet))
-            point = cesiumpy.Point(position=[float(longitude), float(latitude), float(height)], color=color_p)
-            viewer.entities.add(point)
-
-        self.setHtml(viewer.to_html())
+# class CesiumPlot(QWebEngineView):
+#     def __init__(self):
+#         QWebEngineView.__init__(self)
+#
+#         #url = '//assets.agi.com/stk-terrain/world'
+#         #terrainProvider = cesiumpy.CesiumTerrainProvider(url=url)
+#         viewer = cesiumpy.Viewer()
+#
+#         with open('data/mag_track.magnete') as file:
+#             lst = file.readlines()
+#
+#         for i, s in enumerate(lst):
+#             time, latitude, longitude, height, magnet = s.split()
+#             color_p = magnet_color(float(magnet))
+#             point = cesiumpy.Point(position=[float(longitude), float(latitude), float(height)], color=color_p)
+#             viewer.entities.add(point)
+#
+#         self.setHtml(viewer.to_html())

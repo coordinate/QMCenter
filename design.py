@@ -1,12 +1,12 @@
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QTabWidget, QWidget, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog, QSizePolicy, QStyle
+from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, \
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog
 
-from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot, CesiumPlot
-import cesiumpy
-
+from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
+from Design.detachabletabwidget import DetachableTabWidget
 _ = lambda x: x
+
 
 class UIForm:
     def setupUI(self, Form):
@@ -34,18 +34,44 @@ class UIForm:
         self.update_btn = QAction()
         self.update_btn.setText(_("Update"))
 
+        self.split_vertical_btn = QPushButton()
+        self.split_vertical_btn.setIcon(QIcon('images/split_vertical.png'))
+        self.split_vertical_btn.setIconSize(QSize(32, 32))
+
+        self.full_tab_btn = QPushButton()
+        self.full_tab_btn.setIcon(QIcon('images/full_tab.png'))
+        self.full_tab_btn.setIconSize(QSize(32, 32))
+
+        self.visual_btn = QPushButton()
+        self.visual_btn.setText(_("3D Visualization"))
+
         self.toolbar = QToolBar()
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
         self.toolbar.addWidget(self.graphs_btn)
         self.toolbar.addWidget(self.config_btn)
         self.toolbar.addWidget(self.visual_btn)
         self.toolbar.addAction(self.update_btn)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.split_vertical_btn)
+        self.toolbar.addWidget(self.full_tab_btn)
         # self.toolbar.setAllowedAreas(Qt.TopToolBarArea)
 
-        self.tabwidget = QTabWidget()
-        self.setCentralWidget(self.tabwidget)
-        self.tabwidget.setTabsClosable(True)
-        self.tabwidget.setMovable(True)
+        self.tabs_widget = QStackedWidget()
+
+        self.split_tabwidget = QWidget()
+        self.split_lay = QGridLayout(self.split_tabwidget)
+
+        self.one_tabwidget = QWidget()
+        self.one_lay = QGridLayout(self.one_tabwidget)
+
+        self.tabwidget_left = DetachableTabWidget()
+        self.one_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)
+
+        self.tabwidget_right = DetachableTabWidget()
+
+        self.tabs_widget.addWidget(self.one_tabwidget)
+        self.tabs_widget.addWidget(self.split_tabwidget)
+        self.setCentralWidget(self.tabs_widget)
 
 
         self.dockwidget_info = QDockWidget()
@@ -177,7 +203,7 @@ class UIForm:
         self.grid_3d.addWidget(self.magnet_label, 97, 1, 1, 2)
         self.grid_3d.addWidget(self.magnet_value_label, 97, 3, 1, 5)
 
-        self.earth_widget = CesiumPlot()
+        # self.earth_widget = CesiumPlot()
 
 
 
