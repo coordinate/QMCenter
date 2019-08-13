@@ -1,10 +1,9 @@
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QLabel, QFileDialog
-
+from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout
 from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
-from Design.detachabletabwidget import DetachableTabWidget
+from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
 
 
@@ -45,7 +44,7 @@ class UIForm:
         self.visual_btn = QPushButton()
         self.visual_btn.setText(_("3D Visualization"))
 
-        self.toolbar = QToolBar()
+        self.toolbar = QToolBar(_("Toolbar"))
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
         self.toolbar.addWidget(self.graphs_btn)
         self.toolbar.addWidget(self.config_btn)
@@ -80,6 +79,7 @@ class UIForm:
         self.dockwidget_info.setMinimumSize(200, 500)
         # self.dockwidget_info.setAllowedAreas(Qt.LeftDockWidgetArea)
 
+        # create dockwidget Info
         self.widget_info = QWidget()
         self.layout = QVBoxLayout(self.widget_info)
 
@@ -131,31 +131,64 @@ class UIForm:
 
         self.dockwidget_info.setWidget(self.widget_info)
 
-        self.stack_widget = QStackedWidget()
-
-        self.graphs_widget = QWidget()
-        self.graphs_gridlayout = QGridLayout(self.graphs_widget)
-        self.graphs_gridlayout.setVerticalSpacing(50)
-        self.graphs_gridlayout.setHorizontalSpacing(20)
-
+        # create tab Graphs
         self.stream = FrequencyPlot()
         self.dc_plot = DCPlot()
         self.static1 = MainPlot()
-        self.three_d_plot = ThreeDVisual()
         self.signals_plot = SignalsPlot()
 
-        self.graphs_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-        self.graphs_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
-        self.graphs_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
-        self.graphs_gridlayout.addWidget(self.dc_plot, 1, 1, 1, 1)
+        self.scroll_3x2_widget = QWidget()
+        self.scroll_3x2_layout = QHBoxLayout(self.scroll_3x2_widget)
+        self.scroll_3x2_layout.setContentsMargins(5, 0, 0, 0)
 
-        self.stream_widget = QWidget()
-        self.stream_lay = QGridLayout(self.stream_widget)
-        # self.stream_lay.addWidget(self.stream, alignment=Qt.AlignTop)
+        self.scroll_area_3x2 = Scroll()
+        self.scroll_area_3x2.setWidgetResizable(True)
+        self.scroll_area_3x2.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area_3x2.setFrameStyle(0)
+        self.scroll_area_3x2.setStyleSheet('QScrollArea { background-color : white}')
+        self.scroll_3x2_layout.addWidget(self.scroll_area_3x2)
 
-        self.stack_widget.addWidget(self.graphs_widget)
-        self.stack_widget.addWidget(self.stream_widget)
 
+        self.graphs_3x2_widget = QWidget()
+        self.graphs_3x2_widget.setMinimumHeight(900)
+        self.graphs_3x2_widget.setStyleSheet('QWidget { background-color : white}')
+        self.graphs_3x2_gridlayout = QGridLayout(self.graphs_3x2_widget)
+        # self.graphs_3x2_gridlayout.setVerticalSpacing(50)
+        # self.graphs_3x2_gridlayout.setHorizontalSpacing(20)
+        self.graphs_3x2_gridlayout.setContentsMargins(0, 0, 10, 0)
+
+        self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
+        self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
+        self.graphs_3x2_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
+        self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 1, 1, 1, 1)
+
+        self.scroll_area_3x2.setWidget(self.graphs_3x2_widget)
+
+        self.scroll_6x1_widget = QWidget()
+        self.scroll_6x1_layout = QHBoxLayout(self.scroll_6x1_widget)
+        self.scroll_6x1_layout.setContentsMargins(5, 0, 0, 0)
+
+        self.scroll_area_6x1 = Scroll()
+        self.scroll_area_6x1.setWidgetResizable(True)
+        self.scroll_area_6x1.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area_6x1.setFrameStyle(0)
+        self.scroll_area_6x1.setStyleSheet('QScrollArea { background-color : white}')
+        self.scroll_6x1_layout.addWidget(self.scroll_area_6x1)
+
+        self.graphs_6x1_widget = QWidget()
+        self.graphs_6x1_widget.setStyleSheet('QWidget { background-color : white}')
+        self.graphs_6x1_widget.setMinimumHeight(900)
+        self.graphs_6x1_gridlayout = QGridLayout(self.graphs_6x1_widget)
+        self.graphs_6x1_gridlayout.setContentsMargins(0, 0, 10, 0)
+
+        self.scroll_area_6x1.setWidget(self.graphs_6x1_widget)
+
+        self.stack_widget = QStackedWidget()
+        self.stack_widget.addWidget(self.scroll_3x2_widget)
+        self.stack_widget.addWidget(self.scroll_6x1_widget)
+
+        # create tab 3D visualization
+        self.three_d_plot = ThreeDVisual()
         self.three_d_widget = QWidget()
         self.grid_3d = QGridLayout(self.three_d_widget)
         self.grid_3d.setHorizontalSpacing(0)

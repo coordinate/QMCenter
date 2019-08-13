@@ -53,8 +53,9 @@ class MainWindow(QMainWindow, UIForm):
         self.file_dialog.fileSelected.connect(lambda url: print(url))
 
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
+        self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
-        self.enlarge_chbx.stateChanged.connect(lambda v: self.set_main_graph(v))
+        # self.enlarge_chbx.stateChanged.connect(lambda v: self.set_main_graph(v))
 
         self.three_d_plot.set_label_signal.connect(lambda lat, lon, magnet: self.set_labels(lat, lon, magnet))
 
@@ -74,21 +75,35 @@ class MainWindow(QMainWindow, UIForm):
 
     def plot_graphs(self, freq, time, sig1, sig2, dc, temp):
         self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
-        self.signals.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
-        self.dc.update(dc, time, checkbox=self.graphs_chbx.isChecked())
+        self.signals_plot.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
+        self.dc_plot.update(dc, time, checkbox=self.graphs_chbx.isChecked())
         self.deg_num_label.setText(str(temp/10))
 
-    def set_main_graph(self, check):
-        if self.tabwidget_left.indexOf(self.stack_widget) > -1 and check == 2:
-            self.stream_lay.addWidget(self.stream)
-            self.stack_widget.setCurrentWidget(self.stream_widget)
+    # def set_main_graph(self, check):
+    #     if self.tabwidget_left.indexOf(self.stack_widget) > -1 and check == 2:
+    #         self.graphs_6x1_gridlayout.addWidget(self.stream)
+    #         self.stack_widget.setCurrentWidget(self.graphs_6x1_widget)
+    #
+    #     elif self.tabwidget_left.indexOf(self.stack_widget) > -1:
+    #         self.stream.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+    #         self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
+    #         self.stack_widget.setCurrentWidget(self.graphs_3x2_widget)
+    #     else:
+    #         return
 
-        elif self.tabwidget_left.indexOf(self.stack_widget) > -1:
-            self.stream.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-            self.graphs_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-            self.stack_widget.setCurrentWidget(self.graphs_widget)
-        else:
-            return
+    def change_grid(self, size):
+        if size.size().width() < 600:
+            self.graphs_6x1_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
+            self.graphs_6x1_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
+            self.graphs_6x1_gridlayout.addWidget(self.static1, 2, 0, 1, 1)
+            self.graphs_6x1_gridlayout.addWidget(self.dc_plot, 3, 0, 1, 1)
+            self.stack_widget.setCurrentWidget(self.scroll_6x1_widget)
+        elif size.size().width() >= 600:
+            self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 1, 1, 1, 1)
+            self.stack_widget.setCurrentWidget(self.scroll_3x2_widget)
 
     def add_visual(self):
         self.tabwidget_left.addTab(self.three_d_widget, _("3D visual"))
@@ -132,6 +147,7 @@ class MainWindow(QMainWindow, UIForm):
     def test(self):
         # self.earth_widget.show()
         pass
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

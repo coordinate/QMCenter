@@ -10,9 +10,9 @@ from math import sqrt
 from OpenGL.GL import *
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtCore import pyqtSignal, QPointF
-from PyQt5.QtGui import QVector3D
+from PyQt5.QtWidgets import QLabel, QSizePolicy
+from PyQt5.QtCore import Qt, pyqtSignal, QPointF
+from PyQt5.QtGui import QGuiApplication, QVector3D
 
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
@@ -27,6 +27,8 @@ class NonScientificYLeft(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
         return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
+    # def wheelEvent(self, ev):   # event <PyQt5.QtWidgets.QGraphicsSceneWheelEvent object at 0x00>
+    #     print('event', ev)
 
 class NonScientificYRight(pg.AxisItem):
     def __init__(self, *args, **kwargs):
@@ -63,6 +65,7 @@ class MainPlot(pg.PlotWidget):
         pg.PlotWidget.__init__(self, axisItems={'left': NonScientificYLeft(orientation='left'),
                                                 'bottom': NonScientificX(orientation='bottom'),
                                                 'right': NonScientificYRight(orientation='right')})
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
         self.item.setTitle('Some data from server')
@@ -96,10 +99,22 @@ class MainPlot(pg.PlotWidget):
     def scaled(self):
         self.view.setRange(yRange=(self.left_axis[-1] - 10000, self.left_axis[-1] + 10000))
 
+    def wheelEvent(self, event):
+        modifiers = QGuiApplication.keyboardModifiers()
+        if modifiers == Qt.ShiftModifier:
+            self.item.getAxis('left').wheelEvent(event)
+        elif modifiers == Qt.ControlModifier:
+            self.item.getAxis('bottom').wheelEvent(event)
+        elif modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
+            print('Control+Shift+Wheel')
+        else:
+            pg.PlotWidget.wheelEvent(self, event)
+
 
 class FrequencyPlot(MainPlot):
     def __init__(self):
         MainPlot.__init__(self)
+        self.item.setLabel('left', 'Magnetic Field, nT', **{'font-size': '12pt', 'color': 'red'})
         self.view.setYRange(0, 140000)
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):

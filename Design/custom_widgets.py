@@ -1,10 +1,11 @@
-from PyQt5.QtCore import Qt, QPoint, QMimeData
+from PyQt5.QtCore import Qt, QPoint, QMimeData, pyqtSignal
 from PyQt5.QtGui import QPixmap, QRegion, QDrag, QCursor
-from PyQt5.QtWidgets import QTabWidget
+from PyQt5.QtWidgets import QTabWidget, QScrollArea
 
 
 class DetachableTabWidget(QTabWidget):
     idx = 0
+    signal = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -60,3 +61,15 @@ class DetachableTabWidget(QTabWidget):
         else:
             self.insertTab(counter + 1, event.source().parentWidget().widget(DetachableTabWidget.idx),
                            event.source().tabText(DetachableTabWidget.idx))
+
+    def resizeEvent(self, event):
+        self.signal.emit(event)
+        QTabWidget.resizeEvent(self, event)
+
+
+class Scroll(QScrollArea):
+    def __init__(self):
+        QScrollArea.__init__(self)
+
+    def wheelEvent(self, event):
+        pass
