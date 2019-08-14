@@ -56,7 +56,7 @@ class MainWindow(QMainWindow, UIForm):
         self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
         # self.enlarge_chbx.stateChanged.connect(lambda v: self.set_main_graph(v))
-
+        self.sync_time_chbx.stateChanged.connect(lambda v: self.sync_x(v))
         self.three_d_plot.set_label_signal.connect(lambda lat, lon, magnet: self.set_labels(lat, lon, magnet))
 
         self.test_btn.clicked.connect(self.test)
@@ -73,9 +73,11 @@ class MainWindow(QMainWindow, UIForm):
     def add_graphs(self):
         self.tabwidget_left.addTab(self.stack_widget, _("Stream"))
 
-    def plot_graphs(self, freq, time, sig1, sig2, dc, temp):
+    def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
         self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
         self.signals_plot.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
+        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.graphs_chbx.isChecked())
+        self.lamp_temp_plot.update(temp, time, checkbox=self.graphs_chbx.isChecked())
         self.dc_plot.update(dc, time, checkbox=self.graphs_chbx.isChecked())
         self.deg_num_label.setText(str(temp/10))
 
@@ -90,19 +92,38 @@ class MainWindow(QMainWindow, UIForm):
     #         self.stack_widget.setCurrentWidget(self.graphs_3x2_widget)
     #     else:
     #         return
+    def sync_x(self, check):
+        if check == 2:
+            self.signals_plot.setXLink(self.stream)
+            self.lamp_temp_plot.setXLink(self.stream)
+            self.sensor_temp_plot.setXLink(self.stream)
+            self.dc_plot.setXLink(self.stream)
+        else:
+            self.signals_plot.setXLink(self.signals_plot)
+            self.lamp_temp_plot.setXLink(self.lamp_temp_plot)
+            self.sensor_temp_plot.setXLink(self.sensor_temp_plot)
+            self.dc_plot.setXLink(self.dc_plot)
 
     def change_grid(self, size):
         if size.size().width() < 600:
-            self.graphs_6x1_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-            self.graphs_6x1_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
-            self.graphs_6x1_gridlayout.addWidget(self.static1, 2, 0, 1, 1)
-            self.graphs_6x1_gridlayout.addWidget(self.dc_plot, 3, 0, 1, 1)
+            self.graphs_6x1_gridlayout.addWidget(self.stream, 0, 0, 1, 20)
+            self.graphs_6x1_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 20)
+            self.graphs_6x1_gridlayout.addWidget(self.signal_freq_plot, 2, 0, 1, 20)
+            self.graphs_6x1_gridlayout.addWidget(self.lamp_temp_plot, 3, 0, 1, 20)
+            self.graphs_6x1_gridlayout.addWidget(self.sensor_temp_plot, 4, 0, 1, 20)
+            self.graphs_6x1_gridlayout.addWidget(self.dc_plot, 5, 0, 1, 20)
+            # self.graphs_6x1_gridlayout.addWidget(self.sync_time_chbx, 6, 0, 1, 1)
+            # self.graphs_6x1_gridlayout.addWidget(self.sync_time_label, 6, 1, 1, 1)
             self.stack_widget.setCurrentWidget(self.scroll_6x1_widget)
         elif size.size().width() >= 600:
-            self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 1, 1, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 10)
+            self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 10)
+            self.graphs_3x2_gridlayout.addWidget(self.signal_freq_plot, 2, 0, 1, 10)
+            self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 10, 1, 10)
+            self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 10, 1, 10)
+            self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 10, 1, 10)
+            # self.graphs_3x2_gridlayout.addWidget(self.sync_time_chbx, 3, 0, 1, 1)
+            # self.graphs_3x2_gridlayout.addWidget(self.sync_time_label, 3, 1, 1, 8)
             self.stack_widget.setCurrentWidget(self.scroll_3x2_widget)
 
     def add_visual(self):

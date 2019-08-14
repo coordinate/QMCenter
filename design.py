@@ -2,7 +2,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout
-from Plots.plots import MainPlot, ThreeDVisual, FrequencyPlot, SignalsPlot, DCPlot
+from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
 
@@ -132,10 +132,17 @@ class UIForm:
         self.dockwidget_info.setWidget(self.widget_info)
 
         # create tab Graphs
-        self.stream = FrequencyPlot()
-        self.dc_plot = DCPlot()
-        self.static1 = MainPlot()
+        self.stream = MagneticField()
         self.signals_plot = SignalsPlot()
+        self.signal_freq_plot = SignalsFrequency()
+        self.lamp_temp_plot = LampTemp()
+        self.sensor_temp_plot = SensorTemp()
+        self.dc_plot = DCPlot()
+
+        self.sync_time_label = QLabel(_('Synchronize time'))
+        self.sync_time_chbx = QCheckBox()
+        self.gridlayout_state.addWidget(self.sync_time_chbx, 4, 0, 1, 1)
+        self.gridlayout_state.addWidget(self.sync_time_label, 4, 1, 1, 1)
 
         self.scroll_3x2_widget = QWidget()
         self.scroll_3x2_layout = QHBoxLayout(self.scroll_3x2_widget)
@@ -148,19 +155,20 @@ class UIForm:
         self.scroll_area_3x2.setStyleSheet('QScrollArea { background-color : white}')
         self.scroll_3x2_layout.addWidget(self.scroll_area_3x2)
 
-
         self.graphs_3x2_widget = QWidget()
-        self.graphs_3x2_widget.setMinimumHeight(900)
+        self.graphs_3x2_widget.setMinimumHeight(1300)
         self.graphs_3x2_widget.setStyleSheet('QWidget { background-color : white}')
         self.graphs_3x2_gridlayout = QGridLayout(self.graphs_3x2_widget)
         # self.graphs_3x2_gridlayout.setVerticalSpacing(50)
         # self.graphs_3x2_gridlayout.setHorizontalSpacing(20)
         self.graphs_3x2_gridlayout.setContentsMargins(0, 0, 10, 0)
 
-        self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-        self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
-        self.graphs_3x2_gridlayout.addWidget(self.static1, 0, 1, 1, 1)
-        self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 1, 1, 1, 1)
+        # self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 1, 1, 1)
+        # self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 1, 1, 1)
+        # self.graphs_3x2_gridlayout.addWidget(self.signal_freq_plot, 2, 1, 1, 1)
+        # self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 2, 1, 1)
+        # self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 2, 1, 1)
+        # self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 2, 1, 1)
 
         self.scroll_area_3x2.setWidget(self.graphs_3x2_widget)
 
@@ -177,7 +185,7 @@ class UIForm:
 
         self.graphs_6x1_widget = QWidget()
         self.graphs_6x1_widget.setStyleSheet('QWidget { background-color : white}')
-        self.graphs_6x1_widget.setMinimumHeight(900)
+        self.graphs_6x1_widget.setMinimumHeight(1300)
         self.graphs_6x1_gridlayout = QGridLayout(self.graphs_6x1_widget)
         self.graphs_6x1_gridlayout.setContentsMargins(0, 0, 10, 0)
 

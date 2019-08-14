@@ -57,7 +57,7 @@ i = iter(foo())
 loop = asyncio.get_event_loop()
 
 data_json = {'jsons': {}}
-with open('../data/raw_magnet_data.txt', 'r') as file:
+with open('../workdocs/data/raw_magnet_data.txt', 'r') as file:
     a = file.readlines()
 
 
@@ -72,7 +72,8 @@ it = iter(read_lines())
 def read():
     for i in range(100):
         n = next(it).split()
-        data_json['jsons']['json{}'.format(i)] = [int(n[1]), float(n[3]), int(n[5]), int(n[7]), int(n[13]), int(n[15])]  # (time, freq, sig1, sig2, dc, temp)
+        data_json['jsons']['json{}'.format(i)] = [int(n[1]), float(n[3]), int(n[5]), int(n[7]), int(n[9]),
+                                                  int(n[11]), int(n[13]), int(n[15])]     # (time, freq, sig1, sig2, ts, isitemp, dc, temp)
 
     return json.dumps(data_json)
 

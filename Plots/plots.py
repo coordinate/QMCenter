@@ -10,13 +10,34 @@ from math import sqrt
 from OpenGL.GL import *
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QLabel, QSizePolicy
-from PyQt5.QtCore import Qt, pyqtSignal, QPointF
+from PyQt5.QtWidgets import QLabel, QSizePolicy, QMenu, QAction
+from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QPoint
 from PyQt5.QtGui import QGuiApplication, QVector3D
+from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
 
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
 from Utils.transform import project, unproject, magnet_color
+
+_ = lambda x: x
+
+
+class Menu(QMenu):
+    def __init__(self, parent):
+        QMenu.__init__(self)
+        center_plot = self.addAction(_('Center Plot'))
+        center_plot.triggered.connect(lambda: parent.view.setRange(yRange=(parent.left_axis[-1], parent.left_axis[-1])))
+        vertical_autorange = self.addAction(_('Vertical Autorange'))
+        vertical_autorange.triggered.connect(lambda: parent.view.autoRange())
+
+
+class MenuRightAxis(QMenu):
+    def __init__(self, parent):
+        QMenu.__init__(self)
+        center_plot = self.addAction(_('Center Plot'))
+        center_plot.triggered.connect(lambda: parent.viewbox.setRange(yRange=(parent.right_axis[-1], parent.right_axis[-1])))
+        vertical_autorange = self.addAction(_('Vertical Autorange'))
+        vertical_autorange.triggered.connect(lambda: parent.viewbox.autoRange())
 
 
 class NonScientificYLeft(pg.AxisItem):
@@ -27,8 +48,6 @@ class NonScientificYLeft(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
         return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
-    # def wheelEvent(self, ev):   # event <PyQt5.QtWidgets.QGraphicsSceneWheelEvent object at 0x00>
-    #     print('event', ev)
 
 class NonScientificYRight(pg.AxisItem):
     def __init__(self, *args, **kwargs):
@@ -51,6 +70,8 @@ class NonScientificYRight(pg.AxisItem):
 class NonScientificX(pg.AxisItem):
     def __init__(self, *args, **kwargs):
         super(NonScientificX, self).__init__(*args, **kwargs)
+        self.setLabel(_('Time, s'), **{'font-size': '12pt'})
+        self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
         # try:
@@ -58,6 +79,15 @@ class NonScientificX(pg.AxisItem):
         # except OSError:
         #     return [str(round(float(value*1), 3)) for value in values]
         return data
+
+
+class NonScientificXSignalFreq(pg.AxisItem):
+    def __init__(self, *args, **kwargs):
+        super(NonScientificXSignalFreq, self).__init__(*args, **kwargs)
+        self.autoSIPrefix = False
+
+    def tickStrings(self, values, scale, spacing):
+        return [int(value) if abs(value) <= 99999999 else "{:.1e}".format(value) for value in values]
 
 
 class MainPlot(pg.PlotWidget):
@@ -82,9 +112,10 @@ class MainPlot(pg.PlotWidget):
         # self.data = pg.PlotDataItem(symbolSize=5, symbolPen=pg.mkPen(color='r'))
         self.data = pg.PlotDataItem()
         self.data.setPen(pg.mkPen(width=1, color='r'))
-        self.data.sigClicked.connect(lambda: self.test())
 
         self.view = self.item.getViewBox()
+        self.view.menu = Menu(self)
+        self.menu = self.item.getMenu()
         self.view.addItem(self.data)
         self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
 
@@ -93,7 +124,7 @@ class MainPlot(pg.PlotWidget):
         self.right_axis = np.empty(60000)
         self.ptr = 0
 
-    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):  # override this method to update your graph data
+    def update(self, left_ax, bottom_ax, right_ax=None, checkbox=True):  # override this method to update your graph data
         pass
 
     def scaled(self):
@@ -111,13 +142,13 @@ class MainPlot(pg.PlotWidget):
             pg.PlotWidget.wheelEvent(self, event)
 
 
-class FrequencyPlot(MainPlot):
+class MagneticField(MainPlot):
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', 'Magnetic Field, nT', **{'font-size': '12pt', 'color': 'red'})
-        self.view.setYRange(0, 140000)
+        self.item.setLabel('left', _('Magnetic Field, nT'), **{'font-size': '12pt', 'color': 'red'})
+        self.view.setYRange(-20000, 100000)
 
-    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
+    def update(self, left_ax: list, bottom_ax: list, right_ax=None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
@@ -142,16 +173,18 @@ class SignalsPlot(MainPlot):
         MainPlot.__init__(self)
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
 
-        self.item.setLabel('left', 'Sig1', **{'font-size': '12pt', 'color': 'red'})
-        self.view.setYRange(-20, 20)
+        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '12pt', 'color': 'red'})
+        self.view.setYRange(-100, 100)
         right_axis = self.item.getAxis('right')
-        right_axis.setLabel('Sig2', **{'font-size': '12pt'})
+        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '12pt'})
         right_axis.label.rotate(180)
         right_axis.setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
 
         self.viewbox = pg.ViewBox()   # create new viewbox for sig2
-        self.viewbox.setYRange(0, 900)
+        self.viewbox.menu = MenuRightAxis(self)
+
+        self.viewbox.setYRange(0, 500)
         self.item.scene().addItem(self.viewbox)
         right_axis.linkToView(self.viewbox)
         right_axis.setGrid(False)
@@ -183,10 +216,149 @@ class SignalsPlot(MainPlot):
             self.view.setMouseEnabled(x=True, y=True)
 
 
+class SignalsFrequency(pg.PlotWidget):
+    def __init__(self):
+        pg.PlotWidget.__init__(self, axisItems={'left': NonScientificYLeft(orientation='left'),
+                                                'bottom': NonScientificXSignalFreq(orientation='bottom'),
+                                                'right': NonScientificYRight(orientation='right')})
+
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.setBackground(background=pg.mkColor('w'))
+        self.item = self.getPlotItem()
+        self.item.setTitle('Some data from server')
+        self.item.getAxis('left').setPen(pg.mkPen(color='r'))
+        self.item.showGrid(x=1, y=1, alpha=0.5)
+        self.item.hideButtons()
+
+        self.item.setDownsampling(mode='subsample')
+        self.item.setClipToView(True)
+        self.item.setRange(xRange=[100000, 700000])
+        # self.item.setRange(yRange=[84448020, 84449520])
+
+        # self.data = pg.PlotDataItem(symbolSize=5, symbolPen=pg.mkPen(color='r'))
+        self.data = pg.PlotDataItem()
+        self.data.setPen(pg.mkPen(width=1, color='r'))
+        self.data.sigClicked.connect(lambda: self.test())
+
+        self.view = self.item.getViewBox()
+        self.view.addItem(self.data)
+        self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
+
+        self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
+        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '12pt', 'color': 'red'})
+        self.view.setYRange(-100, 100)
+        right_axis = self.item.getAxis('right')
+        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '12pt'})
+        right_axis.label.rotate(180)
+        right_axis.setPen(pg.mkPen(color='b'))
+        self.item.showAxis('right')
+        self.item.setLabel('bottom', _('Frequency, Hz'), **{'font-size': '12pt'})
+
+        self.viewbox = pg.ViewBox()  # create new viewbox for sig2
+        self.viewbox.setYRange(0, 500)
+        self.item.scene().addItem(self.viewbox)
+        right_axis.linkToView(self.viewbox)
+        right_axis.setGrid(False)
+        self.viewbox.setXLink(self.item)
+        self.viewbox.addItem(self.data2)
+
+        self.left_axis = np.empty(600)
+        self.bottom_axis = np.empty(600)
+        self.right_axis = np.empty(600)
+        self.ptr = 0
+
+    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
+        length = len(bottom_ax)
+
+        if checkbox:
+            self.ptr += length
+            self.left_axis[:-length] = self.left_axis[length:]
+            self.left_axis[-length:] = left_ax
+
+            self.bottom_axis[:-length] = self.bottom_axis[length:]
+            self.bottom_axis[-length:] = bottom_ax
+
+            self.right_axis[:-length] = self.right_axis[length:]
+            self.right_axis[-length:] = right_ax
+
+            self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
+            self.data2.setData(x=self.bottom_axis[-self.ptr:], y=self.right_axis[-self.ptr:])
+            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            self.viewbox.enableAutoRange(axis=self.viewbox.YAxis, enable=False)
+            self.view.setMouseEnabled(x=False, y=True)
+            self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
+        else:
+            self.view.disableAutoRange(axis=self.view.XAxis)
+            self.view.setMouseEnabled(x=True, y=True)
+
+    def wheelEvent(self, event):
+        modifiers = QGuiApplication.keyboardModifiers()
+        if modifiers == Qt.ShiftModifier:
+            self.item.getAxis('left').wheelEvent(event)
+        elif modifiers == Qt.ControlModifier:
+            self.item.getAxis('bottom').wheelEvent(event)
+        elif modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
+            print('Control+Shift+Wheel')
+        else:
+            pg.PlotWidget.wheelEvent(self, event)
+
+
+class LampTemp(MainPlot):
+    def __init__(self):
+        MainPlot.__init__(self)
+        self.item.setLabel('left', _('Lamp Temperature, °C'), **{'font-size': '12pt', 'color': 'red'})
+        self.view.setYRange(-50, 200)
+
+    def update(self, left_ax, bottom_ax: list, right_ax=None, checkbox=True):
+        length = len(bottom_ax)
+
+        if checkbox:
+            self.ptr += length
+            self.left_axis[:-length] = self.left_axis[length:]
+            self.left_axis[-length:] = left_ax
+
+            self.bottom_axis[:-length] = self.bottom_axis[length:]
+            self.bottom_axis[-length:] = bottom_ax
+
+            self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
+            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            self.view.setMouseEnabled(x=False, y=True)
+
+        else:
+            self.view.disableAutoRange(axis=self.view.XAxis)
+            self.view.setMouseEnabled(x=True, y=True)
+
+
+class SensorTemp(MainPlot):
+    def __init__(self):
+        MainPlot.__init__(self)
+        self.item.setLabel('left', _('Sensor Temperature, °C'), **{'font-size': '12pt', 'color': 'red'})
+        self.view.setYRange(-50, 100)
+
+    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
+        length = len(bottom_ax)
+
+        if checkbox:
+            self.ptr += length
+            self.left_axis[:-length] = self.left_axis[length:]
+            self.left_axis[-length:] = left_ax
+
+            self.bottom_axis[:-length] = self.bottom_axis[length:]
+            self.bottom_axis[-length:] = bottom_ax
+
+            self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
+            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            self.view.setMouseEnabled(x=False, y=True)
+
+        else:
+            self.view.disableAutoRange(axis=self.view.XAxis)
+            self.view.setMouseEnabled(x=True, y=True)
+
+
 class DCPlot(MainPlot):
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', 'dc', **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Photodiode current, µA'), **{'font-size': '12pt', 'color': 'red'})
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.view.setYRange(0, 900)
 
