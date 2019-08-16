@@ -5,6 +5,7 @@ from PyQt5.QtCore import QTimer, Qt, pyqtSignal
 
 
 class Client(QtCore.QObject):
+    relative_time = -1
     signal_data = pyqtSignal(object, object, object, object, object, object, object, object)
     signal_connection = pyqtSignal()
     signal_disconnect = pyqtSignal()
@@ -53,13 +54,8 @@ class Client(QtCore.QObject):
         arr_dc = []
 
         for time, freq, sig1, sig2, ts, isitemp, dc, temp in dec['jsons'].values():
-            if time / 100000000 < 1:
-                continue
-            # if k == 'time':
-            #     # t_v = datetime.fromtimestamp(v / 1000000).strftime('%S.%f')[:-3]
-            #     t_v = datetime.fromtimestamp(v / 1000000)
-            # elif k == 'freq':
-            arr_time.append(time)
+            Client.relative_time += 1
+            arr_time.append(Client.relative_time)
             arr_freq.append(freq)
             arr_sig1.append(sig1)
             arr_sig2.append(sig2)

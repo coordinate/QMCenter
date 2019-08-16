@@ -75,7 +75,7 @@ class NonScientificX(pg.AxisItem):
 
     def tickStrings(self, values, scale, spacing):
         # try:
-        data = [datetime.fromtimestamp(value / 1000000).strftime('%S:%f')[:-3] for value in values]
+        data = [datetime.fromtimestamp(value / 1000).strftime('%S:%f')[:-3] for value in values]
         # except OSError:
         #     return [str(round(float(value*1), 3)) for value in values]
         return data
