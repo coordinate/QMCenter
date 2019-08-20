@@ -1,7 +1,7 @@
-from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QRegExpValidator
+from PyQt5.QtCore import Qt, QSize, QRegExp
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit
 from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
@@ -13,10 +13,48 @@ class UIForm:
         self.setWindowTitle("QMCenter")
         self.setMinimumSize(1000, 500)
 
+        # Create menu
         self.menu = QMenuBar()
         self.setMenuBar(self.menu)
-        self.menu.addMenu(_("&File"))
 
+        fileMenu = self.menu.addMenu(_("&File"))
+        self.connection = fileMenu.addAction(_('Connection'))
+        fileMenu.addSeparator()
+        self.exit_action = fileMenu.addAction("&Quit")
+        self.exit_action.setShortcut('Ctrl+Q')
+
+        # Create connection widget
+        self.connection_widget = QWidget()
+        # self.connection_widget.setMinimumSize(400, 200)
+        # self.connection_widget.setWindowTitle(_("Connection"))
+        self.connection_layout = QGridLayout(self.connection_widget)
+
+        self.ip_label = QLabel("IP")
+        self.port_label = QLabel("Port")
+
+        ipRange = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"  # Part of the regular expression
+        # Regulare expression
+        ipRegex = QRegExp("^" + ipRange + "\\." + ipRange + "\\." + ipRange + "\\." + ipRange + "$")
+        ipValidator = QRegExpValidator(ipRegex, self)
+
+        self.lineEdit_ip = QLineEdit()
+        self.lineEdit_ip.setValidator(ipValidator)
+        self.connection_layout.addWidget(self.ip_label, 0, 0)
+        self.connection_layout.addWidget(self.lineEdit_ip, 0, 1, 1, 3)
+
+        self.lineEdit_port = QLineEdit()
+        self.lineEdit_port.setMaxLength(5)
+        self.connection_layout.addWidget(self.port_label, 1, 0)
+        self.connection_layout.addWidget(self.lineEdit_port, 1, 1, 1, 3)
+
+        self.apply_btn = QPushButton(_("Apply"))
+        self.cancel_btn = QPushButton(_("Cancel"))
+        self.ok_btn = QPushButton(_("OK"))
+        self.connection_layout.addWidget(self.apply_btn, 3, 2)
+        self.connection_layout.addWidget(self.cancel_btn, 3, 3)
+        self.connection_layout.addWidget(self.ok_btn, 3, 4)
+
+        # Create toolbar
         self.graphs_btn = QPushButton()
         self.graphs_btn.setText(_("Graphs"))
         self.graphs_btn.setMinimumSize(100, 30)
@@ -128,6 +166,7 @@ class UIForm:
         self.gridlayout_update.addWidget(self.browse_btn, 0, 3, 1, 1)
 
         self.file_dialog = QFileDialog()
+        self.file_dialog.setDirectory(self.expanduser_dir)
 
         self.dockwidget_info.setWidget(self.widget_info)
 
@@ -156,7 +195,7 @@ class UIForm:
         self.scroll_3x2_layout.addWidget(self.scroll_area_3x2)
 
         self.graphs_3x2_widget = QWidget()
-        self.graphs_3x2_widget.setMinimumHeight(1300)
+        self.graphs_3x2_widget.setMinimumHeight(900)
         self.graphs_3x2_widget.setStyleSheet('QWidget { background-color : white}')
         self.graphs_3x2_gridlayout = QGridLayout(self.graphs_3x2_widget)
         # self.graphs_3x2_gridlayout.setVerticalSpacing(50)

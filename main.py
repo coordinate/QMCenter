@@ -1,3 +1,4 @@
+import os
 import sys
 import tempfile
 import requests
@@ -30,10 +31,14 @@ class MainWindow(QMainWindow, UIForm):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setMinimumSize(200, 200)
+        self.tempdir = tempfile.gettempdir()
+        self.expanduser_dir = os.path.expanduser('~')
+        self.tempfile = '{}\\mag_track.magnet'.format(self.tempdir)
 
         self.setupUI(self)
-        tempdir = tempfile.gettempdir()
-        self.tempfile = '{}\\mag_track.magnet'.format(tempdir)
+
+        self.connection.triggered.connect(lambda: self.add_connection_tab())
+        self.exit_action.triggered.connect(lambda: sys.exit())
 
         self.client = Client()
         # self.client.signal_connection.connect(lambda: self.disconnect_cli())
@@ -71,14 +76,18 @@ class MainWindow(QMainWindow, UIForm):
         self.tabs_widget.setCurrentWidget(self.one_tabwidget)
 
     def add_graphs(self):
-        self.tabwidget_left.addTab(self.stack_widget, _("Stream"))
+        if self.tabwidget_left.indexOf(self.stack_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.stack_widget, _("Stream"))
+            self.tabwidget_left.setCurrentIndex(idx)
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.stack_widget))
 
     def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
-        self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
         self.signals_plot.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
         self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.graphs_chbx.isChecked())
         self.lamp_temp_plot.update(temp, time, checkbox=self.graphs_chbx.isChecked())
         self.dc_plot.update(dc, time, checkbox=self.graphs_chbx.isChecked())
+        self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
         self.deg_num_label.setText(str(temp/10))
 
     # def set_main_graph(self, check):
@@ -94,7 +103,7 @@ class MainWindow(QMainWindow, UIForm):
     #         return
     def sync_x(self, check):
         if check == 2:
-            self.signals_plot.setXLink(self.stream)
+            self.signals_plot.view.setXLink(self.stream.view)
             self.lamp_temp_plot.setXLink(self.stream)
             self.sensor_temp_plot.setXLink(self.stream)
             self.dc_plot.setXLink(self.stream)
@@ -116,18 +125,22 @@ class MainWindow(QMainWindow, UIForm):
             # self.graphs_6x1_gridlayout.addWidget(self.sync_time_label, 6, 1, 1, 1)
             self.stack_widget.setCurrentWidget(self.scroll_6x1_widget)
         elif size.size().width() >= 600:
-            self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 10)
-            self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 10)
-            self.graphs_3x2_gridlayout.addWidget(self.signal_freq_plot, 2, 0, 1, 10)
-            self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 10, 1, 10)
-            self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 10, 1, 10)
-            self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 10, 1, 10)
+            self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.signal_freq_plot, 2, 0, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 1, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 1, 1, 1)
+            self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 1, 1, 1)
             # self.graphs_3x2_gridlayout.addWidget(self.sync_time_chbx, 3, 0, 1, 1)
             # self.graphs_3x2_gridlayout.addWidget(self.sync_time_label, 3, 1, 1, 8)
             self.stack_widget.setCurrentWidget(self.scroll_3x2_widget)
 
     def add_visual(self):
-        self.tabwidget_left.addTab(self.three_d_widget, _("3D visual"))
+        if self.tabwidget_left.indexOf(self.three_d_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.three_d_widget, _("3D visual"))
+            self.tabwidget_left.setCurrentIndex(idx)
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.three_d_widget))
 
     def set_labels(self, lat, lon, magnet):
         self.latitude_value_label.setText(str(lat))
@@ -143,7 +156,18 @@ class MainWindow(QMainWindow, UIForm):
             self.one_tab()
 
     def add_update(self):
-        self.tabwidget_left.addTab(self.update_widget, _("Update"))
+        if self.tabwidget_left.indexOf(self.update_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.update_widget, _("Update"))
+            self.tabwidget_left.setCurrentIndex(idx)
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.update_widget))
+
+    def add_connection_tab(self):
+        if self.tabwidget_left.indexOf(self.connection_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.connection_widget, _("Connection"))
+            self.tabwidget_left.setCurrentIndex(idx)
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.connection_widget))
 
     def connect(self):
         self.btn.setText("connect")

@@ -48,6 +48,26 @@ class NonScientificYLeft(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
         return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
+    def _updateMaxTextSize(self, x):
+        """ Informs that the maximum tick size orthogonal to the axis has
+        changed; we use this to decide whether the item needs to be resized
+        to accomodate. """
+        if self.orientation in ['left']:
+            mx = max(self.textWidth, x)
+            # if mx > self.textWidth or mx < self.textWidth-10:
+            if x != self.textWidth:
+                self.textWidth = x
+                if self.style['autoExpandTextSpace'] is True:
+                    self._updateWidth()
+                    #return True  ## size has changed
+        else:
+            mx = max(self.textHeight, x)
+            if mx > self.textHeight or mx < self.textHeight-10:
+                self.textHeight = mx
+                if self.style['autoExpandTextSpace'] is True:
+                    self._updateHeight()
+                    #return True  ## size has changed
+
 
 class NonScientificYRight(pg.AxisItem):
     def __init__(self, *args, **kwargs):
@@ -61,10 +81,30 @@ class NonScientificYRight(pg.AxisItem):
         # Set correct position of rotated (180 deg) label
         br = self.label.boundingRect()
         p = QPointF(0, 0)
-        p.setX(int(self.size().width()/2 + br.height() + 10))
-        p.setY(int(self.size().height() / 2 - br.width() / 2))
+        p.setX(self.textWidth + 30)
+        # p.setX(int(self.size().width()/2 + br.height() + 10))
+        p.setY(int(self.size().height()/2 - br.width() / 2))
         self.label.setPos(p)
         self.picture = None
+
+    def _updateMaxTextSize(self, x):
+        """ Informs that the maximum tick size orthogonal to the axis has
+        changed; we use this to decide whether the item needs to be resized
+        to accomodate. """
+        if self.orientation in ['right']:
+            mx = max(self.textWidth, x)
+            # if mx > self.textWidth or mx < self.textWidth-10:
+            if x != self.textWidth:
+                self.textWidth = x
+                if self.style['autoExpandTextSpace'] is True:
+                    self._updateWidth()
+                    #return True  ## size has changed
+        else:
+            mx = max(self.textHeight, x)
+            if mx > self.textHeight or mx < self.textHeight-10:
+                self.textHeight = mx
+                # if self.style['autoExpandTextSpace'] is True:
+                    #return True  ## size has changed
 
 
 class NonScientificX(pg.AxisItem):
@@ -136,22 +176,37 @@ class MainPlot(pg.PlotWidget):
             self.item.getAxis('left').wheelEvent(event)
         elif modifiers == Qt.ControlModifier:
             self.item.getAxis('bottom').wheelEvent(event)
+            self.set_scale(event.angleDelta().y())
         elif modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
-            print('Control+Shift+Wheel')
+            self.item.getAxis('right').wheelEvent(event)
         else:
-            pg.PlotWidget.wheelEvent(self, event)
+            # pg.PlotWidget.wheelEvent(self, event)
+            pass
 
 
 class MagneticField(MainPlot):
+    s = -10000
+
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Magnetic Field, nT'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('right', _(''))
+        self.item.getAxis('right').setPen(pg.mkPen(color='w'))
         self.view.setYRange(-20000, 100000)
+
+    def set_scale(self, value):
+        if (MagneticField.s + value*10)/60000 <= -1:
+            MagneticField.s = -60000
+        elif (MagneticField.s + value*10)/1 >= 0:
+            MagneticField.s = -1000
+        else:
+            MagneticField.s += value * 10
 
     def update(self, left_ax: list, bottom_ax: list, right_ax=None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
+            # print(MagneticField.s)
             self.ptr += length
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
@@ -160,8 +215,9 @@ class MagneticField(MainPlot):
             self.bottom_axis[-length:] = bottom_ax
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
-            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
+            self.view.setXRange(self.bottom_axis[MagneticField.s], self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
@@ -169,6 +225,8 @@ class MagneticField(MainPlot):
 
 
 class SignalsPlot(MainPlot):
+    s = -10000
+
     def __init__(self):
         MainPlot.__init__(self)
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
@@ -191,6 +249,14 @@ class SignalsPlot(MainPlot):
         self.viewbox.setXLink(self.item)
         self.viewbox.addItem(self.data2)
 
+    def set_scale(self, value):
+        if (SignalsPlot.s + value*10)/60000 <= -1:
+            SignalsPlot.s = -60000
+        elif (SignalsPlot.s + value*10)/1 >= 0:
+            SignalsPlot.s = -1000
+        else:
+            SignalsPlot.s += value * 10
+
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
 
@@ -207,10 +273,11 @@ class SignalsPlot(MainPlot):
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             self.data2.setData(x=self.bottom_axis[-self.ptr:], y=self.right_axis[-self.ptr:])
-            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
-            self.viewbox.enableAutoRange(axis=self.viewbox.YAxis, enable=False)
+            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            # self.viewbox.enableAutoRange(axis=self.viewbox.YAxis, enable=False)
             self.view.setMouseEnabled(x=False, y=True)
             self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
+            self.view.setXRange(self.bottom_axis[SignalsPlot.s], self.bottom_axis[-1])
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
@@ -298,16 +365,27 @@ class SignalsFrequency(pg.PlotWidget):
         elif modifiers == Qt.ControlModifier:
             self.item.getAxis('bottom').wheelEvent(event)
         elif modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
-            print('Control+Shift+Wheel')
+            self.item.getAxis('right').wheelEvent(event)
         else:
-            pg.PlotWidget.wheelEvent(self, event)
+            # pg.PlotWidget.wheelEvent(self, event)
+            pass
 
 
 class LampTemp(MainPlot):
+    s = -10000
+
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Lamp Temperature, °C'), **{'font-size': '12pt', 'color': 'red'})
         self.view.setYRange(-50, 200)
+
+    def set_scale(self, value):
+        if (LampTemp.s + value*10)/60000 <= -1:
+            LampTemp.s = -60000
+        elif (LampTemp.s + value*10)/1 >= 0:
+            LampTemp.s = -1000
+        else:
+            LampTemp.s += value * 10
 
     def update(self, left_ax, bottom_ax: list, right_ax=None, checkbox=True):
         length = len(bottom_ax)
@@ -321,8 +399,9 @@ class LampTemp(MainPlot):
             self.bottom_axis[-length:] = bottom_ax
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
-            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
+            self.view.setXRange(self.bottom_axis[LampTemp.s], self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
@@ -330,10 +409,20 @@ class LampTemp(MainPlot):
 
 
 class SensorTemp(MainPlot):
+    s = -10000
+
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Sensor Temperature, °C'), **{'font-size': '12pt', 'color': 'red'})
         self.view.setYRange(-50, 100)
+
+    def set_scale(self, value):
+        if (SensorTemp.s + value*10)/60000 <= -1:
+            SensorTemp.s = -60000
+        elif (SensorTemp.s + value*10)/1 >= 0:
+            SensorTemp.s = -1000
+        else:
+            SensorTemp.s += value * 10
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
@@ -347,8 +436,9 @@ class SensorTemp(MainPlot):
             self.bottom_axis[-length:] = bottom_ax
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
-            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
+            self.view.setXRange(self.bottom_axis[SensorTemp.s], self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
@@ -356,11 +446,21 @@ class SensorTemp(MainPlot):
 
 
 class DCPlot(MainPlot):
+    s = -10000
+
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Photodiode current, µA'), **{'font-size': '12pt', 'color': 'red'})
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.view.setYRange(0, 900)
+
+    def set_scale(self, value):
+        if (DCPlot.s + value*10)/60000 <= -1:
+            DCPlot.s = -60000
+        elif (DCPlot.s + value*10)/1 >= 0:
+            DCPlot.s = -1000
+        else:
+            DCPlot.s += value * 10
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
@@ -374,8 +474,9 @@ class DCPlot(MainPlot):
             self.bottom_axis[-length:] = bottom_ax
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
-            self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
+            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
+            self.view.setXRange(self.bottom_axis[DCPlot.s], self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
