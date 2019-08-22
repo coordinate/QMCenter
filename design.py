@@ -159,6 +159,7 @@ class UIForm:
 
         self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
 
+        # Create update tabwidget
         self.update_widget = QWidget()
         self.gridlayout_update = QGridLayout(self.update_widget)
 
@@ -185,7 +186,7 @@ class UIForm:
 
         self.scroll_3x2_widget = QWidget()
         self.scroll_3x2_layout = QHBoxLayout(self.scroll_3x2_widget)
-        self.scroll_3x2_layout.setContentsMargins(5, 0, 0, 0)
+        self.scroll_3x2_layout.setContentsMargins(5, 0, 5, 0)
 
         self.scroll_area_3x2 = Scroll()
         self.scroll_area_3x2.setWidgetResizable(True)
@@ -195,19 +196,10 @@ class UIForm:
         self.scroll_3x2_layout.addWidget(self.scroll_area_3x2)
 
         self.graphs_3x2_widget = QWidget()
-        self.graphs_3x2_widget.setMinimumHeight(900)
-        self.graphs_3x2_widget.setStyleSheet('QWidget { background-color : white}')
+        # self.graphs_3x2_widget.setMinimumHeight(900)
+        self.graphs_3x2_widget.setStyleSheet('QWidget { background-color : (0, 0, 0)}')
         self.graphs_3x2_gridlayout = QGridLayout(self.graphs_3x2_widget)
-        # self.graphs_3x2_gridlayout.setVerticalSpacing(50)
-        # self.graphs_3x2_gridlayout.setHorizontalSpacing(20)
-        self.graphs_3x2_gridlayout.setContentsMargins(0, 0, 10, 0)
-
-        # self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 1, 1, 1)
-        # self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 1, 1, 1)
-        # self.graphs_3x2_gridlayout.addWidget(self.signal_freq_plot, 2, 1, 1, 1)
-        # self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 2, 1, 1)
-        # self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 2, 1, 1)
-        # self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 2, 1, 1)
+        self.graphs_3x2_gridlayout.setContentsMargins(0, 0, 0, 0)
 
         self.scroll_area_3x2.setWidget(self.graphs_3x2_widget)
 

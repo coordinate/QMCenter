@@ -11,12 +11,13 @@ from OpenGL.GL import *
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QLabel, QSizePolicy, QMenu, QAction
-from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QPoint
+from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QPoint, QEvent
 from PyQt5.QtGui import QGuiApplication, QVector3D
 from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
 
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
+from Design.custom_widgets import CustomViewBox
 from Utils.transform import project, unproject, magnet_color
 
 _ = lambda x: x
@@ -78,12 +79,11 @@ class NonScientificYRight(pg.AxisItem):
         return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
     def resizeEvent(self, ev=None):
-        # Set correct position of rotated (180 deg) label
+        # Set correct position of label
         br = self.label.boundingRect()
         p = QPointF(0, 0)
-        p.setX(self.textWidth + 30)
-        # p.setX(int(self.size().width()/2 + br.height() + 10))
-        p.setY(int(self.size().height()/2 - br.width() / 2))
+        p.setX(self.textWidth + 5)
+        p.setY(int(self.size().height()/2 + br.width() / 2))
         self.label.setPos(p)
         self.picture = None
 
@@ -93,7 +93,6 @@ class NonScientificYRight(pg.AxisItem):
         to accomodate. """
         if self.orientation in ['right']:
             mx = max(self.textWidth, x)
-            # if mx > self.textWidth or mx < self.textWidth-10:
             if x != self.textWidth:
                 self.textWidth = x
                 if self.style['autoExpandTextSpace'] is True:
@@ -104,13 +103,13 @@ class NonScientificYRight(pg.AxisItem):
             if mx > self.textHeight or mx < self.textHeight-10:
                 self.textHeight = mx
                 # if self.style['autoExpandTextSpace'] is True:
-                    #return True  ## size has changed
+                #     return True  ## size has changed
 
 
 class NonScientificX(pg.AxisItem):
     def __init__(self, *args, **kwargs):
         super(NonScientificX, self).__init__(*args, **kwargs)
-        self.setLabel(_('Time, s'), **{'font-size': '12pt'})
+        self.setLabel(_('Time, s'), **{'font-size': '8pt'})
         self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
@@ -119,6 +118,15 @@ class NonScientificX(pg.AxisItem):
         # except OSError:
         #     return [str(round(float(value*1), 3)) for value in values]
         return data
+
+    def resizeEvent(self, ev=None):
+        # Set correct position of label
+        br = self.label.boundingRect()
+        p = QPointF(0, 0)
+        p.setX(int(self.size().width()/2 - br.width() / 2))
+        p.setY(10)
+        self.label.setPos(p)
+        self.picture = None
 
 
 class NonScientificXSignalFreq(pg.AxisItem):
@@ -132,13 +140,14 @@ class NonScientificXSignalFreq(pg.AxisItem):
 
 class MainPlot(pg.PlotWidget):
     def __init__(self, **kwargs):
-        pg.PlotWidget.__init__(self, axisItems={'left': NonScientificYLeft(orientation='left'),
+        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(), axisItems={'left': NonScientificYLeft(orientation='left'),
                                                 'bottom': NonScientificX(orientation='bottom'),
                                                 'right': NonScientificYRight(orientation='right')})
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
-        self.item.setTitle('Some data from server')
+        # self.item.setTitle('Some data from server', **{'font-size': '10pt'})
+        self.item.titleLabel.setMaximumHeight(10)
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.item.showGrid(x=1, y=1, alpha=0.5)
         self.item.hideButtons()
@@ -146,10 +155,7 @@ class MainPlot(pg.PlotWidget):
 
         self.item.setDownsampling(mode='subsample')
         self.item.setClipToView(True)
-        # self.item.setRange(xRange=[-100, 50], yRange=[80, 300])
-        # self.item.setRange(yRange=[84448020, 84449520])
 
-        # self.data = pg.PlotDataItem(symbolSize=5, symbolPen=pg.mkPen(color='r'))
         self.data = pg.PlotDataItem()
         self.data.setPen(pg.mkPen(width=1, color='r'))
 
@@ -177,7 +183,7 @@ class MainPlot(pg.PlotWidget):
         elif modifiers == Qt.ControlModifier:
             self.item.getAxis('bottom').wheelEvent(event)
             self.set_scale(event.angleDelta().y())
-        elif modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
+        elif modifiers == Qt.AltModifier:
             self.item.getAxis('right').wheelEvent(event)
         else:
             # pg.PlotWidget.wheelEvent(self, event)
@@ -189,7 +195,7 @@ class MagneticField(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Magnetic Field, nT'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Magnetic Field, nT'), **{'font-size': '8pt', 'color': 'red'})
         self.item.setLabel('right', _(''))
         self.item.getAxis('right').setPen(pg.mkPen(color='w'))
         self.view.setYRange(-20000, 100000)
@@ -206,7 +212,6 @@ class MagneticField(MainPlot):
         length = len(bottom_ax)
 
         if checkbox:
-            # print(MagneticField.s)
             self.ptr += length
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
@@ -231,15 +236,14 @@ class SignalsPlot(MainPlot):
         MainPlot.__init__(self)
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
 
-        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-100, 100)
         right_axis = self.item.getAxis('right')
-        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '12pt'})
-        right_axis.label.rotate(180)
+        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '8pt'})
         right_axis.setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
 
-        self.viewbox = pg.ViewBox()   # create new viewbox for sig2
+        self.viewbox = CustomViewBox()   # create new viewbox for sig2
         self.viewbox.menu = MenuRightAxis(self)
 
         self.viewbox.setYRange(0, 500)
@@ -292,7 +296,8 @@ class SignalsFrequency(pg.PlotWidget):
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
-        self.item.setTitle('Some data from server')
+        # self.item.setTitle('Some data from server')
+        self.item.titleLabel.setMaximumHeight(10)
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.item.showGrid(x=1, y=1, alpha=0.5)
         self.item.hideButtons()
@@ -300,9 +305,7 @@ class SignalsFrequency(pg.PlotWidget):
         self.item.setDownsampling(mode='subsample')
         self.item.setClipToView(True)
         self.item.setRange(xRange=[100000, 700000])
-        # self.item.setRange(yRange=[84448020, 84449520])
 
-        # self.data = pg.PlotDataItem(symbolSize=5, symbolPen=pg.mkPen(color='r'))
         self.data = pg.PlotDataItem()
         self.data.setPen(pg.mkPen(width=1, color='r'))
         self.data.sigClicked.connect(lambda: self.test())
@@ -312,14 +315,13 @@ class SignalsFrequency(pg.PlotWidget):
         self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
 
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
-        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-100, 100)
         right_axis = self.item.getAxis('right')
-        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '12pt'})
-        right_axis.label.rotate(180)
+        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '8pt'})
         right_axis.setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
-        self.item.setLabel('bottom', _('Frequency, Hz'), **{'font-size': '12pt'})
+        self.item.setLabel('bottom', _('Frequency, Hz'), **{'font-size': '8pt'})
 
         self.viewbox = pg.ViewBox()  # create new viewbox for sig2
         self.viewbox.setYRange(0, 500)
@@ -364,7 +366,7 @@ class SignalsFrequency(pg.PlotWidget):
             self.item.getAxis('left').wheelEvent(event)
         elif modifiers == Qt.ControlModifier:
             self.item.getAxis('bottom').wheelEvent(event)
-        elif modifiers == (Qt.ControlModifier | Qt.ShiftModifier):
+        elif modifiers == Qt.AltModifier:
             self.item.getAxis('right').wheelEvent(event)
         else:
             # pg.PlotWidget.wheelEvent(self, event)
@@ -376,7 +378,7 @@ class LampTemp(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Lamp Temperature, °C'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Lamp Temperature, °C'), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-50, 200)
 
     def set_scale(self, value):
@@ -413,7 +415,7 @@ class SensorTemp(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Sensor Temperature, °C'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Sensor Temperature, °C'), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-50, 100)
 
     def set_scale(self, value):
@@ -450,7 +452,7 @@ class DCPlot(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Photodiode current, µA'), **{'font-size': '12pt', 'color': 'red'})
+        self.item.setLabel('left', _('Photodiode current, µA'), **{'font-size': '8pt', 'color': 'red'})
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.view.setYRange(0, 900)
 
