@@ -3,10 +3,9 @@ import sys
 import tempfile
 import requests
 
-from PyQt5.QtCore import Qt, pyqtSignal
-
 from PyQt5 import QtCore, QtWebSockets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QDockWidget, QGridLayout, QSizePolicy
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QLabel
 
 from design import UIForm
 from Clients.client_socket import Client
@@ -41,12 +40,14 @@ class MainWindow(QMainWindow, UIForm):
         self.exit_action.triggered.connect(lambda: sys.exit())
 
         self.client = Client()
-        # self.client.signal_connection.connect(lambda: self.disconnect_cli())
-        # self.client.signal_disconnect.connect(lambda: self.connect())
-        self.btn.clicked.connect(lambda: self.client.connect())
+        self.client.signal_connection.connect(lambda: self.on_connect())
+        self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
+        self.client.signal_disconnect.connect(lambda: self.on_disconnect())
+        self.connect_btn.clicked.connect(lambda: self.client.connect())
+        self.disconnect_btn.clicked.connect(lambda: self.client.close())
         self.client.signal_data.connect(lambda *args: self.plot_graphs(*args))
 
-        self.static_btn.clicked.connect(self.stream.scaled)
+        self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
 
         self.graphs_btn.clicked.connect(self.add_graphs)
         self.visual_btn.clicked.connect(self.add_visual)
@@ -169,19 +170,41 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.connection_widget))
 
-    def connect(self):
-        self.btn.setText("connect")
-        self.btn.clicked.connect(lambda: self.client.connect())
+    def on_connect(self):
+        self.connection_icon.setPixmap(QPixmap('images/green_light_icon.png'))
 
-    def disconnect_cli(self):
-        self.btn.setText('Disconnect')
-        self.btn.clicked.connect(lambda: self.client.close())
+    def on_autoconnection(self):
+        if self.auto_connect_chbx.isChecked():
+            self.client.signal_autoconnection.disconnect()
+            self.connect_btn.click()
 
-    def request_data(self):
-        url = 'http://127.0.0.1:5000/todo/api/v1.0/tasks'
+    def on_disconnect(self):
+        self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
+        self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
+        # correct work with graphs after disconnect
+
+    def auto_connect_chbx_change(self, state):
+        if state == 2:
+            self.connect_btn.click()
+
+    def request_update(self):
+        url = 'http://127.0.0.1:5000/update'
         res = requests.get(url).json()
+        print(res)
 
-        self.static.print_data(res['tasks']['points_x'], res['tasks']['points_y'])
+        for key, value in res.items():
+            root = QTreeWidgetItem([key])
+            self.update_tree.addTopLevelItem(root)
+            for k, v in value.items():
+                child = QTreeWidgetItem([k])
+                root.addChild(child)
+                print(k)
+                for ks, vl in v.items():
+                    ch = QTreeWidgetItem([ks])
+                    val = QTreeWidgetItem([str(vl)])
+                    child.addChild(ch)
+                    self.update_tree.setItemWidget(val, 1, QLabel())
+                    print(ks, vl)
 
     def request_magnet_file(self):
         url = 'http://127.0.0.1:5000/download'
@@ -190,8 +213,7 @@ class MainWindow(QMainWindow, UIForm):
             f.write(res.content.decode("utf-8"))
 
     def test(self):
-        # self.earth_widget.show()
-        pass
+        print('test')
 
 
 if __name__ == '__main__':

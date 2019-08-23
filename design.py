@@ -121,12 +121,31 @@ class UIForm:
         self.widget_info = QWidget()
         self.layout = QVBoxLayout(self.widget_info)
 
+        self.connection_groupbox = QGroupBox()
+        self.connection_groupbox.setTitle(_('Connection'))
+        self.gridlayout_connection = QGridLayout(self.connection_groupbox)
+
+        self.connection_icon = QLabel()
+        self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
+        self.gridlayout_connection.addWidget(self.connection_icon, 0, 0, 1, 1)
+
+        self.connect_btn = QPushButton(_("Connect"))
+        self.gridlayout_connection.addWidget(self.connect_btn, 1, 0, 1, 3)
+
+        self.disconnect_btn = QPushButton(_('Disconnect'))
+        self.gridlayout_connection.addWidget(self.disconnect_btn, 2, 0, 1, 3)
+
+        self.auto_connect_label = QLabel(_('Auto connect'))
+        self.gridlayout_connection.addWidget(self.auto_connect_label, 0, 2, 1, 1)
+
+        self.auto_connect_chbx = QCheckBox()
+        self.gridlayout_connection.addWidget(self.auto_connect_chbx, 0, 1, 1, 1, alignment=Qt.AlignRight)
+
+        self.layout.addWidget(self.connection_groupbox, alignment=Qt.AlignTop)
+
         self.state_groupbox = QGroupBox()
         self.state_groupbox.setTitle(_("State"))
         self.gridlayout_state = QGridLayout(self.state_groupbox)
-
-        self.btn = QPushButton(_("Connect"))
-        self.gridlayout_state.addWidget(self.btn, 0, 0, 1, 1)
 
         self.static_btn = QPushButton(_("Scaled"))
         self.gridlayout_state.addWidget(self.static_btn, 1, 0, 1, 1)

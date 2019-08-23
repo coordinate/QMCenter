@@ -18,6 +18,7 @@ parts/
 sdist/
 var/
 workdocs/
+ping.txt
 *.egg-info/
 .installed.cfg
 *.egg
