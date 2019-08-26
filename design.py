@@ -1,7 +1,8 @@
 from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QRegExpValidator
 from PyQt5.QtCore import Qt, QSize, QRegExp
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit, QListWidget, \
+    QListWidgetItem
 from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
@@ -18,15 +19,28 @@ class UIForm:
         self.setMenuBar(self.menu)
 
         fileMenu = self.menu.addMenu(_("&File"))
-        self.connection = fileMenu.addAction(_('Connection'))
+        self.settings = fileMenu.addAction(_('Settings'))
+        self.settings.setShortcut('Ctrl+S')
         fileMenu.addSeparator()
         self.exit_action = fileMenu.addAction("&Quit")
         self.exit_action.setShortcut('Ctrl+Q')
 
-        # Create connection widget
+        # Create settings widget
+        self.settings_widget = QWidget()
+        self.settings_widget.setMinimumSize(700, 500)
+        self.settings_widget.setWindowTitle(_("Settings"))
+        self.settings_layout = QGridLayout(self.settings_widget)
+
+        self.settings_menu_items = QListWidget()
+        self.settings_layout.addWidget(self.settings_menu_items, 0, 0, 10, 3)
+
+        self.paint_settings_menu_item = QStackedWidget()
+        self.settings_layout.addWidget(self.paint_settings_menu_item, 0, 3, 10, 1)
+
+        self.settings_menu_items.addItem(QListWidgetItem(_('Connection')))
+
+        # Create connection menu item
         self.connection_widget = QWidget()
-        # self.connection_widget.setMinimumSize(400, 200)
-        # self.connection_widget.setWindowTitle(_("Connection"))
         self.connection_layout = QGridLayout(self.connection_widget)
 
         self.ip_label = QLabel("IP")
@@ -53,6 +67,16 @@ class UIForm:
         self.connection_layout.addWidget(self.apply_btn, 3, 2)
         self.connection_layout.addWidget(self.cancel_btn, 3, 3)
         self.connection_layout.addWidget(self.ok_btn, 3, 4)
+
+        # Fill settings menu items list
+        self.settings_menu_dict = {
+            'Start': QWidget(),
+            'Connection': self.connection_widget,
+
+        }
+
+        for value in self.settings_menu_dict.values():
+            self.paint_settings_menu_item.addWidget(value)
 
         # Create toolbar
         self.graphs_btn = QPushButton()

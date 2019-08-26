@@ -35,8 +35,8 @@ class MainWindow(QMainWindow, UIForm):
         self.tempfile = '{}\\mag_track.magnet'.format(self.tempdir)
 
         self.setupUI(self)
-
-        self.connection.triggered.connect(lambda: self.add_connection_tab())
+        self.settings.triggered.connect(lambda: self.settings_widget.show())
+        self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
         self.exit_action.triggered.connect(lambda: sys.exit())
 
         self.client = Client()
@@ -75,6 +75,11 @@ class MainWindow(QMainWindow, UIForm):
     def one_tab(self):
         self.one_lay.addWidget(self.tabwidget_left)
         self.tabs_widget.setCurrentWidget(self.one_tabwidget)
+
+    def show_menu_item(self, item):
+        for key, value in self.settings_menu_dict.items():
+            if key == item:
+                self.paint_settings_menu_item.setCurrentWidget(value)
 
     def add_graphs(self):
         if self.tabwidget_left.indexOf(self.stack_widget) == -1:
