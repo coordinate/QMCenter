@@ -6,7 +6,41 @@ from pyqtgraph.Point import Point
 
 from PyQt5.QtCore import Qt, QPoint, QMimeData, pyqtSignal, QEvent, QRectF
 from PyQt5.QtGui import QPixmap, QRegion, QDrag, QCursor, QMouseEvent, QWheelEvent
-from PyQt5.QtWidgets import QTabWidget, QScrollArea, QTabBar, QApplication, QWidget, QLabel
+from PyQt5.QtWidgets import QTabWidget, QScrollArea, QTabBar, QApplication, QWidget, QLabel, QMenu, QWidgetAction, \
+    QCheckBox
+
+_ = lambda x: x
+
+
+class Menu(QMenu):
+    sync_chbx_state = 0
+
+    def __init__(self, widget):
+        QMenu.__init__(self)
+        self.widget = widget
+        center_plot = self.addAction(_('Center Plot'))
+        center_plot.triggered.connect(lambda: widget.view.setRange(yRange=(widget.left_axis[-1], widget.left_axis[-1])))
+        vertical_autorange = self.addAction(_('Vertical Autorange'))
+        vertical_autorange.triggered.connect(lambda: widget.view.autoRange())
+        sync_x_chbx = QCheckBox('\t\t\t\t\tSynchronize time')
+        sync_x_chbx.setChecked(Menu.sync_chbx_state)
+        sync_x_chbx.stateChanged.connect(lambda i: self.state_changed(i))
+        sync_x = QWidgetAction(self)
+        sync_x.setDefaultWidget(sync_x_chbx)
+        self.addAction(sync_x)
+
+    def state_changed(self, i):
+        Menu.sync_chbx_state = i
+        self.widget.signal_sync_chbx_changed.emit(i)
+
+
+class MenuRightAxis(QMenu):
+    def __init__(self, widget):
+        QMenu.__init__(self)
+        center_plot = self.addAction(_('Center Plot'))
+        center_plot.triggered.connect(lambda: widget.viewbox.setRange(yRange=(widget.right_axis[-1], widget.right_axis[-1])))
+        vertical_autorange = self.addAction(_('Vertical Autorange'))
+        vertical_autorange.triggered.connect(lambda: widget.viewbox.autoRange())
 
 
 class TabBar(QTabBar):
@@ -100,8 +134,10 @@ class Scroll(QScrollArea):
 
 
 class CustomViewBox(pg.ViewBox):
-    def __init__(self, *args, **kwds):
-        pg.ViewBox.__init__(self, *args, **kwds)
+    def __init__(self, widget=None, orientation='left'):
+        pg.ViewBox.__init__(self)
+        self.widget = widget
+        self.orientation = orientation
 
     def mouseDragEvent(self, ev, axis=None):
         ## if axis is specified, event will only affect that axis.
@@ -163,4 +199,9 @@ class CustomViewBox(pg.ViewBox):
         self.sigRangeChangedManually.emit(self.state['mouseEnabled'])
         ev.accept()
 
-
+    def raiseContextMenu(self, ev):
+        if self.orientation == "left":
+            self.menu = Menu(self.widget)
+        else:
+            self.menu = MenuRightAxis(self.widget)
+        self.menu.exec(ev.screenPos().toPoint())

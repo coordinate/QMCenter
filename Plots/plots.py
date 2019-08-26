@@ -10,7 +10,7 @@ from math import sqrt
 from OpenGL.GL import *
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QLabel, QSizePolicy, QMenu, QAction
+from PyQt5.QtWidgets import QLabel, QSizePolicy, QMenu, QAction, QWidgetAction, QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QPoint, QEvent
 from PyQt5.QtGui import QGuiApplication, QVector3D
 from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
@@ -21,24 +21,6 @@ from Design.custom_widgets import CustomViewBox
 from Utils.transform import project, unproject, magnet_color
 
 _ = lambda x: x
-
-
-class Menu(QMenu):
-    def __init__(self, parent):
-        QMenu.__init__(self)
-        center_plot = self.addAction(_('Center Plot'))
-        center_plot.triggered.connect(lambda: parent.view.setRange(yRange=(parent.left_axis[-1], parent.left_axis[-1])))
-        vertical_autorange = self.addAction(_('Vertical Autorange'))
-        vertical_autorange.triggered.connect(lambda: parent.view.autoRange())
-
-
-class MenuRightAxis(QMenu):
-    def __init__(self, parent):
-        QMenu.__init__(self)
-        center_plot = self.addAction(_('Center Plot'))
-        center_plot.triggered.connect(lambda: parent.viewbox.setRange(yRange=(parent.right_axis[-1], parent.right_axis[-1])))
-        vertical_autorange = self.addAction(_('Vertical Autorange'))
-        vertical_autorange.triggered.connect(lambda: parent.viewbox.autoRange())
 
 
 class NonScientificYLeft(pg.AxisItem):
@@ -140,9 +122,9 @@ class NonScientificXSignalFreq(pg.AxisItem):
 
 class MainPlot(pg.PlotWidget):
     def __init__(self, **kwargs):
-        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(), axisItems={'left': NonScientificYLeft(orientation='left'),
-                                                'bottom': NonScientificX(orientation='bottom'),
-                                                'right': NonScientificYRight(orientation='right')})
+        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self), axisItems={'left': NonScientificYLeft(orientation='left'),
+                                                                         'bottom': NonScientificX(orientation='bottom'),
+                                                                         'right': NonScientificYRight(orientation='right')})
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
@@ -160,7 +142,6 @@ class MainPlot(pg.PlotWidget):
         self.data.setPen(pg.mkPen(width=1, color='r'))
 
         self.view = self.item.getViewBox()
-        self.view.menu = Menu(self)
         self.menu = self.item.getMenu()
         self.view.addItem(self.data)
         self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
@@ -192,6 +173,8 @@ class MainPlot(pg.PlotWidget):
 
 class MagneticField(MainPlot):
     s = -10000
+    signal_sync_chbx_changed = pyqtSignal(object)
+    signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
     def __init__(self):
         MainPlot.__init__(self)
@@ -199,6 +182,8 @@ class MagneticField(MainPlot):
         self.item.setLabel('right', _(''))
         self.item.getAxis('right').setPen(pg.mkPen(color='w'))
         self.view.setYRange(-20000, 100000)
+
+        self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
 
     def set_scale(self, value):
         if (MagneticField.s + value*10)/60000 <= -1:
@@ -231,6 +216,8 @@ class MagneticField(MainPlot):
 
 class SignalsPlot(MainPlot):
     s = -10000
+    signal_sync_chbx_changed = pyqtSignal(object)
+    signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
     def __init__(self):
         MainPlot.__init__(self)
@@ -243,15 +230,15 @@ class SignalsPlot(MainPlot):
         right_axis.setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
 
-        self.viewbox = CustomViewBox()   # create new viewbox for sig2
-        self.viewbox.menu = MenuRightAxis(self)
-
+        self.viewbox = CustomViewBox(self, 'Right')   # create new viewbox for sig2
         self.viewbox.setYRange(0, 500)
         self.item.scene().addItem(self.viewbox)
         right_axis.linkToView(self.viewbox)
         right_axis.setGrid(False)
         self.viewbox.setXLink(self.item)
         self.viewbox.addItem(self.data2)
+
+        self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
 
     def set_scale(self, value):
         if (SignalsPlot.s + value*10)/60000 <= -1:
@@ -375,11 +362,15 @@ class SignalsFrequency(pg.PlotWidget):
 
 class LampTemp(MainPlot):
     s = -10000
+    signal_sync_chbx_changed = pyqtSignal(object)
+    signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Lamp Temperature, °C'), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-50, 200)
+
+        self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
 
     def set_scale(self, value):
         if (LampTemp.s + value*10)/60000 <= -1:
@@ -412,11 +403,14 @@ class LampTemp(MainPlot):
 
 class SensorTemp(MainPlot):
     s = -10000
+    signal_sync_chbx_changed = pyqtSignal(object)
+    signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Sensor Temperature, °C'), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-50, 100)
+        self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
 
     def set_scale(self, value):
         if (SensorTemp.s + value*10)/60000 <= -1:
@@ -449,12 +443,15 @@ class SensorTemp(MainPlot):
 
 class DCPlot(MainPlot):
     s = -10000
+    signal_sync_chbx_changed = pyqtSignal(object)
+    signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
     def __init__(self):
         MainPlot.__init__(self)
         self.item.setLabel('left', _('Photodiode current, µA'), **{'font-size': '8pt', 'color': 'red'})
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.view.setYRange(0, 900)
+        self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
 
     def set_scale(self, value):
         if (DCPlot.s + value*10)/60000 <= -1:

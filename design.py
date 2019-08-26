@@ -222,11 +222,6 @@ class UIForm:
         self.sensor_temp_plot = SensorTemp()
         self.dc_plot = DCPlot()
 
-        self.sync_time_label = QLabel(_('Synchronize time'))
-        self.sync_time_chbx = QCheckBox()
-        self.gridlayout_state.addWidget(self.sync_time_chbx, 4, 0, 1, 1)
-        self.gridlayout_state.addWidget(self.sync_time_label, 4, 1, 1, 1)
-
         self.scroll_3x2_widget = QWidget()
         self.scroll_3x2_layout = QHBoxLayout(self.scroll_3x2_widget)
         self.scroll_3x2_layout.setContentsMargins(5, 0, 5, 0)

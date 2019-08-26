@@ -49,6 +49,12 @@ class MainWindow(QMainWindow, UIForm):
 
         self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
 
+        self.stream.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+        self.signals_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+        self.lamp_temp_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+        self.sensor_temp_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+        self.dc_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+
         self.graphs_btn.clicked.connect(self.add_graphs)
         self.visual_btn.clicked.connect(self.add_visual)
         self.update_btn.triggered.connect(self.add_update)
@@ -61,8 +67,6 @@ class MainWindow(QMainWindow, UIForm):
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
         self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
-        # self.enlarge_chbx.stateChanged.connect(lambda v: self.set_main_graph(v))
-        self.sync_time_chbx.stateChanged.connect(lambda v: self.sync_x(v))
         self.three_d_plot.set_label_signal.connect(lambda lat, lon, magnet: self.set_labels(lat, lon, magnet))
 
         self.test_btn.clicked.connect(self.test)
