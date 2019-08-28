@@ -2,7 +2,7 @@ from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QRegExpValidator
 from PyQt5.QtCore import Qt, QSize, QRegExp
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit, QListWidget, \
-    QListWidgetItem
+    QListWidgetItem, QTreeWidget, QTableWidget, QTableWidgetItem
 from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
@@ -14,7 +14,7 @@ class UIForm:
         self.setWindowTitle("QMCenter")
         self.setMinimumSize(1000, 500)
 
-        # Create menu
+        # Create main menu
         self.menu = QMenuBar()
         self.setMenuBar(self.menu)
 
@@ -263,6 +263,22 @@ class UIForm:
         self.stack_widget = QStackedWidget()
         self.stack_widget.addWidget(self.scroll_3x2_widget)
         self.stack_widget.addWidget(self.scroll_6x1_widget)
+
+        # Create configuration tab
+        self.configuration_widget = QWidget()
+        self.configuration_widget.setWindowTitle(_("Configuration"))
+        self.configuration_layout = QGridLayout(self.configuration_widget)
+
+        self.configuration_tree = QTreeWidget()
+        self.configuration_tree.setColumnCount(4)
+        self.configuration_tree.setHeaderLabels(['Parameter', 'Value', 'Min', 'Max'])
+        self.configuration_tree.editTriggers()
+        self.configuration_layout.addWidget(self.configuration_tree, 0, 0, 1, 10)
+
+        self.read_tree_btn = QPushButton(_('Read'))
+        self.configuration_layout.addWidget(self.read_tree_btn, 1, 0, 1, 1)
+        self.write_tree_btn = QPushButton(_('Write'))
+        self.configuration_layout.addWidget(self.write_tree_btn, 1, 1, 1, 1)
 
         # create tab 3D visualization
         self.three_d_plot = ThreeDVisual()

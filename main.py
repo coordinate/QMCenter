@@ -4,9 +4,11 @@ import tempfile
 import requests
 
 from PyQt5 import QtCore, QtWebSockets
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QLabel
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QPixmap, QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QLabel, QTreeWidgetItemIterator, QTreeWidget
 
+from Design.ui import show_error
 from design import UIForm
 from Clients.client_socket import Client
 
@@ -33,6 +35,7 @@ class MainWindow(QMainWindow, UIForm):
         self.tempdir = tempfile.gettempdir()
         self.expanduser_dir = os.path.expanduser('~')
         self.tempfile = '{}\\mag_track.magnet'.format(self.tempdir)
+        self.tree_header = None
 
         self.setupUI(self)
         self.settings.triggered.connect(lambda: self.settings_widget.show())
@@ -56,6 +59,7 @@ class MainWindow(QMainWindow, UIForm):
         self.dc_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
 
         self.graphs_btn.clicked.connect(self.add_graphs)
+        self.config_btn.clicked.connect(self.add_config)
         self.visual_btn.clicked.connect(self.add_visual)
         self.update_btn.triggered.connect(self.add_update)
         self.split_vertical_btn.clicked.connect(lambda: self.split_tabs())
@@ -68,6 +72,10 @@ class MainWindow(QMainWindow, UIForm):
         self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
         self.three_d_plot.set_label_signal.connect(lambda lat, lon, magnet: self.set_labels(lat, lon, magnet))
+
+        self.configuration_tree.itemDoubleClicked.connect(lambda item, col: self.tree_item_double_clicked(item, col))
+        self.read_tree_btn.clicked.connect(lambda: self.request_update())
+        self.write_tree_btn.clicked.connect(lambda: self.write_tree())
 
         self.test_btn.clicked.connect(self.test)
 
@@ -145,6 +153,13 @@ class MainWindow(QMainWindow, UIForm):
             # self.graphs_3x2_gridlayout.addWidget(self.sync_time_label, 3, 1, 1, 8)
             self.stack_widget.setCurrentWidget(self.scroll_3x2_widget)
 
+    def add_config(self):
+        if self.tabwidget_left.indexOf(self.configuration_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.configuration_widget, _("Configuration"))
+            self.tabwidget_left.setCurrentIndex(idx)
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.configuration_widget))
+
     def add_visual(self):
         if self.tabwidget_left.indexOf(self.three_d_widget) == -1:
             idx = self.tabwidget_left.addTab(self.three_d_widget, _("3D visual"))
@@ -197,23 +212,97 @@ class MainWindow(QMainWindow, UIForm):
             self.connect_btn.click()
 
     def request_update(self):
-        url = 'http://127.0.0.1:5000/update'
-        res = requests.get(url).json()
-        print(res)
+        url = 'http://127.0.0.1:5000/device'
+        try:
+            res = requests.get(url).json()
+        except requests.exceptions.RequestException:
+            show_error(_('Error'), _('Server is not responding.'))
+            return
+        it = iter(res.keys())
+        root = next(it)
+        self.tree_header = root
+        self.configuration_tree.clear()
 
-        for key, value in res.items():
-            root = QTreeWidgetItem([key])
-            self.update_tree.addTopLevelItem(root)
-            for k, v in value.items():
-                child = QTreeWidgetItem([k])
-                root.addChild(child)
-                print(k)
-                for ks, vl in v.items():
-                    ch = QTreeWidgetItem([ks])
-                    val = QTreeWidgetItem([str(vl)])
-                    child.addChild(ch)
-                    self.update_tree.setItemWidget(val, 1, QLabel())
-                    print(ks, vl)
+        self.fill_tree(self.configuration_tree, res[root])
+
+    def fill_tree(self, tree, dict_tree, parent=None):
+        for key, value in dict_tree.items():
+            if isinstance(value, dict):
+                if parent:
+                    top = QTreeWidgetItem(parent, [key])
+                else:
+                    top = QTreeWidgetItem([key])
+                    tree.addTopLevelItem(top)
+                self.fill_tree(tree, value, top)
+            else:
+                if parent:
+                    elem = QTreeWidgetItem(parent, [key])
+                    for i, v in enumerate(value):
+                        elem.setText(i+1, str(v))
+                else:
+                    elem = QTreeWidgetItem([key])
+                    for i, v in enumerate(value):
+                        elem.setText(i+1, str(v))
+                    tree.addTopLevelItem(elem)
+
+    def tree_item_double_clicked(self, it, column):
+        if column == 0:
+            it.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsUserCheckable |
+                        QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled)
+        else:
+            it.setFlags(it.flags() | QtCore.Qt.ItemIsEditable)
+            self.configuration_tree.itemChanged.connect(lambda item, col: self.tree_item_changed(item, col))
+
+    def tree_item_changed(self, item, col):
+        self.configuration_tree.itemChanged.disconnect()
+        if col > 0:
+            item.setBackground(col, QColor(255, 255, 0))
+
+    def write_tree(self):
+        url = 'http://127.0.0.1:5000/api/add_message/{}'.format(self.tree_header)
+        json = {}
+        it = QTreeWidgetItemIterator(self.configuration_tree)
+        while it.value():
+            value = it.value().text(0)
+            if it.value().childCount():
+                json[value] = {}
+                for i in range(it.value().childCount()):
+                    it += 1
+                    json[value][it.value().text(0)] = [it.value().text(1), it.value().text(2), it.value().text(3)]
+            else:
+                json[value] = [it.value().text(1), it.value().text(2), it.value().text(3)]
+            it += 1
+        try:
+            res = requests.post(url=url, json={'{}'.format(self.tree_header): json})
+        except requests.exceptions.RequestException:
+            show_error(_('Error'), _("Configuration updating not completed.\nServer is not responding."))
+            return
+        if res.ok:
+            print(res.json())
+
+        QTimer.singleShot(3000, self.check_configured_tree)
+
+    def check_configured_tree(self):
+        url = 'http://127.0.0.1:5000/{}'.format(self.tree_header)
+        try:
+            res = requests.get(url).json()
+        except requests.exceptions.RequestException:
+            show_error(_('Error'), _("Configuration updating not completed.\nServer is not responding."))
+            return
+        temp_tree = QTreeWidget()
+        self.fill_tree(temp_tree, res[self.tree_header])
+
+        it = QTreeWidgetItemIterator(self.configuration_tree)
+        temp_it = QTreeWidgetItemIterator(temp_tree)
+
+        while it.value():
+            for i in range(4):
+                if it.value().text(i) != temp_it.value().text(i):
+                    it.value().setBackground(i, QColor(255, 0, 0))
+                else:
+                    it.value().setBackground(i, QColor(255, 255, 255))
+            it += 1
+            temp_it += 1
 
     def request_magnet_file(self):
         url = 'http://127.0.0.1:5000/download'
