@@ -64,8 +64,8 @@ class Client(QtCore.QObject):
         self.client.close()
 
     def connect(self):
-        # self.client.open(QtCore.QUrl("ws://127.0.0.1:8765"))
-        self.client.open(QtCore.QUrl("ws://192.168.1.37:8765"))
+        self.client.open(QtCore.QUrl("ws://127.0.0.1:8765"))
+        # self.client.open(QtCore.QUrl("ws://192.168.1.37:8765"))
 
     def decoding_json(self, jsn):
         dec = json.loads(jsn)

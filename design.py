@@ -2,7 +2,9 @@ from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QRegExpValidator
 from PyQt5.QtCore import Qt, QSize, QRegExp
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit, QListWidget, \
-    QListWidgetItem, QTreeWidget, QTableWidget, QTableWidgetItem
+    QListWidgetItem, QTreeWidget, QFrame
+
+from Design.ui import ProgressBar
 from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
@@ -144,6 +146,7 @@ class UIForm:
         # create dockwidget Info
         self.widget_info = QWidget()
         self.layout = QVBoxLayout(self.widget_info)
+        self.dockwidget_info.setWidget(self.widget_info)
 
         self.connection_groupbox = QGroupBox()
         self.connection_groupbox.setTitle(_('Connection'))
@@ -206,13 +209,61 @@ class UIForm:
         self.update_widget = QWidget()
         self.gridlayout_update = QGridLayout(self.update_widget)
 
-        self.browse_btn = QPushButton(_("Browse"))
-        self.gridlayout_update.addWidget(self.browse_btn, 0, 3, 1, 1)
+        self.update_tree = QTreeWidget()
+        self.update_tree.setColumnCount(2)
+        self.update_tree.setHeaderLabels([_('Parameter'), _('Version')])
+        self.gridlayout_update.addWidget(self.update_tree, 0, 0, 1, 1)
+
+        self.update_tree_btn = QPushButton(_('Update'))
+        self.gridlayout_update.addWidget(self.update_tree_btn, 1, 1, 1, 1)
+
+        # create wizard
+        self.wizard = QStackedWidget()
+        self.wizard.setWindowTitle(_('Wizard'))
+        self.wizard.setFixedSize(500, 300)
+
+        # first page
+        self.wizard_first_page = QWidget()
+        self.fist_page_lay = QGridLayout(self.wizard_first_page)
+
+        first_page_label = QLabel(_('Open file to load into device'))
+        first_page_label.setStyleSheet("font: 14pt;")
+        self.first_page_lineedit = QLineEdit()
+        self.browse_btn = QPushButton(_("Browse..."))
+        self.check_file_label = QLabel()
+        self.first_page_line = QFrame()
+        self.first_page_line.setFrameShape(QFrame.HLine)
+        self.first_page_line.setStyleSheet("color: (0, 0, 0)")
+        self.first_page_upload_btn = QPushButton(_('Upload'))
+        self.first_page_upload_btn.setEnabled(False)
+
+        self.first_page_cancel_btn = QPushButton(_('Cancel'))
+        self.fist_page_lay.addWidget(first_page_label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
+        self.fist_page_lay.addWidget(self.first_page_lineedit, 1, 0, 1, 5)
+        self.fist_page_lay.addWidget(self.browse_btn, 1, 5, 1, 1)
+        self.fist_page_lay.addWidget(self.check_file_label, 2, 0, 1, 6, alignment=Qt.AlignCenter)
+        self.fist_page_lay.addWidget(self.first_page_line, 3, 0, 1, 6)
+        self.fist_page_lay.addWidget(self.first_page_upload_btn, 4, 4, 1, 1)
+        self.fist_page_lay.addWidget(self.first_page_cancel_btn, 4, 5, 1, 1)
 
         self.file_dialog = QFileDialog()
         self.file_dialog.setDirectory(self.expanduser_dir)
+        self.wizard.addWidget(self.wizard_first_page)
 
-        self.dockwidget_info.setWidget(self.widget_info)
+        # self.wizard_load_progress = ProgressBar()
+
+        self.wizard_final_page = QWidget()
+        self.final_page_lay = QGridLayout(self.wizard_final_page)
+        self.final_page_label = QLabel(_('Success'))
+        self.final_page_label.setStyleSheet("font: 14pt;")
+        self.final_page_line = QFrame()
+        self.final_page_line.setFrameShape(QFrame.HLine)
+        self.final_page_line.setStyleSheet("color: (0, 0, 0)")
+        self.final_finish_btn = QPushButton(_('Finish'))
+        self.final_page_lay.addWidget(self.final_page_label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
+        self.final_page_lay.addWidget(self.final_page_line, 1, 0, 1, 6)
+        self.final_page_lay.addWidget(self.final_finish_btn, 2, 5, 1, 1)
+        self.wizard.addWidget(self.wizard_final_page)
 
         # create tab Graphs
         self.stream = MagneticField()
@@ -271,7 +322,7 @@ class UIForm:
 
         self.configuration_tree = QTreeWidget()
         self.configuration_tree.setColumnCount(4)
-        self.configuration_tree.setHeaderLabels(['Parameter', 'Value', 'Min', 'Max'])
+        self.configuration_tree.setHeaderLabels([_('Parameter'), _('Value'), _('Min'), _('Max')])
         self.configuration_tree.editTriggers()
         self.configuration_layout.addWidget(self.configuration_tree, 0, 0, 1, 10)
 
@@ -330,8 +381,4 @@ class UIForm:
         self.grid_3d.addWidget(self.magnet_value_label, 97, 3, 1, 5)
 
         # self.earth_widget = CesiumPlot()
-
-
-
-
 

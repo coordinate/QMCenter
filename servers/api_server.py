@@ -1,12 +1,23 @@
-import codecs
 import json
 
 from flask import Flask, jsonify, send_from_directory, request
-import random
-import numpy as np
-import requests
 
 app = Flask(__name__)
+# l = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
+# ALLOWED_EXTENSIONS = set(l)
+# UPLOAD_FOLDER = "D:/a.bulygin/QMCenter/workdocs/server"
+# app.secret_key = "secret key"
+# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+
+@app.route('/upload_file', methods=['POST'])
+def upload_file():
+    if request.method == 'POST':
+        f = request.files['update_file']
+        with open('D:\\a.bulygin\\QMCenter\\workdocs\\server\\'+f.filename, 'wb') as file:
+            file.write(f.read())
+        return jsonify({'success': True})
 
 
 data = {
@@ -30,14 +41,26 @@ device = {
         'Parameter 2': ['Some data', '', '']
     }
 
+update = {
+        'HW_PCB_ver': [1.0],
+        'HW_Assembly_ver': [1.0],
+        'Firmware': [1.0],
+        'Software': [1.0]
+    }
+
 
 @app.route('/config', methods=['GET'])
-def get_tasks():
+def get_config():
     return jsonify({'data': data})
 
 
-@app.route('/device', methods=['GET'])
+@app.route('/update', methods=['GET'])
 def get_update():
+    return jsonify({'update': update})
+
+
+@app.route('/device', methods=['GET'])
+def get_device():
     with open('../workdocs/config_device.json', 'r') as file:
         device = json.load(file)
     return jsonify(device)
@@ -57,10 +80,5 @@ def add_message(uuid):
     return jsonify({"uuid": uuid})
 
 
-# @app.route('/download')
-# def root():
-#     return app.send_static_file('data\\mag_track.magnete')
-
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port='5000', debug=True)

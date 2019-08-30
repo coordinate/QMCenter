@@ -6,25 +6,14 @@ import requests
 from PyQt5 import QtCore, QtWebSockets
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPixmap, QColor
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QLabel, QTreeWidgetItemIterator, QTreeWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTreeWidgetItemIterator, QTreeWidget
+from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
-from Design.ui import show_error
+from Design.ui import show_error, ProgressBar
 from design import UIForm
 from Clients.client_socket import Client
 
-
 _ = lambda x: x
-
-
-class API(QtCore.QObject):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.url = ""
-        self.params = {}
-
-    def get_request(self):
-        r = requests.get(self.url, params=self.params)
-        res = r.json()
 
 
 class MainWindow(QMainWindow, UIForm):
@@ -36,8 +25,8 @@ class MainWindow(QMainWindow, UIForm):
         self.expanduser_dir = os.path.expanduser('~')
         self.tempfile = '{}\\mag_track.magnet'.format(self.tempdir)
         self.tree_header = None
-
         self.setupUI(self)
+
         self.settings.triggered.connect(lambda: self.settings_widget.show())
         self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
         self.exit_action.triggered.connect(lambda: sys.exit())
@@ -65,17 +54,22 @@ class MainWindow(QMainWindow, UIForm):
         self.split_vertical_btn.clicked.connect(lambda: self.split_tabs())
         self.full_tab_btn.clicked.connect(lambda: self.one_tab())
 
-        self.browse_btn.clicked.connect(lambda: self.file_dialog.show())
-        self.file_dialog.fileSelected.connect(lambda url: print(url))
-
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
         self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
         self.three_d_plot.set_label_signal.connect(lambda lat, lon, magnet: self.set_labels(lat, lon, magnet))
 
         self.configuration_tree.itemDoubleClicked.connect(lambda item, col: self.tree_item_double_clicked(item, col))
-        self.read_tree_btn.clicked.connect(lambda: self.request_update())
+        self.read_tree_btn.clicked.connect(lambda: self.request_device_config())
         self.write_tree_btn.clicked.connect(lambda: self.write_tree())
+
+        self.update_tree_btn.clicked.connect(lambda: self.wizard.show())
+        self.browse_btn.clicked.connect(lambda: self.file_dialog.show())
+        self.file_dialog.fileSelected.connect(lambda url: self.update_file_selected(url))
+        self.first_page_lineedit.textChanged.connect(lambda: self.update_file_selected())
+        self.first_page_upload_btn.clicked.connect(lambda: self.upload_file(self.url))
+        self.first_page_cancel_btn.clicked.connect(lambda: self.wizard.close())
+        self.final_finish_btn.clicked.connect(lambda: self.finish_update())
 
         self.test_btn.clicked.connect(self.test)
 
@@ -187,6 +181,61 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.update_widget))
 
+        url = 'http://127.0.0.1:5000/update'
+        try:
+            res = requests.get(url, timeout=1).json()
+        except requests.exceptions.RequestException:
+            show_error(_('Error'), _('Server is not responding.'))
+            return
+        it = iter(res.keys())
+        root = next(it)
+        self.update_tree.clear()
+
+        self.fill_tree(self.update_tree, res[root])
+
+    def update_file_selected(self, url=None):
+        self.url = ''
+        if url:
+            self.url = url
+            self.first_page_lineedit.setText('')
+            self.first_page_lineedit.insert(url)
+        else:
+            url = self.first_page_lineedit.text()
+            self.file_dialog.setDirectory(url if url else self.expanduser_dir)
+            self.url = url
+        if os.path.isfile(url):
+            self.check_file_label.setText('File is good')
+            self.first_page_upload_btn.setEnabled(True)
+        else:
+            self.check_file_label.setText('File is not good')
+            self.first_page_upload_btn.setEnabled(False)
+
+    def upload_file(self, file_url):
+        url = 'http://127.0.0.1:5000/upload_file'
+        filesize = os.path.getsize(file_url)
+        print(filesize)
+        filename = (os.path.basename(file_url))
+        m = MultipartEncoder(
+            fields={'update_file': (filename, open(file_url, 'rb'))}  # added mime-type here
+        )
+        progress = ProgressBar(text=_('Load file into device'), window_title=_('Upload File'))
+        e = MultipartEncoderMonitor(m, lambda monitor: progress.update((monitor.bytes_read/filesize)*99))
+
+        try:
+            res = requests.post(url, data=e, headers={'Content-Type': e.content_type}, timeout=5)
+        except requests.exceptions.RequestException:
+            show_error(_('Error'), _('Server is not responding.'))
+            progress.close()
+            return
+
+        if res.ok:
+            progress.update(100)
+            self.wizard.setCurrentWidget(self.wizard_final_page)
+
+    def finish_update(self):
+        self.wizard.close()
+        self.wizard.setCurrentWidget(self.wizard_first_page)
+
     def add_connection_tab(self):
         if self.tabwidget_left.indexOf(self.connection_widget) == -1:
             idx = self.tabwidget_left.addTab(self.connection_widget, _("Connection"))
@@ -205,13 +254,14 @@ class MainWindow(QMainWindow, UIForm):
     def on_disconnect(self):
         self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
         self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
-        # correct work with graphs after disconnect
+        self.stream.signal_disconnect.emit()
+        # correct work with graphs after disconnect(send signal to plots)
 
     def auto_connect_chbx_change(self, state):
         if state == 2:
             self.connect_btn.click()
 
-    def request_update(self):
+    def request_device_config(self):
         url = 'http://127.0.0.1:5000/device'
         try:
             res = requests.get(url).json()
