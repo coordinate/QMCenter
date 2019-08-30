@@ -255,7 +255,10 @@ class MainWindow(QMainWindow, UIForm):
         self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
         self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
         self.stream.signal_disconnect.emit()
-        # correct work with graphs after disconnect(send signal to plots)
+        self.signals_plot.signal_disconnect.emit()
+        self.dc_plot.signal_disconnect.emit()
+        self.lamp_temp_plot.signal_disconnect.emit()
+        self.sensor_temp_plot.signal_disconnect.emit()
 
     def auto_connect_chbx_change(self, state):
         if state == 2:

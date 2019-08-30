@@ -121,6 +121,8 @@ class NonScientificXSignalFreq(pg.AxisItem):
 
 
 class MainPlot(pg.PlotWidget):
+    signal_disconnect = pyqtSignal()
+
     def __init__(self, **kwargs):
         pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self), axisItems={'left': NonScientificYLeft(orientation='left'),
                                                                          'bottom': NonScientificX(orientation='bottom'),
@@ -151,6 +153,8 @@ class MainPlot(pg.PlotWidget):
         self.right_axis = np.empty(60000)
         self.ptr = 0
 
+        self.signal_disconnect.connect(lambda: self.disconnect())
+
     def update(self, left_ax, bottom_ax, right_ax=None, checkbox=True):  # override this method to update your graph data
         pass
 
@@ -169,6 +173,10 @@ class MainPlot(pg.PlotWidget):
         else:
             # pg.PlotWidget.wheelEvent(self, event)
             pass
+
+    def disconnect(self):
+        self.view.disableAutoRange(axis=self.view.XAxis)
+        self.view.setMouseEnabled(x=True, y=True)
 
 
 class MagneticField(MainPlot):
@@ -276,9 +284,9 @@ class SignalsPlot(MainPlot):
 
 class SignalsFrequency(pg.PlotWidget):
     def __init__(self):
-        pg.PlotWidget.__init__(self, axisItems={'left': NonScientificYLeft(orientation='left'),
-                                                'bottom': NonScientificXSignalFreq(orientation='bottom'),
-                                                'right': NonScientificYRight(orientation='right')})
+        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self), axisItems={'left': NonScientificYLeft(orientation='left'),
+                                                                         'bottom': NonScientificX(orientation='bottom'),
+                                                                         'right': NonScientificYRight(orientation='right')})
 
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
@@ -310,7 +318,7 @@ class SignalsFrequency(pg.PlotWidget):
         self.item.showAxis('right')
         self.item.setLabel('bottom', _('Frequency, Hz'), **{'font-size': '8pt'})
 
-        self.viewbox = pg.ViewBox()  # create new viewbox for sig2
+        self.viewbox = CustomViewBox(self, 'Right')  # create new viewbox for sig2
         self.viewbox.setYRange(0, 500)
         self.item.scene().addItem(self.viewbox)
         right_axis.linkToView(self.viewbox)
