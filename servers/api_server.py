@@ -1,4 +1,7 @@
 import json
+import os
+import datetime
+import shutil
 
 from flask import Flask, jsonify, send_from_directory, request
 
@@ -11,26 +14,7 @@ app = Flask(__name__)
 # app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 
-@app.route('/upload_file', methods=['POST'])
-def upload_file():
-    if request.method == 'POST':
-        f = request.files['update_file']
-        with open('D:\\a.bulygin\\QMCenter\\workdocs\\server\\'+f.filename, 'wb') as file:
-            file.write(f.read())
-        return jsonify({'success': True})
-
-
-data = {
-        'P': [10, 10, 250],
-        'D': [1, 2, 3],
-        'Po': {
-            'V': [123, 50, 200],
-            'C': [321, 0, 400],
-            'Te': [22, -10, 100]},
-        'Par': ['Sota']
-    }
-
-
+# config tab, read btn [get(read) config file]
 device = {
         'Parameter 1': [154.7, 100.0, 250.0],
         'DSP Module': [1, 2, 3],
@@ -41,23 +25,6 @@ device = {
         'Parameter 2': ['Some data', '', '']
     }
 
-update = {
-        'HW_PCB_ver': [1.0],
-        'HW_Assembly_ver': [1.0],
-        'Firmware': [1.0],
-        'Software': [1.0]
-    }
-
-
-@app.route('/config', methods=['GET'])
-def get_config():
-    return jsonify({'data': data})
-
-
-@app.route('/update', methods=['GET'])
-def get_update():
-    return jsonify({'update': update})
-
 
 @app.route('/device', methods=['GET'])
 def get_device():
@@ -66,18 +33,70 @@ def get_device():
     return jsonify(device)
 
 
-@app.route('/download', methods=['POST'])
-def index():
-    response = send_from_directory(directory='D:\\a.bulygin\QMCenter\data', filename='mag_track.magnete')
-    return response
-
-
+# config tab, write btn [post(write) new config file]
 @app.route('/api/add_message/<uuid>', methods=['POST'])
 def add_message(uuid):
     content = request.json
     with open('../workdocs/config_{}.json'.format(uuid), 'w') as file:
         json.dump(content, file, indent=4, sort_keys=True)
     return jsonify({"uuid": uuid})
+
+
+update = {
+        'HW_PCB_ver': [1.0],
+        'HW_Assembly_ver': [1.0],
+        'Firmware': [1.0],
+        'Software': [1.0]
+    }
+
+
+# update tab [get(*read) update info] *automatically
+@app.route('/update', methods=['GET'])
+def get_update():
+    return jsonify({'update': update})
+
+
+# update tab, wizard upload btn [post(upload) update file]
+@app.route('/upload_file', methods=['POST'])
+def upload_file():
+    if request.method == 'POST':
+        f = request.files['update_file']
+        with open('D:\\a.bulygin\\QMCenter\\workdocs\\server\\'+f.filename, 'wb') as file:
+            file.write(f.read())
+        return jsonify({'success': True})
+
+
+# file manager tab, left arrow btn, [get(download) file form device(server)]
+@app.route('/download_from_start_folder/<path:filename>', methods=['GET'])
+def get_file_from_start_folder(filename):
+    response = send_from_directory(directory='D:/a.bulygin/QMCenter/workdocs/', filename=filename)
+    return response
+
+
+# file manager tab, right arrow btn [post(upload) file to device(server)]
+@app.route('/upload_file_to_device/<path:path>', methods=['POST'])
+def upload_file_to_device(path):
+    if request.method == 'POST':
+        f = request.files['upload_file']
+        with open('D:/a.bulygin/QMCenter/workdocs/{}/{}'.format(path, f.filename), 'wb') as file:
+            file.write(f.read())
+        return jsonify({'success': True})
+
+
+# file manager tab, delete btn [delete file from device(server)]
+@app.route('/delete_file_from_device/<path:path>', methods=['DELETE'])
+def delete_file_from_device(path):
+    if os.path.isfile('D:/a.bulygin/QMCenter/workdocs/{}'.format(path)):
+        os.remove('D:/a.bulygin/QMCenter/workdocs/{}'.format(path))
+    else:
+        shutil.rmtree('D:/a.bulygin/QMCenter/workdocs/{}'.format(path))
+    return jsonify({'success': True})
+
+
+@app.route('/download', methods=['POST'])
+def index():
+    response = send_from_directory(directory='D:\\a.bulygin\QMCenter\data', filename='mag_track.magnete')
+    return response
 
 
 if __name__ == '__main__':

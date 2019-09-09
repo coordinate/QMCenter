@@ -29,15 +29,17 @@ class MainWindow(QMainWindow, UIForm):
 
         self.settings.triggered.connect(lambda: self.settings_widget.show())
         self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
+        self.save_btn.clicked.connect(lambda: self.save_file_models_folder())
         self.exit_action.triggered.connect(lambda: sys.exit())
 
         self.client = Client()
+        self.client.signal_directory_data.connect(lambda jsn: self.file_manager_widget.fill_right_file_model(jsn))
         self.client.signal_connection.connect(lambda: self.on_connect())
         self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
         self.client.signal_disconnect.connect(lambda: self.on_disconnect())
-        self.connect_btn.clicked.connect(lambda: self.client.connect())
+        self.connect_btn.clicked.connect(lambda: self.client_connect())
         self.disconnect_btn.clicked.connect(lambda: self.client.close())
-        self.client.signal_data.connect(lambda *args: self.plot_graphs(*args))
+        self.client.signal_stream_data.connect(lambda *args: self.plot_graphs(*args))
 
         self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
 
@@ -51,6 +53,7 @@ class MainWindow(QMainWindow, UIForm):
         self.config_btn.clicked.connect(self.add_config)
         self.visual_btn.clicked.connect(self.add_visual)
         self.update_btn.triggered.connect(self.add_update)
+        self.file_manager.clicked.connect(self.add_file_manager)
         self.split_vertical_btn.clicked.connect(lambda: self.split_tabs())
         self.full_tab_btn.clicked.connect(lambda: self.one_tab())
 
@@ -82,6 +85,10 @@ class MainWindow(QMainWindow, UIForm):
         self.one_lay.addWidget(self.tabwidget_left)
         self.tabs_widget.setCurrentWidget(self.one_tabwidget)
 
+    def save_file_models_folder(self):
+        self.file_manager_widget.left_file_model_auto_sync_label.setText(self.left_folder_tracked.text())
+        self.file_manager_widget.right_file_model_auto_sync_label.setText(self.right_folder_tracked.text())
+
     def show_menu_item(self, item):
         for key, value in self.settings_menu_dict.items():
             if key == item:
@@ -101,6 +108,7 @@ class MainWindow(QMainWindow, UIForm):
         self.dc_plot.update(dc, time, checkbox=self.graphs_chbx.isChecked())
         self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
         self.deg_num_label.setText(str(temp/10))
+        self.device_on_connect = True
 
     # def set_main_graph(self, check):
     #     if self.tabwidget_left.indexOf(self.stack_widget) > -1 and check == 2:
@@ -236,12 +244,25 @@ class MainWindow(QMainWindow, UIForm):
         self.wizard.close()
         self.wizard.setCurrentWidget(self.wizard_first_page)
 
+    def add_file_manager(self):
+        if self.tabwidget_left.indexOf(self.file_manager_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.file_manager_widget, _("File manager"))
+            self.tabwidget_left.setCurrentIndex(idx)
+            self.file_manager_widget.right_file_model_update()
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.file_manager_widget))
+            self.file_manager_widget.right_file_model_update()
+
     def add_connection_tab(self):
         if self.tabwidget_left.indexOf(self.connection_widget) == -1:
             idx = self.tabwidget_left.addTab(self.connection_widget, _("Connection"))
             self.tabwidget_left.setCurrentIndex(idx)
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.connection_widget))
+
+    def client_connect(self):
+        self.client.connect()
+        QTimer.singleShot(1000, lambda: self.file_manager_widget.right_file_model_update())
 
     def on_connect(self):
         self.connection_icon.setPixmap(QPixmap('images/green_light_icon.png'))
@@ -252,6 +273,7 @@ class MainWindow(QMainWindow, UIForm):
             self.connect_btn.click()
 
     def on_disconnect(self):
+        self.device_on_connect = False
         self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
         self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
         self.stream.signal_disconnect.emit()

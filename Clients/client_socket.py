@@ -8,7 +8,8 @@ from PyQt5.QtCore import QTimer, Qt, pyqtSignal
 
 class Client(QtCore.QObject):
     relative_time = -1
-    signal_data = pyqtSignal(object, object, object, object, object, object, object, object)
+    signal_stream_data = pyqtSignal(object, object, object, object, object, object, object, object)
+    signal_directory_data = pyqtSignal(object)
     signal_connection = pyqtSignal()
     signal_autoconnection = pyqtSignal()
     signal_disconnect = pyqtSignal()
@@ -41,15 +42,20 @@ class Client(QtCore.QObject):
                 else:
                     self.signal_disconnect.emit()
             except IndexError:
-                print('ping command is not correct')
+                print('ping command is not done')
 
     def do_ping(self):  # check is connection still alive (Qt function)
         print("client: do_ping")
         self.client.ping(b"foo")
 
-    def send_message(self):
+    def send_message(self, msg):
         print("client: send_message")
-        self.client.sendTextMessage("hello")
+        self.client.sendTextMessage(msg)
+
+    def send_folder_name(self, folder):
+        print("client: send_directory")
+        folder_name = {'folder': folder}
+        self.client.sendTextMessage(json.dumps(folder_name))
 
     def onPong(self, elapsedTime, payload):
         print("onPong - time: {} ; payload: {}".format(elapsedTime, payload))
@@ -64,30 +70,34 @@ class Client(QtCore.QObject):
         self.client.close()
 
     def connect(self):
-        self.client.open(QtCore.QUrl("ws://127.0.0.1:8765"))
-        # self.client.open(QtCore.QUrl("ws://192.168.1.37:8765"))
+        # self.client.open(QtCore.QUrl("ws://127.0.0.1:8765"))
+        self.client.open(QtCore.QUrl("ws://192.168.1.37:8765"))
 
     def decoding_json(self, jsn):
-        dec = json.loads(jsn)
-        arr_time = []
-        arr_freq = []
-        arr_sig1 = []
-        arr_sig2 = []
-        arr_ts = []
-        arr_isitemp = []
-        arr_dc = []
+        if 'jsons' in jsn:
+            dec = json.loads(jsn)
+            arr_time = []
+            arr_freq = []
+            arr_sig1 = []
+            arr_sig2 = []
+            arr_ts = []
+            arr_isitemp = []
+            arr_dc = []
 
-        for time, freq, sig1, sig2, ts, isitemp, dc, temp in dec['jsons'].values():
-            Client.relative_time += 1
-            arr_time.append(Client.relative_time)
-            arr_freq.append(freq)
-            arr_sig1.append(sig1)
-            arr_sig2.append(sig2)
-            arr_ts.append(ts)
-            arr_isitemp.append(isitemp)
-            arr_dc.append(dc)
+            for time, freq, sig1, sig2, ts, isitemp, dc, temp in dec['jsons'].values():
+                Client.relative_time += 1
+                arr_time.append(Client.relative_time)
+                arr_freq.append(freq)
+                arr_sig1.append(sig1)
+                arr_sig2.append(sig2)
+                arr_ts.append(ts)
+                arr_isitemp.append(isitemp)
+                arr_dc.append(dc)
 
-        # print('time', arr_time, '\n', 'freq', arr_freq)
-        if len(arr_time):
-            self.signal_data.emit(arr_freq, arr_time, arr_sig1, arr_sig2,
-                                  arr_ts, arr_isitemp, arr_dc, temp)
+            # print('time', arr_time, '\n', 'freq', arr_freq)
+            if len(arr_time):
+                self.signal_stream_data.emit(arr_freq, arr_time, arr_sig1, arr_sig2,
+                                      arr_ts, arr_isitemp, arr_dc, temp)
+
+        elif 'directory' in jsn:
+            self.signal_directory_data.emit(jsn)

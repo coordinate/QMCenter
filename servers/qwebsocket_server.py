@@ -1,4 +1,5 @@
 import json
+import os
 
 from PyQt5 import QtCore, QtWebSockets, QtNetwork, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QAction
@@ -24,6 +25,23 @@ def read():
                                                   int(n[11]), int(n[13]), int(n[15])]     # (time, freq, sig1, sig2, ts, isitemp, dc, temp)
 
     return json.dumps(data_json)
+
+
+def create_workdir(folder):
+    directory = {}
+    path = 'D:/a.bulygin/QMCenter/workdocs/{}/'.format(folder)
+    if not os.path.isdir(path):
+        return json.dumps({'directory': 0})
+    lst = os.listdir(path)
+    for l in lst:
+        directory[l] = {'type': 'folder' if os.path.isdir(path + l) else 'file',
+                        'size': round(os.path.getsize('{}{}'.format(path, l))/1024, 2),
+                        'changed_date': os.path.getctime('{}{}'.format(path, l)),
+                        }
+        # directory[l] = [round(os.path.getsize('{}{}'.format(path, l))/1024, 2), datetime.datetime.fromtimestamp(os.path.getctime('{}{}'.format(path, l))).strftime('%d/%m/%y')]
+    path_trecked_folder = 'D:/a.bulygin/QMCenter/workdocs/start_folder/tracked_folder/'
+    lst_tracked_folder = os.listdir(path_trecked_folder)
+    return json.dumps({'directory': directory, 'tracked_folder': lst_tracked_folder})
 
 
 class MyServer(QtCore.QObject):
@@ -59,7 +77,7 @@ class MyServer(QtCore.QObject):
         self.clientConnection.binaryMessageReceived.connect(self.processBinaryMessage)
         self.clientConnection.disconnected.connect(self.socketDisconnected)
 
-        print("newClient")
+        print("newClient", self.clientConnection)
         self.clients.append(self.clientConnection)
         self.timer.start()
 
@@ -75,10 +93,14 @@ class MyServer(QtCore.QObject):
 
     def processTextMessage(self, message):
         print("processTextMessage - message: {}".format(message))
+        jsn = json.loads(message)
         if self.clientConnection:
-            for client in self.clients:
-                # if client!= self.clientConnection:
-                client.sendTextMessage(message)
+            if 'folder' in jsn:
+                self.clients[0].sendTextMessage(create_workdir(jsn['folder']))
+
+        # for client in self.clients:
+            #     # if client!= self.clientConnection:
+            #     client.sendTextMessage(message)
             # self.clientConnection.sendTextMessage(message)
 
     def processBinaryMessage(self, message):

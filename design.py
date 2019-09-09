@@ -1,10 +1,10 @@
-from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QRegExpValidator
+from PyQt5.QtGui import QPixmap, QIcon, QRegExpValidator
 from PyQt5.QtCore import Qt, QSize, QRegExp
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit, QListWidget, \
     QListWidgetItem, QTreeWidget, QFrame
 
-from Design.ui import ProgressBar
+from Design.file_manager_widget import FileManager
 from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 _ = lambda x: x
@@ -70,10 +70,37 @@ class UIForm:
         self.connection_layout.addWidget(self.cancel_btn, 3, 3)
         self.connection_layout.addWidget(self.ok_btn, 3, 4)
 
+        # create file manager menu item
+        self.settings_menu_items.addItem(QListWidgetItem(_('File Manager')))
+
+        self.file_manager_menu_widget = QWidget()
+        self.file_manager_menu_layout = QGridLayout(self.file_manager_menu_widget)
+
+        self.left_folder_tracked_label = QLabel(_('Left tracked folder'))
+        self.left_folder_tracked = QLineEdit()
+        self.left_browse_btn = QPushButton(_('Browse...'))
+        self.left_file_dialog = QFileDialog()
+        self.left_file_dialog.setFileMode(QFileDialog.Directory)
+        self.left_browse_btn.clicked.connect(self.left_file_dialog.show)
+        self.left_file_dialog.fileSelected.connect(lambda url: self.left_folder_tracked.setText(url))
+        self.file_manager_menu_layout.addWidget(self.left_folder_tracked_label, 0, 0, 1, 1, alignment=Qt.AlignCenter)
+        self.file_manager_menu_layout.addWidget(self.left_folder_tracked, 1, 0, 1, 1)
+        self.file_manager_menu_layout.addWidget(self.left_browse_btn, 2, 0, 1, 1, alignment=Qt.AlignCenter)
+
+        self.right_folder_tracked_label = QLabel(_('Right tracked folder'))
+        self.right_folder_tracked = QLineEdit()
+        self.right_browse_btn = QPushButton(_('Browse...'))
+        self.file_manager_menu_layout.addWidget(self.right_folder_tracked_label, 0, 1, 1, 1, alignment=Qt.AlignCenter)
+        self.file_manager_menu_layout.addWidget(self.right_folder_tracked, 1, 1, 1, 1)
+
+        self.save_btn = QPushButton(_('Save changes'))
+        self.file_manager_menu_layout.addWidget(self.save_btn, 3, 1, 1, 1)
+
         # Fill settings menu items list
         self.settings_menu_dict = {
             'Start': QWidget(),
             'Connection': self.connection_widget,
+            'File Manager': self.file_manager_menu_widget,
 
         }
 
@@ -97,6 +124,8 @@ class UIForm:
         self.update_btn = QAction()
         self.update_btn.setText(_("Update"))
 
+        self.file_manager = QPushButton(_('File manager'))
+
         self.split_vertical_btn = QPushButton()
         self.split_vertical_btn.setIcon(QIcon('images/split_vertical.png'))
         self.split_vertical_btn.setIconSize(QSize(32, 32))
@@ -114,6 +143,7 @@ class UIForm:
         self.toolbar.addWidget(self.config_btn)
         self.toolbar.addWidget(self.visual_btn)
         self.toolbar.addAction(self.update_btn)
+        self.toolbar.addWidget(self.file_manager)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.split_vertical_btn)
         self.toolbar.addWidget(self.full_tab_btn)
@@ -157,6 +187,7 @@ class UIForm:
         self.gridlayout_connection.addWidget(self.connection_icon, 0, 0, 1, 1)
 
         self.connect_btn = QPushButton(_("Connect"))
+        self.device_on_connect = False
         self.gridlayout_connection.addWidget(self.connect_btn, 1, 0, 1, 3)
 
         self.disconnect_btn = QPushButton(_('Disconnect'))
@@ -264,6 +295,9 @@ class UIForm:
         self.final_page_lay.addWidget(self.final_page_line, 1, 0, 1, 6)
         self.final_page_lay.addWidget(self.final_finish_btn, 2, 5, 1, 1)
         self.wizard.addWidget(self.wizard_final_page)
+
+        # create file manager tab
+        self.file_manager_widget = FileManager(self)
 
         # create tab Graphs
         self.stream = MagneticField()
