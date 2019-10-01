@@ -1,6 +1,7 @@
 import re
 import json
 import subprocess
+from threading import Thread
 
 from PyQt5 import QtCore, QtWebSockets
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal
@@ -31,11 +32,12 @@ class Client(QtCore.QObject):
         self.client.pong.connect(self.onPong)
 
     def ping_server(self):  # standard (cmd) ping command
-        command = "ping -w 800 -n 1 192.168.1.37 > ping.txt"
-        subprocess.Popen(command, shell=True)
-        with open('ping.txt', 'r') as file:
+        def enqueue_output():
+            cmd = "ping -w 800 -n 1 192.168.1.37"
+            out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
+            lines = out.decode('cp1250').splitlines()
             try:
-                lost_percent = re.findall(r'\d+', file.readlines()[6].strip())[0]
+                lost_percent = re.findall(r'\d+', lines[6].strip())[0]
                 if int(lost_percent) < 50:
                     self.signal_connection.emit()
                     self.signal_autoconnection.emit()
@@ -43,6 +45,10 @@ class Client(QtCore.QObject):
                     self.signal_disconnect.emit()
             except IndexError:
                 print('ping command is not done')
+
+        t = Thread(target=enqueue_output)
+        t.daemon = True  # thread dies with the program
+        t.start()
 
     def do_ping(self):  # check is connection still alive (Qt function)
         print("client: do_ping")
