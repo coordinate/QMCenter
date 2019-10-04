@@ -2,12 +2,12 @@ import numpy as np
 import random
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
-# import cesiumpy
 from pyqtgraph.Qt import QtCore, QtGui
 
 from datetime import datetime
 from math import sqrt
 from OpenGL.GL import *
+from osgeo import gdal
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QLabel, QSizePolicy, QMenu, QAction, QWidgetAction, QCheckBox
@@ -18,7 +18,7 @@ from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
 from Design.custom_widgets import CustomViewBox
-from Utils.transform import project, unproject, magnet_color
+from Utils.transform import magnet_color, get_point_cloud
 
 _ = lambda x: x
 
@@ -496,87 +496,79 @@ class ThreeDVisual(gl.GLViewWidget):
     def __init__(self):
         gl.GLViewWidget.__init__(self)
 
-        self.opts['distance'] = 3000
+        self.object_list = []
+
+        self.opts['distance'] = 300
         self.setBackgroundColor(pg.mkColor((0, 0, 0)))
         self.gridx = gl.GLGridItem()
-        self.gridx.scale(0.1, 0.1, 0.1)
-        self.gridx.setSize(x=20000, y=20000, z=20000)
+        self.gridx.scale(1, 1, 1)
+        self.gridx.setSize(x=10000, y=10000, z=10000)
         self.gridx.setSpacing(x=1000, y=1000, z=1000, spacing=None)
-        # self.gridx.setDepthValue(10)
+        self.gridx.setDepthValue(10)
         self.addItem(self.gridx)
+        self.object_list.append(self.gridx)
 
         self.gridy = gl.GLGridItem()
         self.gridy.rotate(90, 0, 1, 0)
-        self.gridy.scale(0.1, 0.1, 0.1)
-        self.gridy.setSize(x=10000, y=20000, z=10000)
+        self.gridy.scale(1, 1, 1)
+        self.gridy.setSize(x=5000, y=10000, z=5000)
         self.gridy.setSpacing(x=1000, y=1000, z=1000, spacing=None)
         self.gridy.setDepthValue(10)
-        self.gridy.translate(-1000, 0, 500)
+        self.gridy.translate(-5000, 0, 2500)
         self.addItem(self.gridy)
+        self.object_list.append(self.gridy)
 
-        z = pg.gaussianFilter(np.random.normal(size=(150, 150)), (1, 1))
-        p1 = gl.GLSurfacePlotItem(z=z, shader='shaded', color=(0.5, 0.5, 1, 1))
-        p1.scale(16. / 49., 16. / 49., 1.0)
-        p1.translate(-18, 2, 0)
-        # self.addItem(p1)
-
-        with open('data\mag_track.magnete') as file:
+        # add fly
+        with open('workdocs/test_fly.magnete') as file:
             lst = file.readlines()
-
         self.length = len(lst)
         self.gradient_scale = []
         self.lat_lon_arr = []
         self.local_scene_points = np.empty((self.length, 4))
         self.points = np.empty((self.length, 3))
         size = np.empty((self.length, ))
-        color = np.empty((self.length, 4))
+        color = np.empty((self.length, ))
         time, latitude, longitude, height0, magnet = lst[0].split()
-        x0, y0 = project((float(latitude), float(longitude)))
-        # self.pan(dx=0, dy=0, dz=500, relative=False)
+        lat0 = float(latitude)*np.pi / 180
+        lon0 = float(longitude)*np.pi / 180
+        earth = 6371000
 
         for i, s in enumerate(lst):
             time, latitude, longitude, height, magnet = s.split()
-            # x, y = project((float(latitude), float(longitude)))
-            x, y = project((float(latitude), float(longitude)))
-            self.points[i] = (x-x0, y-y0, float(height))
-            color[i] = magnet_color(float(magnet))
-            # color[i] = (107, 107, 255)
+            lat = float(latitude)*np.pi / 180
+            lon = float(longitude)*np.pi / 180
+            x, y = ((lon - lon0)*np.cos(lat0)*earth, (lat - lat0)*earth)
+            self.points[i] = (x, y, float(height))
+            color[i] = float(magnet)
             size[i] = 5
             self.gradient_scale.append(float(magnet))
             self.lat_lon_arr.append([latitude, longitude, magnet])
-
+        color = magnet_color(color)
         self.gradient_scale.sort(reverse=True)
         self.fly = gl.GLScatterPlotItem(pos=self.points, size=size, color=color, pxMode=True)
         self.fly.scale(1, 1, 1)
         self.fly.translate(0, 0, 0)
         self.fly.setGLOptions('opaque')
         self.addItem(self.fly)
+        self.object_list.append(self.fly)
 
-        ax = gl.GLAxisItem(size=QVector3D(1000, 1000, 1000))
-        # self.addItem(ax)
+        # add terrain
+        gdal_dem_data = gdal.Open('workdocs/dem.tif')
+        pcd = get_point_cloud(gdal_dem_data, lat0, lon0)
 
-        axis = np.empty((4, 3))
-        size_ax = np.empty((4, ))
-        color_axis = np.empty((4, 3))
+        if pcd.shape[0] > 1000000:
+            pcd = pcd[0::pcd.shape[0]//2000000, :]
 
-        axis[0] = (0, 0, 0)
-        size_ax[0] = 6
-        color_axis[0] = (1, 1, 1)
-
-        axis[1] = (1, 0, 0)
-        size_ax[1] = 6
-        color_axis[1] = (1, 0, 0)
-
-        axis[2] = (0, 1, 0)
-        size_ax[2] = 6
-        color_axis[2] = (0, 1, 0)
-
-        axis[3] = (0, 0, 1)
-        size_ax[3] = 9
-        color_axis[3] = (0, 0, 1)
-
-        axis_line = gl.GLScatterPlotItem(pos=axis, size=size_ax, color=color_axis, pxMode=True)
-        # self.addItem(axis_line)
+        self.terrain_points = pcd[:, :3]
+        point_size = np.full((pcd.shape[0], ), 2)
+        point_color = pcd[:, 3:]
+        self.terrain = gl.GLScatterPlotItem(pos=self.terrain_points, size=point_size, color=point_color, pxMode=True)
+        self.terrain.scale(1, 1, 1)
+        self.terrain.translate(0, 0, 0)
+        self.terrain.setGLOptions('opaque')
+        self.addItem(self.terrain)
+        self.object_list.append(self.terrain)
+        # del(lst_terrain)
 
     def get_scale_magnet(self):
         self.length = len(self.gradient_scale)
@@ -604,22 +596,15 @@ class ThreeDVisual(gl.GLViewWidget):
         else:
             self.set_label_signal.emit('', '', '')
 
+    def show_hide_elements(self, i):
+        if i == 2:
+            for item in self.object_list:
+                if item._id == 3 and item not in self.items:
+                    self.items.append(item)
+                    self.update()
+        elif i == 0:
+            for item in self.object_list:
+                if item._id == 3:
+                    self.items.remove(item)
+                    self.update()
 
-# class CesiumPlot(QWebEngineView):
-#     def __init__(self):
-#         QWebEngineView.__init__(self)
-#
-#         #url = '//assets.agi.com/stk-terrain/world'
-#         #terrainProvider = cesiumpy.CesiumTerrainProvider(url=url)
-#         viewer = cesiumpy.Viewer()
-#
-#         with open('data/mag_track.magnete') as file:
-#             lst = file.readlines()
-#
-#         for i, s in enumerate(lst):
-#             time, latitude, longitude, height, magnet = s.split()
-#             color_p = magnet_color(float(magnet))
-#             point = cesiumpy.Point(position=[float(longitude), float(latitude), float(height)], color=color_p)
-#             viewer.entities.add(point)
-#
-#         self.setHtml(viewer.to_html())
