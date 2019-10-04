@@ -28,8 +28,6 @@ class MainWindow(QMainWindow, UIForm):
         self.setupUI(self)
 
         self.settings.triggered.connect(lambda: self.settings_widget.show())
-        self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
-        self.save_btn.clicked.connect(lambda: self.save_file_models_folder())
         self.exit_action.triggered.connect(lambda: sys.exit())
 
         self.client = Client()
@@ -86,8 +84,8 @@ class MainWindow(QMainWindow, UIForm):
         self.tabs_widget.setCurrentWidget(self.one_tabwidget)
 
     def save_file_models_folder(self):
-        self.file_manager_widget.left_file_model_auto_sync_label.setText(self.left_folder_tracked.text())
-        self.file_manager_widget.right_file_model_auto_sync_label.setText(self.right_folder_tracked.text())
+        self.file_manager_widget.left_file_model_auto_sync_label.setText(self.settings_widget.left_folder_tracked.text())
+        self.file_manager_widget.right_file_model_auto_sync_label.setText(self.settings_widget.right_folder_tracked.text())
 
     def show_menu_item(self, item):
         for key, value in self.settings_menu_dict.items():
