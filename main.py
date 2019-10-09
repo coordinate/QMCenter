@@ -22,12 +22,14 @@ class MainWindow(QMainWindow, UIForm):
         QMainWindow.__init__(self)
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
-        self.expanduser_dir = os.path.expanduser('~')
+        self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
         self.tempfile = '{}\\mag_track.magnet'.format(self.tempdir)
         self.tree_header = None
         self.setupUI(self)
 
         self.settings.triggered.connect(lambda: self.settings_widget.show())
+        self.new_project.triggered.connect(lambda: self.project_instance.create_new_project())
+        self.open_project.triggered.connect(lambda: self.project_instance.open_project())
         self.exit_action.triggered.connect(lambda: sys.exit())
 
         self.client = Client()

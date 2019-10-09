@@ -518,6 +518,7 @@ class ThreeDVisual(gl.GLViewWidget):
         self.addItem(self.gridy)
         self.object_list.append(self.gridy)
 
+    def add_fly(self):
         # add fly
         with open('workdocs/test_fly.magnete') as file:
             lst = file.readlines()
@@ -529,15 +530,15 @@ class ThreeDVisual(gl.GLViewWidget):
         size = np.empty((self.length, ))
         color = np.empty((self.length, ))
         time, latitude, longitude, height0, magnet = lst[0].split()
-        lat0 = float(latitude)*np.pi / 180
-        lon0 = float(longitude)*np.pi / 180
+        self.lat0 = float(latitude)*np.pi / 180
+        self.lon0 = float(longitude)*np.pi / 180
         earth = 6371000
 
         for i, s in enumerate(lst):
             time, latitude, longitude, height, magnet = s.split()
             lat = float(latitude)*np.pi / 180
             lon = float(longitude)*np.pi / 180
-            x, y = ((lon - lon0)*np.cos(lat0)*earth, (lat - lat0)*earth)
+            x, y = ((lon - self.lon0)*np.cos(self.lat0)*earth, (lat - self.lat0)*earth)
             self.points[i] = (x, y, float(height))
             color[i] = float(magnet)
             size[i] = 5
@@ -552,9 +553,10 @@ class ThreeDVisual(gl.GLViewWidget):
         self.addItem(self.fly)
         self.object_list.append(self.fly)
 
+    def add_terraint(self):
         # add terrain
         gdal_dem_data = gdal.Open('workdocs/dem.tif')
-        pcd = get_point_cloud(gdal_dem_data, lat0, lon0)
+        pcd = get_point_cloud(gdal_dem_data, self.lat0, self.lon0)
 
         if pcd.shape[0] > 1000000:
             pcd = pcd[0::pcd.shape[0]//2000000, :]

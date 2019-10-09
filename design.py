@@ -1,13 +1,15 @@
-from PyQt5.QtGui import QPixmap, QIcon, QRegExpValidator
-from PyQt5.QtCore import Qt, QSize, QRegExp
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QFileDialog, QHBoxLayout, QMenu, QLineEdit, QListWidget, \
-    QListWidgetItem, QTreeWidget, QFrame
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget
 
 from Design.file_manager_widget import FileManager
 from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.custom_widgets import DetachableTabWidget, Scroll
 from Design.settings_widget import SettingsWidget
+from Design.work_panel import WorkspaceView
+from Design.project_instance import *
+
 _ = lambda x: x
 
 
@@ -22,6 +24,11 @@ class UIForm:
         self.setMenuBar(self.menu)
 
         fileMenu = self.menu.addMenu(_("&File"))
+
+        self.new_project = fileMenu.addAction(_('New project'))
+        self.new_project.setShortcut('Ctrl+N')
+        self.open_project = fileMenu.addAction(_('Open project'))
+        self.open_project.setShortcut('Ctrl+O')
         self.settings = fileMenu.addAction(_('Settings'))
         self.settings.setShortcut('Ctrl+S')
         fileMenu.addSeparator()
@@ -30,6 +37,9 @@ class UIForm:
 
         # Create settings widget
         self.settings_widget = SettingsWidget(self)
+
+        # Create new project widget
+        self.project_instance = CurrentProject(self)
 
         # Create toolbar
         self.graphs_btn = QPushButton()
@@ -90,17 +100,22 @@ class UIForm:
         self.tabs_widget.addWidget(self.split_tabwidget)
         self.setCentralWidget(self.tabs_widget)
 
+        # Create work panel
+        self.work_panel = QDockWidget()
+        self.work_panel.setWindowTitle(_("Work panel"))
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.work_panel)
 
-        self.dockwidget_info = QDockWidget()
-        self.dockwidget_info.setWindowTitle(_("Info"))
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget_info)
-        self.dockwidget_info.setMinimumSize(200, 500)
-        # self.dockwidget_info.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.tab_work_panel = QTabWidget()
+        self.tab_work_panel.setTabPosition(QTabWidget.South)
+        self.work_panel.setWidget(self.tab_work_panel)
 
-        # create dockwidget Info
-        self.widget_info = QWidget()
-        self.layout = QVBoxLayout(self.widget_info)
-        self.dockwidget_info.setWidget(self.widget_info)
+        self.workspace_widget = WorkspaceView(self)
+        self.tab_work_panel.addTab(self.workspace_widget, _("Workspace"))
+
+        # create Info widget
+        self.info_widget = QWidget()
+        self.tab_work_panel.addTab(self.info_widget, _("Info"))
+        self.layout = QVBoxLayout(self.info_widget)
 
         self.connection_groupbox = QGroupBox()
         self.connection_groupbox.setTitle(_('Connection'))

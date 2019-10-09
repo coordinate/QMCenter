@@ -1,6 +1,7 @@
 import pyproj
 import numpy as np
 import cv2
+import open3d as o3d
 
 
 _projections = {}
@@ -132,3 +133,8 @@ def get_point_cloud(gdal_dem_data, lat0, lon0):
     return pcd
 
 
+def save_point_cloud(points, colors, path):
+    pcd = o3d.PointCloud()
+    pcd.points = o3d.Vector3dVector(points)
+    pcd.colors = o3d.Vector3dVector(colors / 255)
+    o3d.write_point_cloud(path, pcd)
