@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import random
 import pyqtgraph as pg
@@ -493,10 +495,11 @@ class DCPlot(MainPlot):
 class ThreeDVisual(gl.GLViewWidget):
     set_label_signal = pyqtSignal(object, object, object)
 
-    def __init__(self):
+    def __init__(self, parent):
         gl.GLViewWidget.__init__(self)
+        self.parent = parent
 
-        self.object_list = []
+        self.object_list = {}
 
         self.opts['distance'] = 300
         self.setBackgroundColor(pg.mkColor((0, 0, 0)))
@@ -506,7 +509,7 @@ class ThreeDVisual(gl.GLViewWidget):
         self.gridx.setSpacing(x=1000, y=1000, z=1000, spacing=None)
         self.gridx.setDepthValue(10)
         self.addItem(self.gridx)
-        self.object_list.append(self.gridx)
+        self.object_list['gridx'] = self.gridx
 
         self.gridy = gl.GLGridItem()
         self.gridy.rotate(90, 0, 1, 0)
@@ -516,11 +519,11 @@ class ThreeDVisual(gl.GLViewWidget):
         self.gridy.setDepthValue(10)
         self.gridy.translate(-5000, 0, 2500)
         self.addItem(self.gridy)
-        self.object_list.append(self.gridy)
+        self.object_list['gridy'] = self.gridy
 
-    def add_fly(self):
+    def add_fly(self, filename):
         # add fly
-        with open('workdocs/test_fly.magnete') as file:
+        with open(filename) as file:
             lst = file.readlines()
         self.length = len(lst)
         self.gradient_scale = []
@@ -551,7 +554,20 @@ class ThreeDVisual(gl.GLViewWidget):
         self.fly.translate(0, 0, 0)
         self.fly.setGLOptions('opaque')
         self.addItem(self.fly)
-        self.object_list.append(self.fly)
+        self.object_list[os.path.basename(filename)] = self.fly
+
+        gradient_tick_lst = []
+        gradient_scale = self.get_scale_magnet()
+        for i, g in enumerate(gradient_scale):
+            grad_tic = QLabel('{}'.format(int(g)))
+            if i == 0:
+                grad_tic.setAlignment(Qt.AlignTop)
+            elif i == 5:
+                grad_tic.setAlignment(Qt.AlignBottom)
+
+            grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+            self.parent.grid_3d.addWidget(grad_tic, i+1, 1, 1, 1)
+            gradient_tick_lst.append(grad_tic)
 
     def add_terraint(self):
         # add terrain
@@ -569,7 +585,7 @@ class ThreeDVisual(gl.GLViewWidget):
         self.terrain.translate(0, 0, 0)
         self.terrain.setGLOptions('opaque')
         self.addItem(self.terrain)
-        self.object_list.append(self.terrain)
+        # self.object_list[os.path.basename(filename)] = self.terrain
         # del(lst_terrain)
 
     def get_scale_magnet(self):
@@ -578,6 +594,7 @@ class ThreeDVisual(gl.GLViewWidget):
                 self.gradient_scale[int(self.length*0.6)], self.gradient_scale[int(self.length*0.8)], self.gradient_scale[-1]]
 
     def mouseDoubleClickEvent(self, ev):
+        self.length = 0
         m = self.projectionMatrix() * self.viewMatrix()
         mouse_pos = (ev.pos().x()/self.size().width(), ev.pos().y()/self.size().height())
         T_matrix = np.array(m.data()).reshape((4, 4)).T

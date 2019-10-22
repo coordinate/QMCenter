@@ -1,7 +1,8 @@
 import os
 
 from shutil import copyfile
-from xml.etree import ElementTree as ET
+# from xml.etree import ElementTree as ET
+import lxml.etree as ET
 
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QFileDialog
@@ -69,7 +70,7 @@ class CurrentProject(QObject):
         self.geo_data = ET.SubElement(self.root, 'geo_data')
         self.geo_data.set('name', 'Geography')
         self.tree = ET.ElementTree(self.root)
-        self.tree.write(path, xml_declaration=True, encoding='utf-8', method="xml")
+        self.tree.write(path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
 
     def add_raw_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
@@ -78,7 +79,7 @@ class CurrentProject(QObject):
         for file in files[0]:
             copyfile(file, os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file)))
             ET.SubElement(self.raw_data, os.path.basename(file))
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml")
+        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
 
     def add_magnet_data(self):
@@ -88,17 +89,17 @@ class CurrentProject(QObject):
         for file in files[0]:
             copyfile(file, os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file)))
             ET.SubElement(self.magnet_data, os.path.basename(file))
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml")
+            self.parent.three_d_plot.add_fly(file)
+        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
 
     def add_geo_data(self):
-        files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.path, "Geo files (*.tif)")
+        file = QFileDialog.getOpenFileName(None, _("Open file"),
+                                           self.path, "Geo files (*.tif *.ply)")
 
-        for file in files[0]:
-            copyfile(file, os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file)))
-            ET.SubElement(self.geo_data, os.path.basename(file))
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml")
+        copyfile(file, os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file)))
+        ET.SubElement(self.geo_data, os.path.basename(file))
+        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
 
     def send_tree_to_view(self):
@@ -118,5 +119,12 @@ class CurrentProject(QObject):
                 os.remove(os.path.join(self.files_path, ch.attrib['name'], element))
             except TypeError:
                 pass
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml")
+        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
 
+    def remove_all(self, element):
+        for child in self.root.getchildren():
+            if child.attrib['name'] == element:
+                for ch in child.getchildren():
+                    child.remove(ch)
+                    os.remove(os.path.join(self.files_path, element, ch.tag))
+        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)

@@ -305,7 +305,7 @@ class UIForm:
         self.configuration_layout.addWidget(self.write_tree_btn, 1, 1, 1, 1)
 
         # create tab 3D visualization
-        self.three_d_plot = ThreeDVisual()
+        self.three_d_plot = ThreeDVisual(self)
         self.three_d_widget = QWidget()
         self.grid_3d = QGridLayout(self.three_d_widget)
         self.grid_3d.setHorizontalSpacing(0)
@@ -319,19 +319,6 @@ class UIForm:
         self.grid_3d.addWidget(self.three_d_plot, 0, 0, 100, 100)
         # self.grid_3d.addWidget(header, 0, 0, 1, 3)
         self.grid_3d.addWidget(gradient, 1, 2, 6, 1)
-
-        self.gradient_tick_lst = []
-        gradient_scale = self.three_d_plot.get_scale_magnet()
-        for i, g in enumerate(gradient_scale):
-            grad_tic = QLabel('{}'.format(int(g)))
-            if i == 0:
-                grad_tic.setAlignment(Qt.AlignTop)
-            elif i == 5:
-                grad_tic.setAlignment(Qt.AlignBottom)
-
-            grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-            self.grid_3d.addWidget(grad_tic, i+1, 1, 1, 1)
-            self.gradient_tick_lst.append(grad_tic)
 
         self.longitude_label = QLabel(_("Longitude:"))
         self.longitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
