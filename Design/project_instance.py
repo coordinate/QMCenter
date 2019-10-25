@@ -1,11 +1,13 @@
 import os
 
-from shutil import copyfile
+from shutil import copyfile, SameFileError
 # from xml.etree import ElementTree as ET
 import lxml.etree as ET
 
 from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication
+
+from Design.ui import show_error
 
 _ = lambda x: x
 
@@ -16,6 +18,8 @@ class CurrentProject(QObject):
         self.parent = parent
         self.path = r'D:\a.bulygin\QMCenter_projects'
         self.expanduser_dir = os.path.expanduser('~')
+        self.progress = QProgressDialog("Load files", None, 0, 100)
+        self.progress.close()
         self.project_path = None
         self.files_path = None
         self.tree = None
@@ -24,12 +28,13 @@ class CurrentProject(QObject):
         self.magnet_data = None
         self.geo_data = None
 
-    def open_project(self):
+    def open_project(self):  # todo: clear old data from gradient label
         fileName = QFileDialog.getOpenFileName(None, "Open File", self.path, "QMCenter project (*.qmcproj)")
         if fileName[0] == '':
             return
         self.project_path = fileName[0]
         self.files_path = '{}.files'.format(os.path.splitext(self.project_path)[0])
+        self.progress.setWindowTitle(_("Load project files"))
         self.parse_proj_tree(self.project_path)
 
     def parse_proj_tree(self, path):
@@ -43,7 +48,36 @@ class CurrentProject(QObject):
         self.parent.file_manager_widget.left_dir_path.setText(self.root.attrib['path'])
         self.parent.file_manager_widget.left_file_model_go_to_dir()
 
-    def create_new_project(self):
+        lenght = len(self.magnet_data.getchildren()) + len(self.geo_data.getchildren())
+        it = 0
+        self.progress.open()
+        QApplication.processEvents()
+        for magnet in self.magnet_data.getchildren():
+            file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.tag)
+            if not os.path.isfile(file):
+                show_error(_('Error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                self.remove_element(os.path.basename(file))
+                self.send_tree_to_view()
+                continue
+            value = (it + 1)/lenght * 99
+            it += 1
+
+            self.parent.three_d_plot.add_fly(file, self.progress, value)
+
+        for geo in self.geo_data.getchildren():
+            file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.tag)
+            if not os.path.isfile(file):
+                show_error(_('Error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                self.remove_element(os.path.basename(file))
+                self.send_tree_to_view()
+                continue
+            value = (it + 1)/lenght * 99
+            it += 1
+
+            self.parent.three_d_plot.add_terrain(file, self.progress, value)
+        self.progress.setValue(100)
+
+    def create_new_project(self):  # todo: clear old data from gradient label (clear function)
         dir = QFileDialog.getSaveFileName(None, "Save F:xile", self.path, "QMCenter project (*.qmcproj)")
         if dir[0] == '':
             return
@@ -76,31 +110,62 @@ class CurrentProject(QObject):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
                                              self.path, "RAW files (*.ubx *.mag)")
 
-        for file in files[0]:
+        self.progress.open()
+        QApplication.processEvents()
+        for i, file in enumerate(files[0]):
             copyfile(file, os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file)))
             ET.SubElement(self.raw_data, os.path.basename(file))
+            self.progress.setValue((i/len(files[0])*99))
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
+        self.progress.setValue(100)
 
     def add_magnet_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
                                              self.path, "Magnet files (*.magnete)")
 
+        it = 0
+        self.progress.open()
+        QApplication.processEvents()
         for file in files[0]:
-            copyfile(file, os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file)))
+            try:
+                copyfile(file, os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file)))
+            except SameFileError:
+                pass
             ET.SubElement(self.magnet_data, os.path.basename(file))
-            self.parent.three_d_plot.add_fly(file)
+            value = (it + 1) / len(files[0]) * 99
+            it += 1
+            self.parent.three_d_plot.add_fly(file, self.progress, value)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
+        self.progress.setValue(100)
 
     def add_geo_data(self):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
-                                           self.path, "Geo files (*.tif *.ply)")
+                                           self.path, "Geo files (*.tif *.ply)")[0]
 
-        copyfile(file, os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file)))
-        ET.SubElement(self.geo_data, os.path.basename(file))
+        self.progress.open()
+        QApplication.processEvents()
+
+        filename, extension = os.path.splitext(os.path.basename(file))
+        if extension == '.ply':
+            try:
+                copyfile(file, os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file)))
+            except SameFileError:
+                pass
+            self.parent.three_d_plot.add_terrain(file, self.progress)
+            ET.SubElement(self.geo_data, os.path.basename(file))
+        elif extension == '.tif':
+            self.parent.three_d_plot.add_terrain(file, self.progress, 55,
+                                                 os.path.join(self.files_path, self.geo_data.attrib['name'],
+                                                              '{}.ply'.format(filename)))
+            ET.SubElement(self.geo_data, '{}.ply'.format(filename))
+
+        else:
+            return
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
+        self.progress.setValue(100)
 
     def send_tree_to_view(self):
         view = {
@@ -118,6 +183,8 @@ class CurrentProject(QObject):
                 ch.remove(ch.find(element))
                 os.remove(os.path.join(self.files_path, ch.attrib['name'], element))
             except TypeError:
+                pass
+            except FileNotFoundError:
                 pass
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
 

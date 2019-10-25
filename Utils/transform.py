@@ -1,39 +1,54 @@
+import gdal
 import pyproj
 import numpy as np
 import cv2
 import open3d as o3d
 
 
+_ = lambda x: x
 _projections = {}
 
 
-def zone(coordinates):  # coordinates = (latitude, longitude)
-    # if 56 <= coordinates[1] < 64 and 3 <= coordinates[0] < 12:
+def zone(coordinates):  # coordinates = (longitude, latitude)
+    # if 56 <= coordinates[0] < 64 and 3 <= coordinates[1] < 12:
     #     return 32
-    # if 72 <= coordinates[1] < 84 and 0 <= coordinates[0] < 42:
-    #     if coordinates[0] < 9:
+    # if 72 <= coordinates[0] < 84 and 0 <= coordinates[1] < 42:
+    #     if coordinates[1] < 9:
     #         return 31
-    #     elif coordinates[0] < 21:
+    #     elif coordinates[1] < 21:
     #         return 33
-    #     elif coordinates[0] < 33:
+    #     elif coordinates[1] < 33:
     #         return 35
     #     return 37
-    return int((coordinates[1] + 180) / 6) + 1
+    return int((coordinates[0] + 180) / 6) + 1
 
 
 def letter(coordinates):
-    return 'CDEFGHJKLMNPQRSTUVWXX'[int((coordinates[1] + 80) / 8)]
+    return 'CDEFGHJKLMNPQRSTUVWXX'[int((coordinates[0] + 80) / 8)]
 
 
-def project(coordinates):  # coordinates = (latitude, longitude)
+def project(coordinates):  # coordinates = (longitude, latitude)
     z = zone(coordinates)
     # l = letter(coordinates)
     if z not in _projections:
         _projections[z] = pyproj.Proj(proj='utm', zone=z, ellps='WGS84')
-    x, y = _projections[z](coordinates[1], coordinates[0])
+    x, y = _projections[z](coordinates[0], coordinates[1])
     if y < 0:
         y += 10000000
     return x, y
+
+
+def project_array(x, y, srcp='latlong', dstp='utm'):
+    """
+    Project a numpy (n,2) array in projection srcp to projection dstp
+    Returns a numpy (n,2) array.
+    """
+    z = zone((x[0], y[0]))
+    p1 = pyproj.Proj(proj=srcp, datum='WGS84')
+    p2 = pyproj.Proj(proj=dstp, zone=z, ellps='WGS84')
+    fx, fy = pyproj.transform(p1, p2, x, y)
+    # Re-create (n,2) coordinates
+    return fx, fy
 
 
 def unproject(z, l, x, y):
@@ -74,27 +89,25 @@ def magnet_color(magnet):
     return im_color/255
 
 
-def get_point_cloud(gdal_dem_data, lat0, lon0):
-    band = gdal_dem_data.GetRasterBand(1)
-    no_data = band.GetNoDataValue()
+def get_point_cloud(filename, progress):
+    progress.setValue(12)
+    gdal_dem_data = gdal.Open(filename)
+    no_data = gdal_dem_data.GetRasterBand(1).GetNoDataValue()
     dem = gdal_dem_data.ReadAsArray()
-    top_left_lon, pixel, turn, top_left_lat, turn_, pixel_ = gdal_dem_data.GetGeoTransform()
-    pixel_size = (pixel * np.pi / 180) * 6371 * 1000
+    top_left_lon, pixel_w, turn, top_left_lat, turn_, pixel_h = gdal_dem_data.GetGeoTransform()
 
-    earth = 6371
-    lat = float(top_left_lat) * np.pi / 180
-    lon = float(top_left_lon) * np.pi / 180
-    x, y = ((lon - lon0)*np.cos(lat0)*earth*1000, (lat - lat0)*earth*1000)
+    progress.setValue(25)
     height, width = dem.shape
     # picture is created from top left corner
-    x_space = (np.arange(0, width))*pixel_size
-    y_space = (np.arange(0, -height, -1))*pixel_size
+    x_space = (np.arange(0, width))*abs(pixel_w) + top_left_lon
+    y_space = (np.arange(0, -height, -1))*abs(pixel_h) + top_left_lat
     xx, yy = np.meshgrid(x_space, y_space)
     assert xx.shape == yy.shape and xx.shape == dem.shape
     X, Y, Z = xx.flatten(), yy.flatten(), dem.flatten()
     mask = Z != no_data
-    X = X[mask] + x
-    Y = Y[mask] + y
+    progress.setValue(38)
+    X = X[mask]
+    Y = Y[mask]
     Z = Z[mask]
     min_z = np.amin(Z)
     max_z = np.amax(Z)
@@ -123,18 +136,30 @@ def get_point_cloud(gdal_dem_data, lat0, lon0):
     for i in range(3):
         im_color[:, i] = cv2.LUT(colors, lut[:, i]).reshape(-1)
 
-    # colors = np.array(((max_z-Z)/delta)*255, dtype='uint8')
-    # im_color = cv2.applyColorMap(colors, cv2.COLORMAP_JET).reshape(-1, 3)
-
-    pcd = np.column_stack((X, Y, Z-min_z, im_color/255))
+    progress.setValue(84)
+    X, Y = project_array(X, Y)
+    progress.setValue(98)
+    pcd = np.column_stack((X, Y, Z, im_color/255))
     #print(pcd.shape, len(X))
     #print(pcd[:, 0], pcd.T[0])
     assert len(pcd.shape) == 2 and pcd.shape[0] == len(X) and pcd.shape[1] == 6
     return pcd
 
 
-def save_point_cloud(points, colors, path):
+def save_point_cloud(point_cloud, path):
     pcd = o3d.PointCloud()
+    points = point_cloud[:, :3]
+    colors = point_cloud[:, 3:]
     pcd.points = o3d.Vector3dVector(points)
-    pcd.colors = o3d.Vector3dVector(colors / 255)
+    pcd.colors = o3d.Vector3dVector(colors)
     o3d.write_point_cloud(path, pcd)
+
+
+def read_point_cloud(path):
+    pcd = o3d.read_point_cloud(path)
+    points = np.asarray(pcd.points)
+    # x, y, z = points[0]
+    # z_min = np.amin(points[:, 2])
+    # points = np.column_stack((points[:, 0] - x, points[:, 1] - y, points[:, 2] - z_min))
+    colors = np.asarray(pcd.colors)
+    return np.concatenate((points, colors), axis=1)

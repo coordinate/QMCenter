@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWid
     QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget
 
 from Design.file_manager_widget import FileManager
-from Plots.plots import ThreeDVisual, MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
+from Plots.plots import MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
+from Plots.ThreeDPlot import ThreeDVisual
 from Design.custom_widgets import DetachableTabWidget, Scroll
 from Design.settings_widget import SettingsWidget
 from Design.work_panel import WorkspaceView

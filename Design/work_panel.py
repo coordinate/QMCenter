@@ -30,9 +30,11 @@ class WorkspaceView(QTreeView):
             if indicator.data(3) == "Off":
                 indicator.setData(QIcon('images/green_light_icon.png'), 1)
                 indicator.setData('On', 3)
+                self.parent.three_d_plot.show_hide_elements(object_name, 'On')
             elif indicator.data(3) == "On":
                 indicator.setData(QIcon('images/gray_light_icon.png'), 1)
                 indicator.setData('Off', 3)
+                self.parent.three_d_plot.show_hide_elements(object_name, 'Off')
 
     def set_project_name(self, name):
         font = QFont("Times", 10, QFont.Bold)
@@ -44,8 +46,8 @@ class WorkspaceView(QTreeView):
     def add_view(self, view=None):
         self.model.removeRows(0, 3)
         self.raw_data_item = QStandardItem(_('RAW'))
-        self.magnet_data_item = QStandardItem(_('Magnet data'))
-        self.geo_item = QStandardItem(_('Geographic'))
+        self.magnet_data_item = QStandardItem(_('Magnet'))
+        self.geo_item = QStandardItem(_('Geography'))
         self.model.setItem(0, self.raw_data_item)
         self.model.setItem(1, self.magnet_data_item)
         self.model.setItem(2, self.geo_item)
@@ -124,6 +126,7 @@ class WorkspaceView(QTreeView):
 
     def remove_element(self, item_index):
         self.parent.project_instance.remove_element(item_index.data())
+        self.parent.three_d_plot.show_hide_elements(item_index.data(), 'Off')
         parent_item = self.model.item(item_index.parent().row())
         parent_item.removeRow(item_index.row())
 
