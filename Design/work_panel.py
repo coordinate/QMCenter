@@ -15,13 +15,17 @@ class WorkspaceView(QTreeView):
         self.setMinimumSize(200, 500)
         self.setEditTriggers(QTreeView.NoEditTriggers)
         self.project_name = QStandardItem()
-        self.model = QStandardItemModel()
+        self.model = QStandardItemModel(self)
         self.model.setColumnCount(2)
         self.model.setHorizontalHeaderItem(0, self.project_name)
         self.model.setHorizontalHeaderItem(1, QStandardItem())
         self.header().setContextMenuPolicy(Qt.CustomContextMenu)
         self.header().customContextMenuRequested.connect(lambda event: self.header_context_menu(event))
         self.clicked.connect(lambda idx: self.click(idx))
+        self.doubleClicked.connect(lambda idx: self.double_click(idx))
+
+        self.expanded.connect(lambda idx: self.item_expanded(idx))
+        self.collapsed.connect(lambda idx: self.item_collapsed(idx))
 
     def click(self, idx):
         if idx.column() == 1:
@@ -35,6 +39,36 @@ class WorkspaceView(QTreeView):
                 indicator.setData(QIcon('images/gray_light_icon.png'), 1)
                 indicator.setData('Off', 3)
                 self.parent.three_d_plot.show_hide_elements(object_name, 'Off')
+            for ch in self.parent.project_instance.root.getchildren():
+                try:
+                    ch.find(object_name).attrib['indicator'] = indicator.data(3)
+                except AttributeError:
+                    pass
+
+    def double_click(self, idx):
+        parent_click_item = self.model.itemFromIndex(idx).parent()
+        indicator = parent_click_item.child(idx.row(), 1)
+        self.parent.three_d_plot.focus_element(idx.data(), indicator.data(3))
+        indicator.setData(QIcon('images/green_light_icon.png'), 1)
+        indicator.setData('On', 3)
+
+    def item_expanded(self, idx):
+        object_name = idx.data()
+        try:
+            for ch in self.parent.project_instance.root.getchildren():
+                if ch.attrib['name'] == object_name:
+                    ch.attrib['expanded'] = 'True'
+        except TypeError:
+            pass
+
+    def item_collapsed(self, idx):
+        object_name = idx.data()
+        try:
+            for ch in self.parent.project_instance.root.getchildren():
+                if ch.attrib['name'] == object_name:
+                    ch.attrib['expanded'] = 'False'
+        except TypeError:
+            pass
 
     def set_project_name(self, name):
         font = QFont("Times", 10, QFont.Bold)
@@ -51,22 +85,34 @@ class WorkspaceView(QTreeView):
         self.model.setItem(0, self.raw_data_item)
         self.model.setItem(1, self.magnet_data_item)
         self.model.setItem(2, self.geo_item)
+        self.setModel(self.model)
 
         if view:
-            for i, ch in enumerate(view['RAW']):
-                self.raw_data_item.setChild(i, 0, QStandardItem(ch))
-            for j, ch in enumerate(view['Magnet']):
-                self.magnet_data_item.setChild(j, 0, QStandardItem(ch))
-                item = QStandardItem(QIcon('images/gray_light_icon.png'), '')
-                item.setData('Off', 3)
-                self.magnet_data_item.setChild(j, 1, item)
-            for k, ch in enumerate(view['Geographic']):
-                self.geo_item.setChild(k, 0, QStandardItem(ch))
-                item = QStandardItem(QIcon('images/gray_light_icon.png'), '')
-                item.setData('Off', 3)
-                self.geo_item.setChild(k, 1, item)
+            self.setExpanded(self.model.indexFromItem(self.raw_data_item),
+                             True if view['RAW'].attrib['expanded'] == 'True' else False)
+            for i, ch in enumerate(view['RAW'].getchildren()):
+                self.raw_data_item.setChild(i, 0, QStandardItem(ch.tag))
 
-        self.setModel(self.model)
+            self.setExpanded(self.model.indexFromItem(self.magnet_data_item),
+                             True if view['Magnet'].attrib['expanded'] == 'True' else False)
+            for j, ch in enumerate(view['Magnet'].getchildren()):
+                self.magnet_data_item.setChild(j, 0, QStandardItem(ch.tag))
+                item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
+                                                                             else 'green')), '')
+                item.setData(ch.attrib['indicator'], 3)
+                self.magnet_data_item.setChild(j, 1, item)
+                self.parent.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
+
+            self.setExpanded(self.model.indexFromItem(self.geo_item),
+                             True if view['Geography'].attrib['expanded'] == 'True' else False)
+            for k, ch in enumerate(view['Geography'].getchildren()):
+                self.geo_item.setChild(k, 0, QStandardItem(ch.tag))
+                item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
+                                                                             else 'green')), '')
+                item.setData(ch.attrib['indicator'], 3)
+                self.geo_item.setChild(k, 1, item)
+                self.parent.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
+
         self.setColumnWidth(0, 200)
         self.setColumnWidth(1, 50)
         self.header().setSectionResizeMode(QHeaderView.Fixed)
@@ -133,7 +179,7 @@ class WorkspaceView(QTreeView):
     def remove_all(self, item_index):
         self.parent.project_instance.remove_all(item_index.data())
         item = self.model.item(item_index.row())
-        item.removeRows(item_index.row(), item.rowCount())
+        item.removeRows(0, item.rowCount())
 
     def open_in_explorer(self, item_index):
         path = os.path.join(self.parent.project_instance.files_path,

@@ -7,7 +7,7 @@ import lxml.etree as ET
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication
 
-from Design.ui import show_error
+from Design.ui import show_error, show_info
 
 _ = lambda x: x
 
@@ -44,7 +44,6 @@ class CurrentProject(QObject):
         self.magnet_data = self.root.find('magnet_data')
         self.geo_data = self.root.find('geo_data')
         self.parent.setWindowTitle('QMCenter — {}'.format(self.project_path))
-        self.send_tree_to_view()
         self.parent.file_manager_widget.left_dir_path.setText(self.root.attrib['path'])
         self.parent.file_manager_widget.left_file_model_go_to_dir()
 
@@ -75,6 +74,7 @@ class CurrentProject(QObject):
             it += 1
 
             self.parent.three_d_plot.add_terrain(file, self.progress, value)
+        self.send_tree_to_view()
         self.progress.setValue(100)
 
     def create_new_project(self):  # todo: clear old data from gradient label (clear function)
@@ -99,10 +99,13 @@ class CurrentProject(QObject):
         self.root.set('path', '{}.files'.format(os.path.splitext(self.project_path)[0]))
         self.raw_data = ET.SubElement(self.root, 'raw_data')
         self.raw_data.set('name', 'RAW')
+        self.raw_data.set('expanded', 'False')
         self.magnet_data = ET.SubElement(self.root, 'magnet_data')
         self.magnet_data.set('name', 'Magnet')
+        self.magnet_data.set('expanded', 'False')
         self.geo_data = ET.SubElement(self.root, 'geo_data')
         self.geo_data.set('name', 'Geography')
+        self.geo_data.set('expanded', 'False')
         self.tree = ET.ElementTree(self.root)
         self.tree.write(path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
 
@@ -110,6 +113,8 @@ class CurrentProject(QObject):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
                                              self.path, "RAW files (*.ubx *.mag)")
 
+        if not files[0]:
+            return
         self.progress.open()
         QApplication.processEvents()
         for i, file in enumerate(files[0]):
@@ -124,6 +129,8 @@ class CurrentProject(QObject):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
                                              self.path, "Magnet files (*.magnete)")
 
+        if not files[0]:
+            return
         it = 0
         self.progress.open()
         QApplication.processEvents()
@@ -132,10 +139,12 @@ class CurrentProject(QObject):
                 copyfile(file, os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file)))
             except SameFileError:
                 pass
-            ET.SubElement(self.magnet_data, os.path.basename(file))
             value = (it + 1) / len(files[0]) * 99
             it += 1
-            self.parent.three_d_plot.add_fly(file, self.progress, value)
+            if self.magnet_data.find(os.path.basename(file)) is None:
+                element = ET.SubElement(self.magnet_data, os.path.basename(file))
+                element.set("indicator", "Off")
+                self.parent.three_d_plot.add_fly(file, self.progress, value)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
         self.progress.setValue(100)
@@ -144,6 +153,8 @@ class CurrentProject(QObject):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
                                            self.path, "Geo files (*.tif *.ply)")[0]
 
+        if file == '':
+            return
         self.progress.open()
         QApplication.processEvents()
 
@@ -153,13 +164,23 @@ class CurrentProject(QObject):
                 copyfile(file, os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file)))
             except SameFileError:
                 pass
-            self.parent.three_d_plot.add_terrain(file, self.progress)
-            ET.SubElement(self.geo_data, os.path.basename(file))
+            if self.geo_data.find(os.path.basename(file)) is None:
+                self.parent.three_d_plot.add_terrain(file, self.progress, 55)
+                element = ET.SubElement(self.geo_data, os.path.basename(file))
+                element.set("indicator", "Off")
+            else:
+                show_info(_('Info'), _('File is already in project'))
         elif extension == '.tif':
-            self.parent.three_d_plot.add_terrain(file, self.progress, 55,
-                                                 os.path.join(self.files_path, self.geo_data.attrib['name'],
-                                                              '{}.ply'.format(filename)))
-            ET.SubElement(self.geo_data, '{}.ply'.format(filename))
+            try:
+                if self.geo_data.find('{}.ply'.format(filename)) is None:
+                    self.parent.three_d_plot.add_terrain(file, self.progress,
+                                                         path_to_save=os.path.join(self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename)))
+                    element = ET.SubElement(self.geo_data, '{}.ply'.format(filename))
+                    element.set('indicator', 'Off')
+                else:
+                    show_info(_('Info'), _('File is already in project'))
+            except AssertionError:
+                pass
 
         else:
             return
@@ -169,9 +190,9 @@ class CurrentProject(QObject):
 
     def send_tree_to_view(self):
         view = {
-            'RAW': [ch.tag for ch in self.root.find('raw_data').getchildren()],
-            'Magnet': [ch.tag for ch in self.root.find('magnet_data').getchildren()],
-            'Geographic': [ch.tag for ch in self.root.find('geo_data').getchildren()],
+            'RAW': self.root.find('raw_data'),
+            'Magnet': self.root.find('magnet_data'),
+            'Geography': self.root.find('geo_data'),
         }
 
         self.parent.workspace_widget.set_project_name(os.path.basename(self.project_path))

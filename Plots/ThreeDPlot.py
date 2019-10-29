@@ -9,7 +9,8 @@ from math import sqrt
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtCore import Qt, pyqtSignal
 
-from Utils.transform import magnet_color, get_point_cloud, save_point_cloud, read_point_cloud
+from Design.ui import show_error
+from Utils.transform import magnet_color, get_point_cloud, save_point_cloud, read_point_cloud, project
 
 _ = lambda x: x
 
@@ -33,18 +34,9 @@ class ThreeDVisual(gl.GLViewWidget):
         self.addItem(self.gridx)
         self.object_list['gridx'] = self.gridx
 
-        self.gridy = gl.GLGridItem()
-        self.gridy.rotate(90, 0, 1, 0)
-        self.gridy.scale(1, 1, 1)
-        self.gridy.setSize(x=5000, y=10000, z=5000)
-        self.gridy.setSpacing(x=1000, y=1000, z=1000, spacing=None)
-        self.gridy.setDepthValue(10)
-        self.gridy.translate(-5000, 0, 2500)
-        self.addItem(self.gridy)
-        self.object_list['gridy'] = self.gridy
-
-        self.lat0 = None
-        self.lon0 = None
+        self.x0 = None
+        self.y0 = None
+        self.utm_zone = None
 
     def add_fly(self, filename, progress, value):
         with open(filename) as file:
@@ -57,16 +49,13 @@ class ThreeDVisual(gl.GLViewWidget):
         size = np.empty((self.length, ))
         color = np.empty((self.length, ))
         time, latitude, longitude, height0, magnet = lst[0].split()
-        self.lat0 = float(latitude)*np.pi / 180   # todo: define common zero point
-        self.lon0 = float(longitude)*np.pi / 180
-        earth = 6371000
+        if not self.x0 and not self.y0 and not self.utm_zone:
+            self.x0, self.y0, self.utm_zone = project((float(longitude), float(latitude)))
 
         for i, s in enumerate(lst):
             time, latitude, longitude, height, magnet = s.split()
-            lat = float(latitude)*np.pi / 180
-            lon = float(longitude)*np.pi / 180
-            x, y = ((lon - self.lon0)*np.cos(self.lat0)*earth, (lat - self.lat0)*earth)
-            self.points[i] = (x, y, float(height))
+            x, y, zone = project((float(longitude), float(latitude)), self.utm_zone)
+            self.points[i] = (x-self.x0, y-self.y0, float(height))
             color[i] = float(magnet)
             size[i] = 5
             self.gradient_scale.append(float(magnet))
@@ -75,13 +64,13 @@ class ThreeDVisual(gl.GLViewWidget):
         progress.setValue(value)
         color = magnet_color(color)
         self.gradient_scale.sort(reverse=True)
-        self.fly = gl.GLScatterPlotItem(pos=self.points, size=size, color=color, pxMode=True)
-        self.fly.scale(1, 1, 1)
-        self.fly.translate(0, 0, 0)
-        self.fly.setGLOptions('opaque')
-        self.fly.setVisible(False)
-        self.addItem(self.fly)
-        self.object_list[os.path.basename(filename)] = self.fly
+        fly = gl.GLScatterPlotItem(pos=self.points, size=size, color=color, pxMode=True)
+        fly.scale(1, 1, 1)
+        fly.translate(0, 0, 0)
+        fly.setGLOptions('opaque')
+        fly.setVisible(False)
+        self.addItem(fly)
+        self.object_list[os.path.basename(filename)] = fly
 
         gradient_tick_lst = []
         gradient_scale = self.get_scale_magnet()
@@ -98,9 +87,14 @@ class ThreeDVisual(gl.GLViewWidget):
 
     def add_terrain(self, filename, progress, value=None, path_to_save=None):
         if os.path.splitext(filename)[1] == '.tif':
-            pcd = get_point_cloud(filename, progress)
-            save_point_cloud(pcd, path_to_save)
-            filename = os.path.basename(path_to_save)
+            try:
+                pcd, self.utm_zone = get_point_cloud(filename, progress, self.utm_zone)
+                save_point_cloud(pcd, path_to_save)
+                filename = os.path.basename(path_to_save)
+            except AssertionError as e:
+                progress.close()
+                show_error(_("Error"), _("File couldn't be downloaded\n{}".format(e.args[0])))
+                raise AssertionError
         elif os.path.splitext(filename)[1] == '.ply':
             pcd = read_point_cloud(filename)
             progress.setValue(value)
@@ -110,16 +104,22 @@ class ThreeDVisual(gl.GLViewWidget):
         if pcd.shape[0] > 1000000:
             pcd = pcd[0::pcd.shape[0]//2000000, :]
 
-        self.terrain_points = pcd[:, :3]
+        terrain_points = pcd[:, :3]
+        if not self.x0 and not self.y0:
+            self.x0 = terrain_points[0][0]
+            self.y0 = terrain_points[0][1]
+
+        terrain_points = np.column_stack((terrain_points[:, 0] - self.x0, terrain_points[:, 1] - self.y0,
+                                          terrain_points[:, 2]))
         point_size = np.full((pcd.shape[0], ), 2)
         point_color = pcd[:, 3:]
-        self.terrain = gl.GLScatterPlotItem(pos=self.terrain_points, size=point_size, color=point_color, pxMode=True)
-        self.terrain.scale(1, 1, 1)
-        self.terrain.translate(0, 0, 0)
-        self.terrain.setGLOptions('opaque')
-        self.terrain.setVisible(False)
-        self.addItem(self.terrain)
-        self.object_list[os.path.basename(filename)] = self.terrain
+        terrain = gl.GLScatterPlotItem(pos=terrain_points, size=point_size, color=point_color, pxMode=True)
+        terrain.scale(1, 1, 1)
+        terrain.translate(0, 0, 0)
+        terrain.setGLOptions('opaque')
+        terrain.setVisible(False)
+        self.addItem(terrain)
+        self.object_list[os.path.basename(filename)] = terrain
 
     def get_scale_magnet(self):
         self.length = len(self.gradient_scale)
@@ -153,11 +153,20 @@ class ThreeDVisual(gl.GLViewWidget):
         obj = self.object_list[name]
         if visible == "Off":
             obj.setVisible(False)
-            self.setCameraPosition(QVector3D(0, 0, 0), 300, 30, 45)
+            # self.setCameraPosition(QVector3D(0, 0, 0), 300, 30, 45)
         elif visible == "On":
             obj.setVisible(True)
             x, y, z = obj.pos[0]
-            self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)
+            # self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)
+
+    def focus_element(self, name, visible):
+        if name not in self.object_list:
+            return
+        if visible == 'Off':
+            self.show_hide_elements(name, 'On')
+        obj = self.object_list[name]
+        x, y, z = obj.pos[0]
+        self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)
 
     def setCameraPosition(self, center=None, distance=None, elevation=None, azimuth=None):
         if center is not None:
