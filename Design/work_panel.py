@@ -31,11 +31,11 @@ class WorkspaceView(QTreeView):
         if idx.column() == 1:
             indicator = self.model.itemFromIndex(idx)
             object_name = idx.parent().child(idx.row(), 0).data()
-            if indicator.data(3) == "Off":
+            if indicator.data(3) == 'Off':
                 indicator.setData(QIcon('images/green_light_icon.png'), 1)
                 indicator.setData('On', 3)
                 self.parent.three_d_plot.show_hide_elements(object_name, 'On')
-            elif indicator.data(3) == "On":
+            elif indicator.data(3) == 'On':
                 indicator.setData(QIcon('images/gray_light_icon.png'), 1)
                 indicator.setData('Off', 3)
                 self.parent.three_d_plot.show_hide_elements(object_name, 'Off')
@@ -44,8 +44,12 @@ class WorkspaceView(QTreeView):
                     ch.find(object_name).attrib['indicator'] = indicator.data(3)
                 except AttributeError:
                     pass
+                except TypeError:
+                    pass
 
     def double_click(self, idx):
+        if not self.model.itemFromIndex(idx).parent():
+            return
         parent_click_item = self.model.itemFromIndex(idx).parent()
         indicator = parent_click_item.child(idx.row(), 1)
         self.parent.three_d_plot.focus_element(idx.data(), indicator.data(3))
@@ -71,7 +75,7 @@ class WorkspaceView(QTreeView):
             pass
 
     def set_project_name(self, name):
-        font = QFont("Times", 10, QFont.Bold)
+        font = QFont('Times', 10, QFont.Bold)
         icon = QIcon('images/project_icon.png')
         self.project_name.setText(name)
         self.project_name.setFont(font)
@@ -139,15 +143,15 @@ class WorkspaceView(QTreeView):
         project_action = {
             self.raw_data_item.text(): {
                 _('Create .magnete files'): print,
-                _("Add RAW"): self.parent.project_instance.add_raw_data,
+                _('Add RAW'): self.parent.project_instance.add_raw_data,
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             self.magnet_data_item.text(): {
-                _("Add Magnet data"): self.parent.project_instance.add_magnet_data,
+                _('Add Magnet data'): self.parent.project_instance.add_magnet_data,
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             self.geo_item.text(): {
-                _("Add Geodata"): self.parent.project_instance.add_geo_data,
+                _('Add Geodata'): self.parent.project_instance.add_geo_data,
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             'subitems': {

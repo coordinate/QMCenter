@@ -24,13 +24,14 @@ def utm_zone(coordinates):  # coordinates = (longitude, latitude)
 
 
 def letter(coordinates):
-    return 'CDEFGHJKLMNPQRSTUVWXX'[int((coordinates[0] + 80) / 8)]
+    return 'CDEFGHJKLMNPQRSTUVWXX'[int((coordinates[1] + 80) / 8)]
 
 
 def project(coordinates, zone=None):  # coordinates = (longitude, latitude)
     if not zone:
         zone = utm_zone(coordinates)
-    # l = letter(coordinates)
+    l = letter(coordinates)
+    # print(zone, l)
     if zone not in _projections:
         _projections[zone] = pyproj.Proj(proj='utm', zone=zone, ellps='WGS84')
     x, y = _projections[zone](coordinates[0], coordinates[1])
@@ -62,11 +63,18 @@ def unproject(z, l, x, y):
     return lng, lat
 
 
-def magnet_color(magnet):
-    min_z = np.amin(magnet)
-    max_z = np.amax(magnet)
-    delta = max_z - min_z
-    colors = np.array(((magnet-min_z)/delta)*255, dtype='uint8')
+def magnet_color(magnet, min_m=None, max_m=None):
+    if not min_m and not max_m:
+        min_m = np.amin(magnet)
+        max_m = np.amax(magnet)
+    delta = max_m - min_m
+    if delta:
+        colors = np.array(((magnet-min_m)/delta)*255, dtype='uint16')
+        colors[colors > 255] = 255
+        colors[colors < 0] = 0
+        colors = colors.astype('uint8')
+    else:
+        colors = np.repeat(0.5*255, len(magnet)).astype('uint8')
     lut = np.empty(shape=(256, 3), dtype="uint8")
     cmap = (
         (0, (0, 0, 255)),
@@ -80,8 +88,7 @@ def magnet_color(magnet):
     for step, col in cmap[1:]:
         val = int(step * 256)
         for i in range(3):
-            lut[lastval:val, i] = np.linspace(
-                lastcol[i], col[i], val - lastval)
+            lut[lastval:val, i] = np.linspace(lastcol[i], col[i], val - lastval)
 
         lastcol = col
         lastval = val
@@ -161,8 +168,5 @@ def save_point_cloud(point_cloud, path):
 def read_point_cloud(path):
     pcd = o3d.read_point_cloud(path)
     points = np.asarray(pcd.points)
-    # x, y, z = points[0]
-    # z_min = np.amin(points[:, 2])
-    # points = np.column_stack((points[:, 0] - x, points[:, 1] - y, points[:, 2] - z_min))
     colors = np.asarray(pcd.colors)
     return np.concatenate((points, colors), axis=1)

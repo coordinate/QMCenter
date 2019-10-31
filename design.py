@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWid
 
 from Design.file_manager_widget import FileManager
 from Plots.plots import MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
-from Plots.ThreeDPlot import ThreeDVisual
+from Plots.ThreeDPlot import ThreeDVisual, Palette
 from Design.custom_widgets import DetachableTabWidget, Scroll
 from Design.settings_widget import SettingsWidget
 from Design.work_panel import WorkspaceView
@@ -306,20 +306,15 @@ class UIForm:
         self.configuration_layout.addWidget(self.write_tree_btn, 1, 1, 1, 1)
 
         # create tab 3D visualization
-        self.three_d_plot = ThreeDVisual(self)
         self.three_d_widget = QWidget()
-        self.grid_3d = QGridLayout(self.three_d_widget)
-        self.grid_3d.setHorizontalSpacing(0)
-        self.grid_3d.setVerticalSpacing(0)
+        self.layout_3d_widget = QGridLayout(self.three_d_widget)
+        self.palette = Palette(self)
+        self.three_d_plot = ThreeDVisual(self, self.palette)
+        self.layout_3d_widget.setHorizontalSpacing(0)
+        self.layout_3d_widget.setVerticalSpacing(0)
 
-        header = QLabel("Info")
-        header.setStyleSheet("QLabel { background-color : black, color: white}")
-        gradient = QLabel()
-        pixmap = QPixmap('images/red-blue.jpg')
-        gradient.setPixmap(pixmap)
-        self.grid_3d.addWidget(self.three_d_plot, 0, 0, 100, 100)
-        # self.grid_3d.addWidget(header, 0, 0, 1, 3)
-        self.grid_3d.addWidget(gradient, 1, 2, 6, 1)
+        self.layout_3d_widget.addWidget(self.three_d_plot, 0, 0, 100, 100)
+        self.layout_3d_widget.addWidget(self.palette, 1, 2, 6, 1)
 
         self.longitude_label = QLabel(_("Longitude:"))
         self.longitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
@@ -334,12 +329,12 @@ class UIForm:
         self.magnet_value_label = QLabel()
         self.magnet_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
 
-        self.grid_3d.addWidget(self.longitude_label, 95, 1, 1, 2)
-        self.grid_3d.addWidget(self.longitude_value_label, 95, 3, 1, 5)
-        self.grid_3d.addWidget(self.latitude_label, 96, 1, 1, 2)
-        self.grid_3d.addWidget(self.latitude_value_label, 96, 3, 1, 5)
-        self.grid_3d.addWidget(self.magnet_label, 97, 1, 1, 2)
-        self.grid_3d.addWidget(self.magnet_value_label, 97, 3, 1, 5)
+        self.layout_3d_widget.addWidget(self.longitude_label, 95, 1, 1, 2)
+        self.layout_3d_widget.addWidget(self.longitude_value_label, 95, 3, 1, 5)
+        self.layout_3d_widget.addWidget(self.latitude_label, 96, 1, 1, 2)
+        self.layout_3d_widget.addWidget(self.latitude_value_label, 96, 3, 1, 5)
+        self.layout_3d_widget.addWidget(self.magnet_label, 97, 1, 1, 2)
+        self.layout_3d_widget.addWidget(self.magnet_value_label, 97, 3, 1, 5)
 
         # self.earth_widget = CesiumPlot()
 
