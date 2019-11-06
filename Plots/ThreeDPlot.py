@@ -15,6 +15,45 @@ from Utils.transform import magnet_color, get_point_cloud, save_point_cloud, rea
 _ = lambda x: x
 
 
+class CutMagnetWidget(QWidget):
+    def __init__(self, parent):
+        QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
+        self.parent = parent
+        self.shortcut_object = None
+        self.first_idx = None
+        self.second_idx = None
+
+        self.setWindowTitle(_('Cut magnet data'))
+        self.layout = QGridLayout(self)
+        self.label = QLabel(_('Choose points'))
+        self.first = QLabel(_('First point: '))
+        self.first_point = QLabel()
+        self.second = QLabel(_('Second point: '))
+        self.second_point = QLabel()
+        self.reset_btn = QPushButton(_('Reset points'))
+        self.cut_save_btn = QPushButton(_('Cut and Save'))
+        self.cut_save_as_btn = QPushButton(_('Cut and Save as'))
+        self.cancel = QPushButton(_('Cancel'))
+        self.layout.addWidget(self.label, 0, 1, 1, 2)
+        self.layout.addWidget(self.first, 1, 0, 1, 1)
+        self.layout.addWidget(self.first_point, 1, 1, 1, 1)
+        self.layout.addWidget(self.second, 2, 0, 1, 1)
+        self.layout.addWidget(self.second_point, 2, 1, 1, 1)
+        self.layout.addWidget(self.reset_btn, 1, 3, 2, 1)
+        self.layout.addWidget(self.cut_save_btn, 3, 1, 1, 1)
+        self.layout.addWidget(self.cancel, 3, 2, 1, 1)
+        self.layout.addWidget(self.cut_save_as_btn, 3, 3, 1, 1)
+
+        self.reset_btn.clicked.connect(lambda: self.parent.reset_cutting_preprocessing())
+        self.cancel.clicked.connect(lambda: self.parent.cancel_cutting())
+        self.cut_save_btn.clicked.connect(lambda: self.parent.cut_save(False))
+        self.cut_save_as_btn.clicked.connect(lambda: self.parent.cut_save(True))
+
+    def closeEvent(self, event):
+        if self.shortcut_object:
+            self.parent.cancel_cutting()
+
+
 class Palette(QLabel):
     recolor_signal = pyqtSignal(object, object)
 
@@ -69,10 +108,11 @@ class Palette(QLabel):
         self.cancel_btn.clicked.connect(lambda: self.cancel_clicked())
         self.apply_btn.clicked.connect(lambda: self.apply_clicked())
 
-    def set_values(self, min=None, max=None):
-        arr = np.array(())
-        for value in self.all_values.values():
-            arr = np.hstack((arr, value))
+    def set_values(self, arr=None, min=None, max=None):
+        if arr is None:
+            arr = np.array(())
+            for value in self.all_values.values():
+                arr = np.hstack((arr, value))
 
         if len(arr) == 0:
             for i in range(6):
@@ -103,9 +143,10 @@ class Palette(QLabel):
             self.parent.layout_3d_widget.addWidget(grad_tic, i+1, 1, 1, 1)
 
     def mouseDoubleClickEvent(self, event):
-        pos = event.globalPos()
-        self.settings_widget.setGeometry(pos.x(), pos.y(), 300, 150)
-        self.settings_widget.show()
+        if self.parent.workspace_widget.isEnabled():
+            pos = event.globalPos()
+            self.settings_widget.setGeometry(pos.x(), pos.y(), 300, 150)
+            self.settings_widget.show()
 
     def min_value_changed(self, val):
         try:
@@ -166,7 +207,7 @@ class Palette(QLabel):
             if float(self.min_value.text()) > float(self.max_value.text()):
                 show_error(_('Error'), _('Max must be more than Min'))
                 return
-            self.set_values(float(self.min_value.text()), float(self.max_value.text()))
+            self.set_values(min=float(self.min_value.text()), max=float(self.max_value.text()))
             self.recolor_signal.emit(self.min, self.max)
 
 
@@ -177,6 +218,8 @@ class ThreeDVisual(gl.GLViewWidget):
         gl.GLViewWidget.__init__(self)
         self.parent = parent
         self.palette = palette
+        self.release_ignore = False
+        self.cut_widget = CutMagnetWidget(self)
 
         self.objects = {}
 
@@ -194,13 +237,16 @@ class ThreeDVisual(gl.GLViewWidget):
         self.y0 = None
         self.utm_zone = None
 
-        self.palette.recolor_signal.connect(lambda min, max: self.recolor_fly(min, max))
+        self.palette.recolor_signal.connect(lambda min, max: self.recolor_flying(min, max))
 
     def add_fly(self, filename, progress, value):
         with open(filename) as file:
             lst = file.readlines()
+            if len(lst[-1]) < 3:
+                lst.pop()
         length = len(lst)
         magnet_array = np.empty((length, ))
+        time_array = np.empty((length, ))
         lon_lat = np.empty((length, 2))
         points = np.empty((length, 3))
         size = np.empty((length, ))
@@ -210,12 +256,16 @@ class ThreeDVisual(gl.GLViewWidget):
             self.x0, self.y0, self.utm_zone = project((float(longitude), float(latitude)))
 
         for i, s in enumerate(lst):
-            time, latitude, longitude, height, magnet = s.split()
+            try:
+                time, latitude, longitude, height, magnet = s.split()
+            except ValueError:
+                continue
             x, y, zone = project((float(longitude), float(latitude)), self.utm_zone)
             points[i] = (x-self.x0, y-self.y0, float(height))
             color[i] = float(magnet)
             size[i] = 5
             magnet_array[i] = float(magnet)
+            time_array[i] = float(time)
             lon_lat[i] = [float(longitude), float(latitude)]
 
         progress.setValue(value)
@@ -226,12 +276,15 @@ class ThreeDVisual(gl.GLViewWidget):
         fly.setGLOptions('opaque')
         fly.setVisible(False)
         self.addItem(fly)
-        self.objects[os.path.basename(filename)] = {'object': fly, 'magnet': magnet_array, 'lon_lat': lon_lat}
+        self.objects[os.path.basename(filename)] = {'object': fly, 'magnet': magnet_array, 'lon_lat': lon_lat, 'time': time_array}
 
-    def recolor_fly(self, min, max):
+    def recolor_flying(self, min, max):
         for k in self.palette.all_values.keys():
             self.objects[k]['object'].color = magnet_color(self.objects[k]['magnet'], min, max)
         self.update()
+
+    def recolor_selected(self, arr, min=None, max=None):
+        return magnet_color(arr, min, max)
 
     def add_terrain(self, filename, progress, value=None, path_to_save=None):
         if os.path.splitext(filename)[1] == '.tif':
@@ -268,6 +321,172 @@ class ThreeDVisual(gl.GLViewWidget):
         terrain.setVisible(False)
         self.addItem(terrain)
         self.objects[os.path.basename(filename)] = {'object': terrain}
+
+    def remove_object(self, filename):
+        object = self.objects[filename]['object']
+        self.show_hide_elements(filename, 'Off')
+        try:
+            del self.objects[filename]
+            self.removeItem(object)
+        except KeyError:
+            pass
+
+    def mousePressEvent(self, ev):
+        self.mousePos = ev.pos()
+        self.release_ignore = False
+
+    def mouseMoveEvent(self, ev):
+        diff = ev.pos() - self.mousePos
+        self.mousePos = ev.pos()
+
+        if ev.buttons() == Qt.LeftButton:
+            self.orbit(-diff.x(), diff.y())
+            # print self.opts['azimuth'], self.opts['elevation']
+        elif ev.buttons() == Qt.MidButton:
+            if (ev.modifiers() & Qt.ControlModifier):
+                self.pan(diff.x(), 0, diff.y(), relative=True)
+            else:
+                self.pan(diff.x(), diff.y(), 0, relative=True)
+
+        self.release_ignore = True
+
+    def mouseReleaseEvent(self, ev):
+        if not ev.button() == 1 or self.release_ignore:
+            return
+
+        arr = np.array(())
+        magnet = np.array(())
+        lon_lat = np.array(())
+
+        # if self.parent.workspace_widget.cut_widget.isVisible():
+        if self.cut_widget.isVisible():
+            filename = self.cut_widget.shortcut_object
+            objects = [filename]
+        else:
+            objects = [k for k in self.palette.all_values.keys()]
+
+        if not len(objects):
+            return
+
+        for obj_name in objects:
+            try:
+                arr = self.objects[obj_name]['object'].pos if len(arr) == 0 \
+                    else np.vstack((arr, self.objects[obj_name]['object'].pos))
+                magnet = np.hstack((magnet, self.objects[obj_name]['magnet']))
+                lon_lat = self.objects[obj_name]['lon_lat'] if len(lon_lat) == 0 \
+                    else np.vstack((lon_lat, self.objects[obj_name]['lon_lat']))
+            except KeyError:
+                return
+
+        length = len(arr)
+
+        m = self.projectionMatrix() * self.viewMatrix()
+        mouse_pos = (ev.pos().x() / self.size().width(), ev.pos().y() / self.size().height())
+        m_positions = np.repeat(np.array([list(mouse_pos)]), length, axis=0)
+
+        T_matrix = np.array(m.data()).reshape((4, 4)).T
+        points = np.vstack((arr.T, np.ones(length)))
+
+        ps = T_matrix @ points
+        ps /= ps[3]
+        ps[0] = 0.5 + ps[0] / 2
+        ps[1] = 0.5 - ps[1] / 2
+
+        dis = np.linalg.norm(ps[:2, :].T - m_positions, axis=1)
+        print_index = np.argmin(dis)
+
+        if self.cut_widget.isVisible() and dis[print_index] <= 0.007:
+            if len(self.cut_widget.first_point.text()) == 0:
+                self.cut_widget.first_point.setText(
+                    'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 4), round(lon_lat[print_index][1]), 4))
+
+                self.cut_widget.first_idx = print_index
+                self.objects[filename]['object'].color[print_index] = np.array([0, 0, 1], dtype='uint8')
+                self.objects[filename]['object'].size[print_index] = 10
+                self.update()
+
+            elif len(self.cut_widget.second_point.text()) == 0:
+                self.cut_widget.second_point.setText(
+                    'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 4), round(lon_lat[print_index][1]), 4))
+
+                self.cut_widget.second_idx = print_index
+                if self.cut_widget.first_idx >= self.cut_widget.second_idx:
+                    self.cut_widget.second_idx, self.cut_widget.first_idx = self.cut_widget.first_idx, self.cut_widget.second_idx
+                color_arr = self.recolor_selected(self.objects[filename]['magnet'][self.cut_widget.first_idx:self.cut_widget.second_idx])
+                self.objects[filename]['object'].color[self.cut_widget.first_idx:self.cut_widget.second_idx] = color_arr
+                # self.objects[filename]['object'].size[self.cut_widget.first_idx:self.cut_widget.second_idx] = 10
+                self.palette.set_values(self.objects[filename]['magnet'][self.cut_widget.first_idx:self.cut_widget.second_idx])
+                self.update()
+
+        elif dis[print_index] <= 0.007:
+            lon, lat = lon_lat[print_index]
+            magnet = magnet[print_index]
+            self.set_label_signal.emit(lat, lon, magnet)
+        else:
+            self.set_label_signal.emit('', '', '')
+
+    def preprocessing_for_cutting(self, item_index):
+        filename = item_index.data()
+        if filename not in self.objects:
+            return
+        self.show_hide_elements(filename, 'On')
+        self.objects[filename]['object'].color = self.recolor_selected(self.objects[filename]['magnet'], 100, 100)
+        self.update()
+        self.cut_widget.shortcut_object = filename
+        self.cut_widget.show()
+        self.parent.workspace_widget.setEnabled(False)
+
+    def reset_cutting_preprocessing(self):
+        self.cut_widget.first_point.setText('')
+        self.cut_widget.second_point.setText('')
+        self.objects[self.cut_widget.shortcut_object]['object'].color[:] = (1, 1, 1)
+        self.objects[self.cut_widget.shortcut_object]['object'].size[:] = 5
+        self.update()
+
+    def cancel_cutting(self):
+        self.cut_widget.first_point.setText('')
+        self.cut_widget.second_point.setText('')
+        self.objects[self.cut_widget.shortcut_object]['object'].size[:] = 5
+        self.palette.set_values()
+        self.recolor_flying(self.palette.min, self.palette.max)
+        self.cut_widget.shortcut_object = None
+        self.cut_widget.first_idx = None
+        self.cut_widget.second_idx = None
+        self.update()
+        self.cut_widget.close()
+        self.parent.workspace_widget.setEnabled(True)
+
+    def cut_save(self, save_as):
+        filename = self.cut_widget.shortcut_object
+        start = self.cut_widget.first_idx
+        finish = self.cut_widget.second_idx
+        time = self.objects[filename]['time'][start:finish]
+        lon_lat = self.objects[filename]['lon_lat'][start:finish]
+        height = self.objects[filename]['object'].pos[start:finish, 2]
+        magnet = self.objects[filename]['magnet'][start:finish]
+
+        object = {'time': time, 'lon_lat': lon_lat, 'height': height, 'magnet': magnet}
+
+        self.parent.project_instance.add_magnet_from_memory(filename, object, save_as)
+        self.cut_widget.close()
+        self.cancel_cutting()
+
+    def concatenate_magnet(self, files_list):
+        objects = [self.objects[k] for k in files_list]
+        time = np.array(())
+        lon_lat = np.array(())
+        height = np.array(())
+        magnet = np.array(())
+        for obj in objects:
+            time = np.hstack((time, obj['time']))
+            height = np.hstack((height, obj['object'].pos[:, 2]))
+            magnet = np.hstack((magnet, obj['magnet']))
+            lon_lat = obj['lon_lat'] if len(lon_lat) == 0 \
+                else np.vstack((lon_lat, obj['lon_lat']))
+
+        object = {'time': time, 'lon_lat': lon_lat, 'height': height, 'magnet': magnet}
+
+        self.parent.project_instance.add_magnet_from_memory(files_list[0], object)
 
     def mouseDoubleClickEvent(self, ev):
         objects = [k for k in self.palette.all_values.keys()]
@@ -328,7 +547,7 @@ class ThreeDVisual(gl.GLViewWidget):
 
         if len(self.palette.all_values) != fly_len and self.palette.chbx.isChecked():
             self.palette.set_values()
-            self.recolor_fly(self.palette.min, self.palette.max)
+            self.recolor_flying(self.palette.min, self.palette.max)
 
     def focus_element(self, name, visible):
         if name not in self.objects:

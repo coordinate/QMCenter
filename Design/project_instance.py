@@ -5,9 +5,9 @@ from shutil import copyfile, SameFileError
 import lxml.etree as ET
 
 from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication
+from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication, QMessageBox
 
-from Design.ui import show_error, show_info
+from Design.ui import show_error, show_info, show_warning_yes_no
 
 _ = lambda x: x
 
@@ -127,24 +127,71 @@ class CurrentProject(QObject):
 
     def add_magnet_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.path, "Magnet files (*.magnete)")
+                                             self.path, "Magnet files (*.magnete)")[0]
 
-        if not files[0]:
+        if not files:
             return
         it = 0
         self.progress.open()
         QApplication.processEvents()
-        for file in files[0]:
-            try:
-                copyfile(file, os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file)))
-            except SameFileError:
-                pass
-            value = (it + 1) / len(files[0]) * 99
+        for file in files:
+            filepath = os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file))
+            if not os.path.exists(file):
+                copyfile(file, filepath)
+            else:
+                path = os.path.splitext(filepath)
+                filepath = '{}_copy{}'.format(path[0], path[1])
+                answer = show_warning_yes_no(_('File error'), _('This filename in project. '
+                                                                'Do you want to save as\n{}'.format(filepath.replace('\\', '/'))))
+                if answer == QMessageBox.Yes:
+                    copyfile(file, filepath)
+                else:
+                    self.progress.close()
+                    return
+
+            value = (it + 1) / len(files) * 99
             it += 1
-            if self.magnet_data.find(os.path.basename(file)) is None:
-                element = ET.SubElement(self.magnet_data, os.path.basename(file))
+            if self.magnet_data.find(os.path.basename(filepath)) is None:
+                element = ET.SubElement(self.magnet_data, os.path.basename(filepath))
                 element.set("indicator", "Off")
-                self.parent.three_d_plot.add_fly(file, self.progress, value)
+            self.parent.three_d_plot.add_fly(filepath, self.progress, value)
+        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.send_tree_to_view()
+        self.progress.setValue(100)
+
+    def add_magnet_from_memory(self, filename, object, save_as=True):
+        path_to_save = os.path.join(self.files_path, self.magnet_data.attrib['name'])
+        time = object['time']
+        lon_lat = object['lon_lat']
+        height = object['height']
+        magnet = object['magnet']
+
+        if save_as:
+            filename = QFileDialog.getSaveFileName(None, _("Save F:xile"), path_to_save, "Magnet files (*.magnete)")[0]
+        else:
+            filename = os.path.join(path_to_save, filename)
+
+        if os.path.basename(filename) in self.parent.three_d_plot.objects:
+            self.parent.three_d_plot.remove_object(os.path.basename(filename))
+
+        it = 0
+        self.progress.open()
+        QApplication.processEvents()
+
+        try:
+            with open(filename, 'w') as file:
+                for i in range(len(time)):
+                    value = (it + 1) / len(time) * 60
+                    it += 1
+                    self.progress.setValue(value)
+                    file.write('{} {} {} {} {}\n'.format(time[i], lon_lat[i][1], lon_lat[i][0], height[i], magnet[i]))
+        except FileNotFoundError:
+            return
+
+        if self.magnet_data.find(os.path.basename(filename)) is None:
+            element = ET.SubElement(self.magnet_data, os.path.basename(filename))
+            element.set("indicator", "On")
+        self.parent.three_d_plot.add_fly(filename, self.progress, value+18)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
         self.progress.setValue(100)
