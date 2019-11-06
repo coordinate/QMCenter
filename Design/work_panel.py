@@ -85,6 +85,10 @@ class WorkspaceView(QTreeView):
         self.project_name.setIcon(icon)
 
     def add_view(self, view=None):
+        if not self.parent.project_instance.project_path:
+            self.model.removeRows(0, 3)
+            self.project_name.setText('')
+            return
         self.model.removeRows(0, 3)
         self.raw_data_item = QStandardItem(_('RAW'))
         self.raw_data_item.setSelectable(False)
@@ -247,6 +251,10 @@ class WorkspaceView(QTreeView):
         print(files_list)
 
     def cut_magnet_data(self, item_index):
+        if self.parent.palette.settings_widget.isVisible():
+            self.parent.palette.settings_widget.activateWindow()
+            return
+
         indicator = self.model.itemFromIndex(item_index.parent()).child(item_index.row(), 1)
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)

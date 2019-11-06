@@ -28,7 +28,18 @@ class CurrentProject(QObject):
         self.magnet_data = None
         self.geo_data = None
 
-    def open_project(self):  # todo: clear old data from gradient label
+    def reset_project(self):
+        self.project_path = None
+        self.parent.three_d_plot.reset_data()
+        self.parent.workspace_widget.add_view()
+        self.parent.longitude_value_label.setText('')
+        self.parent.latitude_value_label.setText('')
+        self.parent.magnet_value_label.setText('')
+        self.parent.file_manager_widget.left_dir_path.setText(self.expanduser_dir)
+        self.parent.file_manager_widget.left_file_model_go_to_dir()
+
+    def open_project(self):
+        self.reset_project()
         fileName = QFileDialog.getOpenFileName(None, "Open File", self.path, "QMCenter project (*.qmcproj)")
         if fileName[0] == '':
             return
@@ -77,7 +88,8 @@ class CurrentProject(QObject):
         self.send_tree_to_view()
         self.progress.setValue(100)
 
-    def create_new_project(self):  # todo: clear old data from gradient label (clear function)
+    def create_new_project(self):
+        self.reset_project()
         dir = QFileDialog.getSaveFileName(None, "Save F:xile", self.path, "QMCenter project (*.qmcproj)")
         if dir[0] == '':
             return
@@ -135,26 +147,26 @@ class CurrentProject(QObject):
         self.progress.open()
         QApplication.processEvents()
         for file in files:
-            filepath = os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file))
-            if not os.path.exists(file):
-                copyfile(file, filepath)
+            destination = os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file))
+            if not os.path.exists(destination):
+                copyfile(file, destination)
             else:
-                path = os.path.splitext(filepath)
-                filepath = '{}_copy{}'.format(path[0], path[1])
+                path = os.path.splitext(destination)
+                destination = '{}_copy{}'.format(path[0], path[1])
                 answer = show_warning_yes_no(_('File error'), _('This filename in project. '
-                                                                'Do you want to save as\n{}'.format(filepath.replace('\\', '/'))))
+                                                                'Do you want to save as\n{}'.format(destination.replace('\\', '/'))))
                 if answer == QMessageBox.Yes:
-                    copyfile(file, filepath)
+                    copyfile(file, destination)
                 else:
                     self.progress.close()
                     return
 
             value = (it + 1) / len(files) * 99
             it += 1
-            if self.magnet_data.find(os.path.basename(filepath)) is None:
-                element = ET.SubElement(self.magnet_data, os.path.basename(filepath))
+            if self.magnet_data.find(os.path.basename(destination)) is None:
+                element = ET.SubElement(self.magnet_data, os.path.basename(destination))
                 element.set("indicator", "Off")
-            self.parent.three_d_plot.add_fly(filepath, self.progress, value)
+            self.parent.three_d_plot.add_fly(destination, self.progress, value)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
         self.progress.setValue(100)

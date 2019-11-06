@@ -143,10 +143,12 @@ class Palette(QLabel):
             self.parent.layout_3d_widget.addWidget(grad_tic, i+1, 1, 1, 1)
 
     def mouseDoubleClickEvent(self, event):
-        if self.parent.workspace_widget.isEnabled():
-            pos = event.globalPos()
-            self.settings_widget.setGeometry(pos.x(), pos.y(), 300, 150)
-            self.settings_widget.show()
+        if self.parent.three_d_plot.cut_widget.isVisible():
+            self.parent.three_d_plot.cut_widget.activateWindow()
+            return
+        pos = event.globalPos()
+        self.settings_widget.setGeometry(pos.x(), pos.y(), 300, 150)
+        self.settings_widget.show()
 
     def min_value_changed(self, val):
         try:
@@ -238,6 +240,22 @@ class ThreeDVisual(gl.GLViewWidget):
         self.utm_zone = None
 
         self.palette.recolor_signal.connect(lambda min, max: self.recolor_flying(min, max))
+
+    def reset_data(self):
+        self.x0 = None
+        self.y0 = None
+        self.utm_zone = None
+        self.items.clear()
+        self.addItem(self.gridx)
+        self.objects.clear()
+        self.objects['gridx'] = {'object': self.gridx}
+        self.palette.all_values.clear()
+        self.palette.min = None
+        self.palette.max = None
+        self.palette.set_values()
+        self.cut_widget.close()
+        self.palette.settings_widget.close()
+        self.setCameraPosition(QVector3D(0, 0, 0), 300, 30, 45)
 
     def add_fly(self, filename, progress, value):
         with open(filename) as file:
@@ -469,7 +487,6 @@ class ThreeDVisual(gl.GLViewWidget):
 
         self.parent.project_instance.add_magnet_from_memory(filename, object, save_as)
         self.cut_widget.close()
-        self.cancel_cutting()
 
     def concatenate_magnet(self, files_list):
         objects = [self.objects[k] for k in files_list]
@@ -487,42 +504,6 @@ class ThreeDVisual(gl.GLViewWidget):
         object = {'time': time, 'lon_lat': lon_lat, 'height': height, 'magnet': magnet}
 
         self.parent.project_instance.add_magnet_from_memory(files_list[0], object)
-
-    def mouseDoubleClickEvent(self, ev):
-        objects = [k for k in self.palette.all_values.keys()]
-        arr = np.array(())
-        magnet = np.array(())
-        lon_lat = np.array(())
-
-        for obj_name in objects:
-            arr = self.objects[obj_name]['object'].pos if len(arr) == 0 \
-                else np.vstack((arr, self.objects[obj_name]['object'].pos))
-            magnet = np.hstack((magnet, self.objects[obj_name]['magnet']))
-            lon_lat = self.objects[obj_name]['lon_lat'] if len(lon_lat) == 0 \
-                else np.vstack((lon_lat, self.objects[obj_name]['lon_lat']))
-        length = len(arr)
-
-        m = self.projectionMatrix() * self.viewMatrix()
-        mouse_pos = (ev.pos().x()/self.size().width(), ev.pos().y()/self.size().height())
-        m_positions = np.repeat(np.array([list(mouse_pos)]), length, axis=0)
-
-        T_matrix = np.array(m.data()).reshape((4, 4)).T
-        points = np.vstack((arr.T, np.ones(length)))
-
-        ps = T_matrix @ points
-        ps /= ps[3]
-        ps[0] = 0.5 + ps[0] / 2
-        ps[1] = 0.5 - ps[1] / 2
-
-        dis = np.linalg.norm(ps[:2, :].T - m_positions, axis=1)
-        print_index = np.argmin(dis)
-
-        if dis[print_index] <= 0.007:
-            lon, lat = lon_lat[print_index]
-            magnet = magnet[print_index]
-            self.set_label_signal.emit(lat, lon, magnet)
-        else:
-            self.set_label_signal.emit('', '', '')
 
     def show_hide_elements(self, name, visible):
         if name not in self.objects:
