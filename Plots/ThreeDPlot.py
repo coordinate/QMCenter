@@ -61,7 +61,7 @@ class Palette(QLabel):
         QLabel.__init__(self)
         self.parent = parent
         self.all_values = {}
-        pixmap = QPixmap('images/red-blue.jpg')
+        pixmap = QPixmap('images/red-blue.png')
         self.setPixmap(pixmap)
 
         self.settings_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
@@ -258,6 +258,8 @@ class ThreeDVisual(gl.GLViewWidget):
         self.setCameraPosition(QVector3D(0, 0, 0), 300, 30, 45)
 
     def add_fly(self, filename, progress, value):
+        if os.path.basename(filename) in self.objects:
+            self.remove_object(os.path.basename(filename))
         with open(filename) as file:
             lst = file.readlines()
             if len(lst[-1]) < 3:
@@ -305,6 +307,9 @@ class ThreeDVisual(gl.GLViewWidget):
         return magnet_color(arr, min, max)
 
     def add_terrain(self, filename, progress, value=None, path_to_save=None):
+        if os.path.basename(filename) in self.objects:
+            self.remove_object(os.path.basename(filename))
+
         if os.path.splitext(filename)[1] == '.tif':
             try:
                 pcd, self.utm_zone = get_point_cloud(filename, progress, self.utm_zone)
@@ -341,6 +346,8 @@ class ThreeDVisual(gl.GLViewWidget):
         self.objects[os.path.basename(filename)] = {'object': terrain}
 
     def remove_object(self, filename):
+        if filename not in self.objects:
+            return
         object = self.objects[filename]['object']
         self.show_hide_elements(filename, 'Off')
         try:

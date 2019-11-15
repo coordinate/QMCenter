@@ -1,13 +1,15 @@
 import os
+import subprocess
 
 from shutil import copyfile, SameFileError
-# from xml.etree import ElementTree as ET
 import lxml.etree as ET
+import numpy as np
 
 from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication
 
-from Design.ui import show_error, show_info, show_warning_yes_no
+from Design.ui import show_error, show_info, show_message_saveas_cancel_add
+from Utils.transform import parse_mag_file
 
 _ = lambda x: x
 
@@ -130,12 +132,192 @@ class CurrentProject(QObject):
         self.progress.open()
         QApplication.processEvents()
         for i, file in enumerate(files[0]):
-            copyfile(file, os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file)))
-            ET.SubElement(self.raw_data, os.path.basename(file))
+            destination = os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file))
+            if not os.path.exists(destination):
+                copyfile(file, destination)
+            else:
+                path = os.path.splitext(destination)
+                destination = '{}_copy{}'.format(path[0], path[1])
+                answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
+                                                        'Do you want to save as and add to project:\n{}\n'
+                                                        'Or just add existed file to project'.format(destination.replace('\\', '/'))))
+                if answer == 0:
+                    copyfile(file, destination)
+                elif answer == 1:
+                    self.progress.close()
+                    return
+                elif answer == 2:
+                    destination = os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file))
+                    try:
+                        copyfile(file, destination)
+                    except SameFileError:
+                        pass
+
+            # copyfile(file, os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file)))
+            if self.raw_data.find(os.path.basename(destination)) is None:
+                ET.SubElement(self.raw_data, os.path.basename(file))
             self.progress.setValue((i/len(files[0])*99))
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
         self.progress.setValue(100)
+
+    def create_magnet_files(self, files_list, widget=None):
+        mag_file, second_file = files_list
+
+        files_path = os.path.join(self.files_path, self.raw_data.attrib['name'])
+
+        filename = os.path.splitext(mag_file)[0]
+        widget.second_label.setText(_('Parse {}'.format(mag_file)))
+        mag_values = parse_mag_file(os.path.join(files_path, mag_file), widget.progress)
+        gpst = mag_values[0] / 1e6
+        freq = mag_values[1] * 0.026062317
+
+        if gpst.shape != freq.shape:
+            show_error(_('Error'), _('GPS time and frequency don\'t match'))
+            return
+
+        if os.path.splitext(second_file)[-1] == '.ubx':
+            # do command with RTKLIB and get .pos file bin or txt
+            widget.second_label.setText(_('Create {}'.format('{}.pos'.format(filename))))
+            widget.progress.setValue(0)
+
+            cmd = 'rtk_lib\\convbin.exe -d {} {}'.format(self.files_path.replace('/', '\\'),
+                                                         os.path.join(files_path, '{}.ubx'.format(filename)).replace('/', '\\'))
+
+            if not os.path.isfile(os.path.join(files_path, '{}.ubx'.format(filename))):
+                show_error(_('Error'), _('There is no match .ubx file for {}'.format(mag_file)))
+                return
+
+            p1 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            out, err = p1.communicate()
+            # if err:
+            #     show_error(_('Error'), err.decode('cp866'))
+            #     return
+
+            widget.progress.setValue(50)
+
+            pos = os.path.join(self.files_path, '{}.pos'.format(filename)).replace('/', '\\')
+
+            if not os.path.isfile(os.path.join(self.files_path, '{}.obs'.format(filename))) or \
+                not os.path.isfile(os.path.join(self.files_path, '{}.nav'.format(filename))):
+                show_error(_('Error'), _('RTK Lib didn\'t create {}.obs and {}.nav files.\n'
+                                         'Please report us about this problem'.format(filename, filename)))
+
+                widget.close()
+                return
+
+            cmd = 'rtk_lib\\rnx2rtkp.exe -p 0 -o {} {} {}'.format(
+                            pos,
+                            os.path.join(self.files_path, '{}.obs'.format(filename)).replace('/', '\\'),
+                            os.path.join(self.files_path, '{}.nav'.format(filename)).replace('/', '\\'))
+
+            p2 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p2.communicate()
+
+            if not os.path.isfile(os.path.join(self.files_path, '{}.obs'.format(filename))) or \
+                not os.path.isfile(os.path.join(self.files_path, '{}.nav'.format(filename))):
+                show_error(_('Error'), _('RTK Lib didn\'t create {}.pos file.\n'
+                                         'Please report us about this problem'.format(filename, filename)))
+
+                widget.close()
+                return
+
+            # if err:
+            #     show_error(_('Error'), err.decode('cp866'))
+            #     return
+
+        elif os.path.splitext(second_file)[-1] == '.pos':
+            pos = second_file
+
+        else:
+            show_error(_('Error'), _('There is no match .ubx or pos file for {}'.format(mag_file)))
+            return
+
+        widget.second_label.setText(_('Create {}'.format('{}.magnete'.format(filename))))
+        widget.progress.setValue(0)
+        # with open(os.path.join(self.files_path, '{}.magnete'.format(filename)), 'w') as magnet_file:
+        #     magnet_len = 0
+        magnet_obj = dict()
+        with open(pos, 'r') as pos_file:
+            file = pos_file.readlines()
+            for l in file:
+                if l[0] == '%':
+                    file.remove(l)
+                    continue
+                time = float(l.split()[0])
+                break
+            start = np.argsort(np.absolute(time - gpst))[0]
+            if gpst[start] == gpst[-1]:
+                widget.second_label.setText(
+                    _('Didn\'t match GPST with time in {} file'.format(os.path.basename(second_file))))
+                return
+
+            length = len(file)
+            time_arr = []
+            lon_arr = []
+            lat_arr = []
+            height_arr = []
+            magnet_arr = []
+            for i, line in enumerate(file):
+                if line[0] == '%':
+                    continue
+                # week = int(line[0])
+                # sec = float(line.split()[1])
+                # time = (week * 7 * 86400) + sec
+                time = float(line.split()[0])
+                indices = np.argsort(np.absolute(time - gpst[start: start + 200]))
+                diff = time - gpst[indices[0] + start]
+                if abs(diff) < 0.0015:
+                    new_offset = indices[0] + start
+                    # print(indices, abs(time - gpst[indices[0] + start]), start, '\n', line)
+                    indices.sort()
+
+                    # gpst[192099 + 120:192099 + 140].tolist() gpst[193099+115:193099+130].tolist()
+
+                    # print(gpst[indices[0]:indices[-1]].tolist())
+                    # print(freq[indices[0]:indices[-1]].tolist())
+                    coeff = np.polyfit(gpst[indices[0]+start:indices[-1]+start],
+                                       freq[indices[0]+start:indices[-1]+start], 1)
+                    poly1d = np.poly1d(coeff)
+                    magnet_field = poly1d(time)
+                    # magnet_file.write('{} {} {} {} {}\n'.format(time, line.split()[2], line.split()[1],
+                    #                                             line.split()[3], magnet_field))
+
+                    time_arr.append(time)
+                    lon_arr.append(line.split()[1])
+                    lat_arr.append(line.split()[2])
+                    height_arr.append(line.split()[3])
+                    magnet_arr.append(magnet_field)
+
+                    widget.progress.setValue((i/length)*99)
+                    start = new_offset
+                    # magnet_len += 1
+                elif diff > 1:
+                    start = np.argsort(np.absolute(time - gpst))[0]
+                    if time - gpst[start] > 3:
+                        break
+
+        for file in os.listdir(self.files_path):
+            if os.path.splitext(file)[-1] in ['.pos', '.nav', '.obs', '.magnete'] or \
+                    os.path.isdir(os.path.join(self.files_path, file)):
+                continue
+            os.remove(os.path.join(self.files_path, file))
+
+        if len(time_arr) == 0:
+            widget.progress.setValue(100)
+            widget.second_label.setText(_('Didn\'t match GPST with time in {} file'.format(os.path.basename(second_file))))
+
+        else:
+            widget.progress.setValue(100)
+            widget.second_label.setText(_('Magnet file was created'))
+
+            magnet_obj['time'] = np.array(time_arr)
+            magnet_obj['lon_lat'] = np.column_stack((np.array(lon_arr), np.array(lat_arr)))
+            magnet_obj['height'] = np.array(height_arr)
+            magnet_obj['magnet'] = np.array(magnet_arr)
+
+            self.add_magnet_from_memory('{}.magnete'.format(filename), magnet_obj, False)
 
     def add_magnet_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
@@ -153,13 +335,20 @@ class CurrentProject(QObject):
             else:
                 path = os.path.splitext(destination)
                 destination = '{}_copy{}'.format(path[0], path[1])
-                answer = show_warning_yes_no(_('File error'), _('This filename in project. '
-                                                                'Do you want to save as\n{}'.format(destination.replace('\\', '/'))))
-                if answer == QMessageBox.Yes:
+                answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
+                                                        'Do you want to "save as" and add to project\n{}\n'
+                                                        'Or just add existed file to project'.format(destination.replace('\\', '/'))))
+                if answer == 0:
                     copyfile(file, destination)
-                else:
+                elif answer == 1:
                     self.progress.close()
                     return
+                elif answer == 2:
+                    destination = os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file))
+                    try:
+                        copyfile(file, destination)
+                    except SameFileError:
+                        pass
 
             value = (it + 1) / len(files) * 99
             it += 1
@@ -202,7 +391,7 @@ class CurrentProject(QObject):
 
         if self.magnet_data.find(os.path.basename(filename)) is None:
             element = ET.SubElement(self.magnet_data, os.path.basename(filename))
-            element.set("indicator", "On")
+            element.set("indicator", "Off")
         self.parent.three_d_plot.add_fly(filename, self.progress, value+18)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
@@ -219,16 +408,33 @@ class CurrentProject(QObject):
 
         filename, extension = os.path.splitext(os.path.basename(file))
         if extension == '.ply':
-            try:
-                copyfile(file, os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file)))
-            except SameFileError:
-                pass
+            destination = os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file))
+            if not os.path.exists(destination):
+                copyfile(file, destination)
+            else:
+                path = os.path.splitext(destination)
+                destination = '{}_copy{}'.format(path[0], path[1])
+                answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
+                                                        'Do you want to "save as" and add to project\n{}\n'
+                                                        'Or just add existed file to project'.format(destination.replace('\\', '/'))))
+                if answer == 0:
+                    copyfile(file, destination)
+                elif answer == 1:
+                    self.progress.close()
+                    return
+                elif answer == 2:
+                    destination = os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file))
+                    try:
+                        copyfile(file, destination)
+                    except SameFileError:
+                        pass
+
             if self.geo_data.find(os.path.basename(file)) is None:
                 self.parent.three_d_plot.add_terrain(file, self.progress, 55)
                 element = ET.SubElement(self.geo_data, os.path.basename(file))
                 element.set("indicator", "Off")
             else:
-                show_info(_('Info'), _('File is already in project'))
+                show_info(_('Info'), _('File {} is already in project'.format(os.path.basename(file))))
         elif extension == '.tif':
             try:
                 if self.geo_data.find('{}.ply'.format(filename)) is None:
@@ -237,7 +443,7 @@ class CurrentProject(QObject):
                     element = ET.SubElement(self.geo_data, '{}.ply'.format(filename))
                     element.set('indicator', 'Off')
                 else:
-                    show_info(_('Info'), _('File is already in project'))
+                    show_info(_('Info'), _('File {}.ply is already in project'.format(filename)))
             except AssertionError:
                 pass
 

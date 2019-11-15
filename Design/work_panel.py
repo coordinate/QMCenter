@@ -3,7 +3,10 @@ import subprocess
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon
-from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog
+from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog, QWidget, QGridLayout, QStackedWidget, \
+    QLabel, QRadioButton, QPushButton, QProgressBar
+
+from Design.ui import show_error
 
 _ = lambda x: x
 
@@ -27,6 +30,8 @@ class WorkspaceView(QTreeView):
 
         self.expanded.connect(lambda idx: self.item_expanded(idx))
         self.collapsed.connect(lambda idx: self.item_collapsed(idx))
+
+        self.magnet_creator = MagnetCreator(self.parent)
 
     def click(self, idx):
         if idx.column() == 1:
@@ -159,6 +164,7 @@ class WorkspaceView(QTreeView):
     def contextMenuEvent(self, event):
         if not self.parent.project_instance.project_path:
             return
+        print([i.data() for i in self.selectedIndexes()])
         item_list = [i.data() for i in self.selectedIndexes()]
 
         if len(item_list) > 2:
@@ -175,7 +181,7 @@ class WorkspaceView(QTreeView):
 
         project_action = {
             self.raw_data_item.text(): {
-                _('Create .magnete files'): lambda: self.create_magnet_files(item_index.data()),
+                # _('Create .magnete files'): lambda: self.create_magnet_files(item_index.data()),
                 _('Add RAW'): self.parent.project_instance.add_raw_data,
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
@@ -228,7 +234,8 @@ class WorkspaceView(QTreeView):
         context_menu = {}
 
         if len(extension_set) == 2 and '.mag' in extension_set and '.ubx' in extension_set:
-            context_menu[_('Create .magnete files')] = lambda: self.create_magnet_files(lst)
+            # context_menu[_('Create .magnete files')] = lambda: self.parent.project_instance.create_magnet_files(lst)
+            context_menu[_('Create .magnete files')] = lambda: self.magnet_creator.show_widget(lst)
         elif len(extension_set) == 1 and '.magnete' in extension_set:
             context_menu[_('Concatenate')] = lambda: self.parent.three_d_plot.concatenate_magnet(lst)
 
@@ -242,13 +249,25 @@ class WorkspaceView(QTreeView):
         if action:
             context_menu[action.text()]()
 
-    def create_magnet_files(self, files_list):
-        if files_list == 'RAW':
-            item = self.model.findItems(files_list)[0]
-            files_list = []
-            for r in range(item.rowCount()):
-                files_list.append(item.child(r).text())
-        print(files_list)
+    # def create_magnet_files(self, files_list):
+    #     mag_files = [m for m in files_list if os.path.splitext(m)[-1] == '.mag']
+    #
+    #     files_path = os.path.join(self.parent.project_instance.files_path,
+    #                               self.parent.project_instance.raw_data.attrib['name'])
+    #     for m in mag_files:
+    #         if os.path.splitext(m)[0] + '.ubx' in files_list:
+    #             cmd = 'MagParser.exe {} {}'.format('{}/{}'.format(files_path, m), self.parent.project_instance.files_path)
+    #             subprocess.Popen(cmd, shell=True)
+    #
+    #         else:
+    #             show_error(_('Error'), _('There is no match .ubx file for {}'.format(m)))
+    #
+    #     # if files_list == 'RAW':
+    #     #     item = self.model.findItems(files_list)[0]
+    #     #     files_list = []
+    #     #     for r in range(item.rowCount()):
+    #     #         files_list.append(item.child(r).text())
+    #     print(files_list)
 
     def cut_magnet_data(self, item_index):
         if self.parent.palette.settings_widget.isVisible():
@@ -283,3 +302,72 @@ class WorkspaceView(QTreeView):
         path = os.path.join(self.parent.project_instance.files_path,
                                  item_index.parent().data(), item_index.data())
         subprocess.Popen(r'explorer /select, "{}"'.format(path.replace('/', '\\')))
+
+
+class MagnetCreator(QWidget):
+    def __init__(self, parent):
+        QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
+        self.parent = parent
+        self.mag_file = None
+        self.second_file = None
+        self.setWindowTitle(_('Create magnet file'))
+        self.layout = QGridLayout(self)
+
+        self.first_page = QWidget()
+        first_lay = QGridLayout(self.first_page)
+        first_label = QLabel(_('Create .magnete file from:'))
+        self.ubx_radiobtn = QRadioButton(_('Use chosen .ubx file'))
+        self.ubx_radiobtn.setChecked(True)
+        self.pos_radiobtn = QRadioButton(_('Use own .pos file'))
+        create_btn = QPushButton(_('Create'))
+        self.browse_btn = QPushButton(_('Browse'))
+        self.browse_btn.setEnabled(False)
+        first_lay.addWidget(first_label, 0, 0, 1, 3)
+        first_lay.addWidget(self.ubx_radiobtn, 1, 0, 1, 1)
+        first_lay.addWidget(self.pos_radiobtn, 2, 0, 1, 1)
+        first_lay.addWidget(self.browse_btn, 3, 1, 1, 1)
+        first_lay.addWidget(create_btn, 3, 2, 1, 1)
+
+        self.second_page = QWidget()
+        self.second_lay = QGridLayout(self.second_page)
+        self.progress = QProgressBar()
+        self.second_label = QLabel()
+        self.second_lay.addWidget(self.second_label, 0, 0, 1, 1)
+        self.second_lay.addWidget(self.progress, 1, 0, 1, 1)
+
+        self.stack_widget = QStackedWidget()
+        self.stack_widget.addWidget(self.first_page)
+        self.stack_widget.addWidget(self.second_page)
+        self.stack_widget.setCurrentWidget(self.first_page)
+        self.layout.addWidget(self.stack_widget)
+
+        self.ubx_radiobtn.clicked.connect(lambda: self.browse_btn.setEnabled(False))
+        self.pos_radiobtn.clicked.connect(lambda: self.browse_btn.setEnabled(True))
+        self.browse_btn.clicked.connect(lambda: self.open_filedialog())
+        create_btn.clicked.connect(lambda: self.create_magnet())
+
+    def show_widget(self, files_list):
+        self.mag_file = [m for m in files_list if os.path.splitext(m)[-1] == '.mag'][0]
+        self.second_file = [u for u in files_list if os.path.splitext(u)[-1] == '.ubx'][0]
+
+        self.show()
+
+    def open_filedialog(self):
+        file = QFileDialog.getOpenFileName(None, _("Open file"),
+                                                       self.parent.project_instance.files_path, "GPS file (*.pos)")[0]
+
+        if not file:
+            return
+        self.second_file = file
+
+    def create_magnet(self):
+        self.stack_widget.setCurrentWidget(self.second_page)
+        self.parent.project_instance.create_magnet_files((self.mag_file, self.second_file), self)
+
+    def closeEvent(self, QCloseEvent):
+        self.mag_file = None
+        self.second_file = None
+        self.stack_widget.setCurrentWidget(self.first_page)
+        self.ubx_radiobtn.setChecked(True)
+        self.browse_btn.setEnabled(False)
+        self.close()

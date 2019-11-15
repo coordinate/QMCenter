@@ -24,6 +24,18 @@ def show_warning_yes_no(title, message):
     return QMessageBox.warning(win, title, message, QMessageBox.Yes | QMessageBox.No)
 
 
+def show_message_saveas_cancel_add(title, message):
+    msg = QMessageBox()
+    msg.setWindowTitle(title)
+    msg.setIcon(QMessageBox.Warning)
+    msg.setText(message)
+    msg.addButton('Save as', QMessageBox.YesRole)
+    msg.addButton('Cancel', QMessageBox.NoRole)
+    msg.addButton('Add to project', QMessageBox.ApplyRole)
+
+    return msg.exec_()
+
+
 class ProgressBar:
     def __init__(self, text="", window_title="", modality=True, cancel_button=None):
         self.progress = QProgressDialog(text, cancel_button, 0, 100)

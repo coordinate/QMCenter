@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTreeWid
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from Design.ui import show_error, ProgressBar
-from design import UIForm
+from Design.design import UIForm
 from Clients.client_socket import Client
 
 _ = lambda x: x

@@ -1,8 +1,11 @@
+import struct
+import crcmod
 import gdal
 import pyproj
 import numpy as np
 import cv2
 import open3d as o3d
+import re
 
 
 _ = lambda x: x
@@ -170,3 +173,44 @@ def read_point_cloud(path):
     points = np.asarray(pcd.points)
     colors = np.asarray(pcd.colors)
     return np.concatenate((points, colors), axis=1)
+
+
+def parse_mag_file(filepath, progress):
+    crc8 = crcmod.predefined.mkCrcFun('crc-8-maxim')
+    file = open(filepath, 'rb').read()
+    pattern = bytes([0xFF, 0x7E, 0x1A]) + b'.{27}'
+    packets = re.findall(pattern, file, flags=re.DOTALL)
+    length = len(packets)
+    gpst_arr = np.empty(length, dtype=np.uint64)
+    freq_arr = np.empty(length, dtype=np.uint32)
+    sig1_arr = np.empty(length, dtype=np.int16)
+    sig2_arr = np.empty(length, dtype=np.int16)
+    sens_temp_arr = np.empty(length, dtype=np.uint16)
+    lamp_temp_arr = np.empty(length, dtype=np.uint16)
+    status_arr = np.empty(length, dtype=np.uint8)
+    dc_current_arr = np.empty(length, dtype=np.uint16)
+    board_temp_arr = np.empty(length, dtype=np.int8)
+
+    for i in range(length):
+        magic = packets[i][:2]
+        assert magic == bytes((0xFF, 0x7E))
+        packet_size = struct.unpack('<B', packets[i][2:3])[0]
+        if packets[i][-1] != crc8(packets[i][3:-1]) or packet_size != 26:
+            print("error")
+
+        data_layout = '<cQLhhHHBHh'
+
+        data, gpst, frequency, sig1, sig2, sens_temp, lamp_temp, status, dc_current, board_temp = struct.unpack(data_layout, packets[i][3:-1])
+        gpst_arr[i] = gpst
+        freq_arr[i] = frequency
+        sig1_arr[i] = sig1
+        sig2_arr[i] = sig2
+        sens_temp_arr[i] = sens_temp
+        lamp_temp_arr[i] = lamp_temp
+        status_arr[i] = status
+        dc_current_arr[i] = dc_current
+        board_temp_arr[i] = board_temp
+        progress.setValue((i/length) * 99)
+
+    return gpst_arr, freq_arr, sig1_arr, sig2_arr, sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr
+
