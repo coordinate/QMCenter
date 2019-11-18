@@ -92,7 +92,7 @@ class CurrentProject(QObject):
 
     def create_new_project(self):
         self.reset_project()
-        dir = QFileDialog.getSaveFileName(None, "Save F:xile", self.path, "QMCenter project (*.qmcproj)")
+        dir = QFileDialog.getSaveFileName(None, "Save File", self.path, "QMCenter project (*.qmcproj)")
         if dir[0] == '':
             return
         self.project_path = dir[0]
@@ -368,7 +368,9 @@ class CurrentProject(QObject):
         magnet = object['magnet']
 
         if save_as:
-            filename = QFileDialog.getSaveFileName(None, _("Save F:xile"), path_to_save, "Magnet files (*.magnete)")[0]
+            filename = QFileDialog.getSaveFileName(None, _("Save File"), path_to_save, "Magnet files (*.magnete)")[0]
+            if not filename:
+                return
         else:
             filename = os.path.join(path_to_save, filename)
 

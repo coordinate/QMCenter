@@ -4,9 +4,9 @@ import subprocess
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon
 from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog, QWidget, QGridLayout, QStackedWidget, \
-    QLabel, QRadioButton, QPushButton, QProgressBar
+    QLabel, QRadioButton, QPushButton, QProgressBar, QMessageBox
 
-from Design.ui import show_error
+from Design.ui import show_warning_yes_no
 
 _ = lambda x: x
 
@@ -164,7 +164,7 @@ class WorkspaceView(QTreeView):
     def contextMenuEvent(self, event):
         if not self.parent.project_instance.project_path:
             return
-        print([i.data() for i in self.selectedIndexes()])
+        # print([i.data() for i in self.selectedIndexes()])
         item_list = [i.data() for i in self.selectedIndexes()]
 
         if len(item_list) > 2:
@@ -249,26 +249,6 @@ class WorkspaceView(QTreeView):
         if action:
             context_menu[action.text()]()
 
-    # def create_magnet_files(self, files_list):
-    #     mag_files = [m for m in files_list if os.path.splitext(m)[-1] == '.mag']
-    #
-    #     files_path = os.path.join(self.parent.project_instance.files_path,
-    #                               self.parent.project_instance.raw_data.attrib['name'])
-    #     for m in mag_files:
-    #         if os.path.splitext(m)[0] + '.ubx' in files_list:
-    #             cmd = 'MagParser.exe {} {}'.format('{}/{}'.format(files_path, m), self.parent.project_instance.files_path)
-    #             subprocess.Popen(cmd, shell=True)
-    #
-    #         else:
-    #             show_error(_('Error'), _('There is no match .ubx file for {}'.format(m)))
-    #
-    #     # if files_list == 'RAW':
-    #     #     item = self.model.findItems(files_list)[0]
-    #     #     files_list = []
-    #     #     for r in range(item.rowCount()):
-    #     #         files_list.append(item.child(r).text())
-    #     print(files_list)
-
     def cut_magnet_data(self, item_index):
         if self.parent.palette.settings_widget.isVisible():
             self.parent.palette.settings_widget.activateWindow()
@@ -280,20 +260,33 @@ class WorkspaceView(QTreeView):
         self.parent.three_d_plot.preprocessing_for_cutting(item_index)
 
     def remove_selected_group(self, lst):
+        answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove selected elements?'))
+        if answer == QMessageBox.No:
+            return
         for r in range(self.model.rowCount()):
             item = self.model.item(r)
             for i in range(item.rowCount()-1, -1, -1):
                 child = item.child(i)
                 if child.text() in lst:
-                    self.remove_element(child.index())
+                    item_index = child.index()
+                    self.parent.project_instance.remove_element(item_index.data())
+                    self.parent.three_d_plot.remove_object(item_index.data())
+                    parent_item = self.model.item(item_index.parent().row())
+                    parent_item.removeRow(item_index.row())
 
     def remove_element(self, item_index):
+        answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove this element?'))
+        if answer == QMessageBox.No:
+            return
         self.parent.project_instance.remove_element(item_index.data())
         self.parent.three_d_plot.remove_object(item_index.data())
         parent_item = self.model.item(item_index.parent().row())
         parent_item.removeRow(item_index.row())
 
     def remove_all(self, item_index):
+        answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove all elements?'))
+        if answer == QMessageBox.No:
+            return
         self.parent.project_instance.remove_all(item_index.data())
         item = self.model.item(item_index.row())
         item.removeRows(0, item.rowCount())

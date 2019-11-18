@@ -1,12 +1,13 @@
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget
+    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget, \
+    QScrollArea
 
+from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
 from Plots.plots import MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Plots.ThreeDPlot import ThreeDVisual, Palette
-from Design.custom_widgets import DetachableTabWidget, Scroll
 from Design.settings_widget import SettingsWidget
 from Design.work_panel import WorkspaceView
 from Design.project_instance import *
@@ -251,7 +252,7 @@ class UIForm:
         self.scroll_3x2_layout = QHBoxLayout(self.scroll_3x2_widget)
         self.scroll_3x2_layout.setContentsMargins(5, 0, 5, 0)
 
-        self.scroll_area_3x2 = Scroll()
+        self.scroll_area_3x2 = QScrollArea()
         self.scroll_area_3x2.setWidgetResizable(True)
         self.scroll_area_3x2.setContentsMargins(0, 0, 0, 0)
         self.scroll_area_3x2.setFrameStyle(0)
@@ -270,7 +271,7 @@ class UIForm:
         self.scroll_6x1_layout = QHBoxLayout(self.scroll_6x1_widget)
         self.scroll_6x1_layout.setContentsMargins(5, 0, 0, 0)
 
-        self.scroll_area_6x1 = Scroll()
+        self.scroll_area_6x1 = QScrollArea()
         self.scroll_area_6x1.setWidgetResizable(True)
         self.scroll_area_6x1.setContentsMargins(0, 0, 0, 0)
         self.scroll_area_6x1.setFrameStyle(0)

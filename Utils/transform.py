@@ -4,9 +4,8 @@ import gdal
 import pyproj
 import numpy as np
 import cv2
-import open3d as o3d
 import re
-
+from plyfile import PlyData, PlyElement
 
 _ = lambda x: x
 _projections = {}
@@ -160,19 +159,29 @@ def get_point_cloud(filename, progress, zone):
 
 
 def save_point_cloud(point_cloud, path):
-    pcd = o3d.PointCloud()
-    points = point_cloud[:, :3]
-    colors = point_cloud[:, 3:]
-    pcd.points = o3d.Vector3dVector(points)
-    pcd.colors = o3d.Vector3dVector(colors)
-    o3d.write_point_cloud(path, pcd)
+    dt = [('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')]
+    vertex = np.array(np.zeros(point_cloud.shape[0]), dtype=dt)
+    vertex['x'] = point_cloud[:, 0]
+    vertex['y'] = point_cloud[:, 1]
+    vertex['z'] = point_cloud[:, 2]
+    vertex['red'] = point_cloud[:, 3]
+    vertex['green'] = point_cloud[:, 4]
+    vertex['blue'] = point_cloud[:, 5]
+    el = PlyElement.describe(vertex, 'vertex')
+    PlyData([el]).write(path)
 
 
 def read_point_cloud(path):
-    pcd = o3d.read_point_cloud(path)
-    points = np.asarray(pcd.points)
-    colors = np.asarray(pcd.colors)
-    return np.concatenate((points, colors), axis=1)
+    pcd = PlyData.read(path)
+    data = pcd.elements[0].data
+    x = np.array(data['x'])
+    y = np.array(data['y'])
+    z = np.array(data['z'])
+    red = np.array(data['red']) / 255
+    green = np.array(data['green']) / 255
+    blue = np.array(data['blue']) / 255
+    points = np.column_stack((x, y, z, red, green, blue))
+    return points
 
 
 def parse_mag_file(filepath, progress):

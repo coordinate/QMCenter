@@ -4,7 +4,7 @@ import subprocess
 from threading import Thread
 
 from PyQt5 import QtCore, QtWebSockets
-from PyQt5.QtCore import QTimer, Qt, pyqtSignal
+from PyQt5.QtCore import QTimer, pyqtSignal
 
 
 class Client(QtCore.QObject):
@@ -17,9 +17,6 @@ class Client(QtCore.QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        with open('ping.txt', 'w') as file:
-            pass
 
         self.ping_server_timer = QTimer()
         self.ping_server_timer.setInterval(800)

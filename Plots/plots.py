@@ -1,26 +1,13 @@
-import os
-
 import numpy as np
-import random
 import pyqtgraph as pg
-import pyqtgraph.opengl as gl
-from pyqtgraph.Qt import QtCore, QtGui
 
 from datetime import datetime
-from math import sqrt
-from OpenGL.GL import *
-from osgeo import gdal
 
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QLabel, QSizePolicy, QMenu, QAction, QWidgetAction, QCheckBox
-from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QPoint, QEvent
-from PyQt5.QtGui import QGuiApplication, QVector3D
-from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
+from PyQt5.QtWidgets import QSizePolicy
+from PyQt5.QtCore import Qt, pyqtSignal, QPointF
+from PyQt5.QtGui import QGuiApplication
 
-from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
-
-from Design.custom_widgets import CustomViewBox
-from Utils.transform import magnet_color, get_point_cloud
+from Design.custom_viewbox import CustomViewBox
 
 _ = lambda x: x
 
@@ -97,10 +84,10 @@ class NonScientificX(pg.AxisItem):
         self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
-        # try:
-        data = [datetime.fromtimestamp(value / 1000).strftime('%S:%f')[:-3] for value in values]
-        # except OSError:
-        #     return [str(round(float(value*1), 3)) for value in values]
+        try:
+            data = [datetime.fromtimestamp(value / 1000).strftime('%S:%f')[:-3] for value in values]
+        except OSError:
+            return [str(round(float(value*1), 3)) for value in values]
         return data
 
     def resizeEvent(self, ev=None):

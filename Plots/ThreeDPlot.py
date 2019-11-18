@@ -3,8 +3,6 @@ import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from math import sqrt
-
 from PyQt5.QtGui import QVector3D, QPixmap
 from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QFrame, QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -462,6 +460,8 @@ class ThreeDVisual(gl.GLViewWidget):
         self.parent.workspace_widget.setEnabled(False)
 
     def reset_cutting_preprocessing(self):
+        self.cut_widget.first_idx = None
+        self.cut_widget.second_idx = None
         self.cut_widget.first_point.setText('')
         self.cut_widget.second_point.setText('')
         self.objects[self.cut_widget.shortcut_object]['object'].color[:] = (1, 1, 1)
@@ -482,6 +482,9 @@ class ThreeDVisual(gl.GLViewWidget):
         self.parent.workspace_widget.setEnabled(True)
 
     def cut_save(self, save_as):
+        if not self.cut_widget.first_idx or not self.cut_widget.second_idx:
+            show_error(_('Error'), _('You must define boundary points.'))
+            return
         filename = self.cut_widget.shortcut_object
         start = self.cut_widget.first_idx
         finish = self.cut_widget.second_idx
