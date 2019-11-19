@@ -18,6 +18,8 @@ class Client(QtCore.QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.server = '127.0.0.1'
+
         self.ping_server_timer = QTimer()
         self.ping_server_timer.setInterval(800)
         self.ping_server_timer.start()
@@ -30,7 +32,7 @@ class Client(QtCore.QObject):
 
     def ping_server(self):  # standard (cmd) ping command
         def enqueue_output():
-            cmd = "ping -w 800 -n 1 192.168.1.37"
+            cmd = "ping -w 800 -n 1 {}".format(self.server)
             out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
             lines = out.decode('cp1250').splitlines()
             try:
@@ -73,8 +75,7 @@ class Client(QtCore.QObject):
         self.client.close()
 
     def connect(self):
-        # self.client.open(QtCore.QUrl("ws://127.0.0.1:8765"))
-        self.client.open(QtCore.QUrl("ws://192.168.1.37:8765"))
+        self.client.open(QtCore.QUrl("ws://{}:8765".format(self.server)))
 
     def decoding_json(self, jsn):
         if 'jsons' in jsn:

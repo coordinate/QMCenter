@@ -1,11 +1,11 @@
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QPushButton, QCheckBox, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QVBoxLayout, QGridLayout, QStackedWidget, QGroupBox, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget, \
-    QScrollArea
+from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
+    QGridLayout, QStackedWidget, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget, QScrollArea
 
 from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
+from Design.info_widget import InfoWidget
 from Plots.plots import MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Plots.ThreeDPlot import ThreeDVisual, Palette
 from Design.settings_widget import SettingsWidget
@@ -115,67 +115,8 @@ class UIForm:
         self.tab_work_panel.addTab(self.workspace_widget, _("Workspace"))
 
         # create Info widget
-        self.info_widget = QWidget()
+        self.info_widget = InfoWidget(self)
         self.tab_work_panel.addTab(self.info_widget, _("Info"))
-        self.layout = QVBoxLayout(self.info_widget)
-
-        self.connection_groupbox = QGroupBox()
-        self.connection_groupbox.setTitle(_('Connection'))
-        self.gridlayout_connection = QGridLayout(self.connection_groupbox)
-
-        self.connection_icon = QLabel()
-        self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
-        self.gridlayout_connection.addWidget(self.connection_icon, 0, 0, 1, 1)
-
-        self.connect_btn = QPushButton(_("Connect"))
-        self.device_on_connect = False
-        self.gridlayout_connection.addWidget(self.connect_btn, 1, 0, 1, 3)
-
-        self.disconnect_btn = QPushButton(_('Disconnect'))
-        self.gridlayout_connection.addWidget(self.disconnect_btn, 2, 0, 1, 3)
-
-        self.auto_connect_label = QLabel(_('Auto connect'))
-        self.gridlayout_connection.addWidget(self.auto_connect_label, 0, 2, 1, 1)
-
-        self.auto_connect_chbx = QCheckBox()
-        self.gridlayout_connection.addWidget(self.auto_connect_chbx, 0, 1, 1, 1, alignment=Qt.AlignRight)
-
-        self.layout.addWidget(self.connection_groupbox, alignment=Qt.AlignTop)
-
-        self.state_groupbox = QGroupBox()
-        self.state_groupbox.setTitle(_("State"))
-        self.gridlayout_state = QGridLayout(self.state_groupbox)
-
-        self.static_btn = QPushButton(_("Scaled"))
-        self.gridlayout_state.addWidget(self.static_btn, 1, 0, 1, 1)
-
-        self.graphs_chbx = QCheckBox()
-        self.graphs_chbx.setChecked(True)
-        self.gridlayout_state.addWidget(self.graphs_chbx, 0, 1, 1, 1)
-
-        self.graphs_label = QLabel()
-        self.graphs_label.setText(_("Graphs"))
-        self.gridlayout_state.addWidget(self.graphs_label, 0, 2, 1, 1)
-
-        self.enlarge_chbx = QCheckBox()
-        self.gridlayout_state.addWidget(self.enlarge_chbx, 1, 1, 1, 1)
-
-        self.enlarge_label = QLabel(_("Enlarge"))
-        self.gridlayout_state.addWidget(self.enlarge_label, 1, 2, 1, 1)
-
-        self.temp_label = QLabel(_("Temperature:"))
-        self.deg_label = QLabel("°C")
-        self.deg_num_label = QLabel("0")
-        self.deg_num_label.setAlignment(Qt.AlignRight)
-
-        self.gridlayout_state.addWidget(self.temp_label, 2, 0, 1, 1)
-        self.gridlayout_state.addWidget(self.deg_num_label, 2, 1, 1, 1)
-        self.gridlayout_state.addWidget(self.deg_label, 2, 2, 1, 1)
-
-        self.test_btn = QPushButton('Test')
-        self.gridlayout_state.addWidget(self.test_btn, 3, 0, 1, 1)
-
-        self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
 
         # Create update tabwidget
         self.update_widget = QWidget()

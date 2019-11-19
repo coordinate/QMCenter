@@ -18,7 +18,6 @@ class CurrentProject(QObject):
     def __init__(self, parent):
         QObject.__init__(self)
         self.parent = parent
-        self.path = r'D:\a.bulygin\QMCenter_projects'
         self.expanduser_dir = os.path.expanduser('~')
         self.progress = QProgressDialog("Load files", None, 0, 100)
         self.progress.close()
@@ -42,7 +41,7 @@ class CurrentProject(QObject):
 
     def open_project(self):
         self.reset_project()
-        fileName = QFileDialog.getOpenFileName(None, "Open File", self.path, "QMCenter project (*.qmcproj)")
+        fileName = QFileDialog.getOpenFileName(None, "Open File", self.expanduser_dir, "QMCenter project (*.qmcproj)")
         if fileName[0] == '':
             return
         self.project_path = fileName[0]
@@ -92,7 +91,7 @@ class CurrentProject(QObject):
 
     def create_new_project(self):
         self.reset_project()
-        dir = QFileDialog.getSaveFileName(None, "Save File", self.path, "QMCenter project (*.qmcproj)")
+        dir = QFileDialog.getSaveFileName(None, "Save File", self.expanduser_dir, "QMCenter project (*.qmcproj)")
         if dir[0] == '':
             return
         self.project_path = dir[0]
@@ -125,7 +124,7 @@ class CurrentProject(QObject):
 
     def add_raw_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.path, "RAW files (*.ubx *.mag)")
+                                             self.files_path, "RAW files (*.ubx *.mag)")
 
         if not files[0]:
             return
@@ -321,7 +320,7 @@ class CurrentProject(QObject):
 
     def add_magnet_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.path, "Magnet files (*.magnete)")[0]
+                                             self.files_path, "Magnet files (*.magnete)")[0]
 
         if not files:
             return
@@ -401,7 +400,7 @@ class CurrentProject(QObject):
 
     def add_geo_data(self):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
-                                           self.path, "Geo files (*.tif *.ply)")[0]
+                                           self.files_path, "Geo files (*.tif *.ply)")[0]
 
         if file == '':
             return

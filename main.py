@@ -5,7 +5,7 @@ import requests
 
 from PyQt5 import QtCore, QtWebSockets
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QPixmap, QColor
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTreeWidgetItemIterator, QTreeWidget
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
@@ -23,7 +23,7 @@ class MainWindow(QMainWindow, UIForm):
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
         self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
-        self.tempfile = '{}\\mag_track.magnet'.format(self.tempdir)
+        self.server = '127.0.0.1:5000'
         self.tree_header = None
         self.setupUI(self)
 
@@ -34,14 +34,10 @@ class MainWindow(QMainWindow, UIForm):
 
         self.client = Client()
         self.client.signal_directory_data.connect(lambda jsn: self.file_manager_widget.fill_right_file_model(jsn))
-        self.client.signal_connection.connect(lambda: self.on_connect())
-        self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
-        self.client.signal_disconnect.connect(lambda: self.on_disconnect())
-        self.connect_btn.clicked.connect(lambda: self.client_connect())
-        self.disconnect_btn.clicked.connect(lambda: self.client.close())
+        self.client.signal_connection.connect(lambda: self.info_widget.on_connect())
+        self.client.signal_autoconnection.connect(lambda: self.info_widget.on_autoconnection())
+        self.client.signal_disconnect.connect(lambda: self.info_widget.on_disconnect())
         self.client.signal_stream_data.connect(lambda *args: self.plot_graphs(*args))
-
-        self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
 
         self.stream.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
         self.signals_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
@@ -74,8 +70,6 @@ class MainWindow(QMainWindow, UIForm):
         self.first_page_cancel_btn.clicked.connect(lambda: self.wizard.close())
         self.final_finish_btn.clicked.connect(lambda: self.finish_update())
 
-        self.test_btn.clicked.connect(self.test)
-
     def split_tabs(self):
         self.split_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)
         self.split_lay.addWidget(self.tabwidget_right, 0, 1, 1, 1)
@@ -102,25 +96,14 @@ class MainWindow(QMainWindow, UIForm):
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.stack_widget))
 
     def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
-        self.signals_plot.update(sig1, time, sig2, checkbox=self.graphs_chbx.isChecked())
-        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.graphs_chbx.isChecked())
-        self.lamp_temp_plot.update(temp, time, checkbox=self.graphs_chbx.isChecked())
-        self.dc_plot.update(dc, time, checkbox=self.graphs_chbx.isChecked())
-        self.stream.update(freq, time, checkbox=self.graphs_chbx.isChecked())
-        self.deg_num_label.setText(str(temp/10))
-        self.device_on_connect = True
+        self.signals_plot.update(sig1, time, sig2, checkbox=self.info_widget.graphs_chbx.isChecked())
+        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.info_widget.graphs_chbx.isChecked())
+        self.lamp_temp_plot.update(temp, time, checkbox=self.info_widget.graphs_chbx.isChecked())
+        self.dc_plot.update(dc, time, checkbox=self.info_widget.graphs_chbx.isChecked())
+        self.stream.update(freq, time, checkbox=self.info_widget.graphs_chbx.isChecked())
+        self.info_widget.deg_num_label.setText(str(temp/10))
+        self.info_widget.device_on_connect = True
 
-    # def set_main_graph(self, check):
-    #     if self.tabwidget_left.indexOf(self.stack_widget) > -1 and check == 2:
-    #         self.graphs_6x1_gridlayout.addWidget(self.stream)
-    #         self.stack_widget.setCurrentWidget(self.graphs_6x1_widget)
-    #
-    #     elif self.tabwidget_left.indexOf(self.stack_widget) > -1:
-    #         self.stream.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-    #         self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-    #         self.stack_widget.setCurrentWidget(self.graphs_3x2_widget)
-    #     else:
-    #         return
     def sync_x(self, check):
         if check == 2:
             self.signals_plot.view.setXLink(self.stream.view)
@@ -189,7 +172,7 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.update_widget))
 
-        url = 'http://127.0.0.1:5000/update'
+        url = 'http://{}/update'.format(self.server)
         try:
             res = requests.get(url, timeout=1).json()
         except requests.exceptions.RequestException:
@@ -219,7 +202,7 @@ class MainWindow(QMainWindow, UIForm):
             self.first_page_upload_btn.setEnabled(False)
 
     def upload_file(self, file_url):
-        url = 'http://127.0.0.1:5000/upload_file'
+        url = 'http://{}/upload_file'.format(self.server)
         filesize = os.path.getsize(file_url)
         print(filesize)
         filename = (os.path.basename(file_url))
@@ -260,34 +243,8 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.connection_widget))
 
-    def client_connect(self):
-        self.client.connect()
-        QTimer.singleShot(1000, lambda: self.file_manager_widget.right_file_model_update())
-
-    def on_connect(self):
-        self.connection_icon.setPixmap(QPixmap('images/green_light_icon.png'))
-
-    def on_autoconnection(self):
-        if self.auto_connect_chbx.isChecked():
-            self.client.signal_autoconnection.disconnect()
-            self.connect_btn.click()
-
-    def on_disconnect(self):
-        self.device_on_connect = False
-        self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
-        self.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
-        self.stream.signal_disconnect.emit()
-        self.signals_plot.signal_disconnect.emit()
-        self.dc_plot.signal_disconnect.emit()
-        self.lamp_temp_plot.signal_disconnect.emit()
-        self.sensor_temp_plot.signal_disconnect.emit()
-
-    def auto_connect_chbx_change(self, state):
-        if state == 2:
-            self.connect_btn.click()
-
     def request_device_config(self):
-        url = 'http://127.0.0.1:5000/device'
+        url = 'http://{}/device'.format(self.server)
         try:
             res = requests.get(url).json()
         except requests.exceptions.RequestException:
@@ -334,7 +291,7 @@ class MainWindow(QMainWindow, UIForm):
             item.setBackground(col, QColor(255, 255, 0))
 
     def write_tree(self):
-        url = 'http://127.0.0.1:5000/api/add_message/{}'.format(self.tree_header)
+        url = 'http://{}/api/add_message/{}'.format(self.server, self.tree_header)
         json = {}
         it = QTreeWidgetItemIterator(self.configuration_tree)
         while it.value():
@@ -358,7 +315,7 @@ class MainWindow(QMainWindow, UIForm):
         QTimer.singleShot(3000, self.check_configured_tree)
 
     def check_configured_tree(self):
-        url = 'http://127.0.0.1:5000/{}'.format(self.tree_header)
+        url = 'http://{}/{}'.format(self.server, self.tree_header)
         try:
             res = requests.get(url).json()
         except requests.exceptions.RequestException:
@@ -378,15 +335,6 @@ class MainWindow(QMainWindow, UIForm):
                     it.value().setBackground(i, QColor(255, 255, 255))
             it += 1
             temp_it += 1
-
-    def request_magnet_file(self):
-        url = 'http://127.0.0.1:5000/download'
-        res = requests.post(url)
-        with open(self.tempfile, 'w', newline='') as f:
-            f.write(res.content.decode("utf-8"))
-
-    def test(self):
-        print('test')
 
 
 if __name__ == '__main__':

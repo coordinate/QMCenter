@@ -9,7 +9,6 @@ class TabBar(QTabBar):
     def __init__(self, parent=None):
         QTabBar.__init__(self, parent)
         self.parent = parent
-        self.move_tab = None
         self.pressEvent = False
         self.tab_rect = None
         self.bar_rect = None
@@ -51,7 +50,6 @@ class TabBar(QTabBar):
 
 
 class DetachableTabWidget(QTabWidget):
-    idx = 0
     drag_widget = None
     drag_text = None
     signal = pyqtSignal(object)
@@ -71,7 +69,6 @@ class DetachableTabWidget(QTabWidget):
         if event.source().parentWidget() != self:
             return
 
-        DetachableTabWidget.idx = self.indexOf(self.widget(self.tabBar.currentIndex()))
         if DetachableTabWidget.drag_widget is None:
             DetachableTabWidget.drag_widget = self.widget(self.tabBar.currentIndex())
             DetachableTabWidget.drag_text = self.tabText(self.tabBar.currentIndex())

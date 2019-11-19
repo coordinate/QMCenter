@@ -31,7 +31,7 @@ class SettingsWidget(QWidget):
         self.port_label = QLabel("Port")
 
         ipRange = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"  # Part of the regular expression
-        # Regulare expression
+        # Regular expression
         ipRegex = QRegExp("^" + ipRange + "\\." + ipRange + "\\." + ipRange + "\\." + ipRange + "$")
         ipValidator = QRegExpValidator(ipRegex, self)
 
