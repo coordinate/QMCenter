@@ -1,13 +1,13 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QGridLayout, QStackedWidget, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget, QScrollArea
+    QGridLayout, QStackedWidget, QLineEdit, QTreeWidget, QFrame, QTabWidget
 
 from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
+from Design.graphs_widget import GraphsWidget
 from Design.info_widget import InfoWidget
 from Design.three_D_visual_widget import ThreeDVisual
-from Plots.plots import MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
 from Design.settings_widget import SettingsWidget
 from Design.workspace_widget import WorkspaceView
 from Design.project_instance import *
@@ -182,55 +182,8 @@ class UIForm:
         # create file manager tab
         self.file_manager_widget = FileManager(self)
 
-        # create tab Graphs
-        self.stream = MagneticField()
-        self.signals_plot = SignalsPlot()
-        self.signal_freq_plot = SignalsFrequency()
-        self.lamp_temp_plot = LampTemp()
-        self.sensor_temp_plot = SensorTemp()
-        self.dc_plot = DCPlot()
-
-        self.scroll_3x2_widget = QWidget()
-        self.scroll_3x2_layout = QHBoxLayout(self.scroll_3x2_widget)
-        self.scroll_3x2_layout.setContentsMargins(5, 0, 5, 0)
-
-        self.scroll_area_3x2 = QScrollArea()
-        self.scroll_area_3x2.setWidgetResizable(True)
-        self.scroll_area_3x2.setContentsMargins(0, 0, 0, 0)
-        self.scroll_area_3x2.setFrameStyle(0)
-        self.scroll_area_3x2.setStyleSheet('QScrollArea { background-color : white}')
-        self.scroll_3x2_layout.addWidget(self.scroll_area_3x2)
-
-        self.graphs_3x2_widget = QWidget()
-        # self.graphs_3x2_widget.setMinimumHeight(900)
-        self.graphs_3x2_widget.setStyleSheet('QWidget { background-color : (0, 0, 0)}')
-        self.graphs_3x2_gridlayout = QGridLayout(self.graphs_3x2_widget)
-        self.graphs_3x2_gridlayout.setContentsMargins(0, 0, 0, 0)
-
-        self.scroll_area_3x2.setWidget(self.graphs_3x2_widget)
-
-        self.scroll_6x1_widget = QWidget()
-        self.scroll_6x1_layout = QHBoxLayout(self.scroll_6x1_widget)
-        self.scroll_6x1_layout.setContentsMargins(5, 0, 0, 0)
-
-        self.scroll_area_6x1 = QScrollArea()
-        self.scroll_area_6x1.setWidgetResizable(True)
-        self.scroll_area_6x1.setContentsMargins(0, 0, 0, 0)
-        self.scroll_area_6x1.setFrameStyle(0)
-        self.scroll_area_6x1.setStyleSheet('QScrollArea { background-color : white}')
-        self.scroll_6x1_layout.addWidget(self.scroll_area_6x1)
-
-        self.graphs_6x1_widget = QWidget()
-        self.graphs_6x1_widget.setStyleSheet('QWidget { background-color : white}')
-        self.graphs_6x1_widget.setMinimumHeight(1300)
-        self.graphs_6x1_gridlayout = QGridLayout(self.graphs_6x1_widget)
-        self.graphs_6x1_gridlayout.setContentsMargins(0, 0, 10, 0)
-
-        self.scroll_area_6x1.setWidget(self.graphs_6x1_widget)
-
-        self.stack_widget = QStackedWidget()
-        self.stack_widget.addWidget(self.scroll_3x2_widget)
-        self.stack_widget.addWidget(self.scroll_6x1_widget)
+        # create Graphs tab
+        self.graphs_widget = GraphsWidget(self)
 
         # Create configuration tab
         self.configuration_widget = QWidget()

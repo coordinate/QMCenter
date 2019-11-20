@@ -37,13 +37,7 @@ class MainWindow(QMainWindow, UIForm):
         self.client.signal_connection.connect(lambda: self.info_widget.on_connect())
         self.client.signal_autoconnection.connect(lambda: self.info_widget.on_autoconnection())
         self.client.signal_disconnect.connect(lambda: self.info_widget.on_disconnect())
-        self.client.signal_stream_data.connect(lambda *args: self.plot_graphs(*args))
-
-        self.stream.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
-        self.signals_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
-        self.lamp_temp_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
-        self.sensor_temp_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
-        self.dc_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+        self.client.signal_stream_data.connect(lambda *args: self.graphs_widget.plot_graphs(*args))
 
         self.graphs_btn.clicked.connect(self.add_graphs)
         self.config_btn.clicked.connect(self.add_config)
@@ -54,7 +48,7 @@ class MainWindow(QMainWindow, UIForm):
         self.full_tab_btn.clicked.connect(lambda: self.one_tab())
 
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
-        self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
+        self.tabwidget_left.signal.connect(lambda ev: self.graphs_widget.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
 
         self.configuration_tree.itemDoubleClicked.connect(lambda item, col: self.tree_item_double_clicked(item, col))
@@ -88,50 +82,11 @@ class MainWindow(QMainWindow, UIForm):
                 self.paint_settings_menu_item.setCurrentWidget(value)
 
     def add_graphs(self):
-        if self.tabwidget_left.indexOf(self.stack_widget) == -1:
-            idx = self.tabwidget_left.addTab(self.stack_widget, _("Stream"))
+        if self.tabwidget_left.indexOf(self.graphs_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.graphs_widget, _("Graphs"))
             self.tabwidget_left.setCurrentIndex(idx)
         else:
-            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.stack_widget))
-
-    def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
-        self.signals_plot.update(sig1, time, sig2, checkbox=self.info_widget.graphs_chbx.isChecked())
-        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.info_widget.graphs_chbx.isChecked())
-        self.lamp_temp_plot.update(temp, time, checkbox=self.info_widget.graphs_chbx.isChecked())
-        self.dc_plot.update(dc, time, checkbox=self.info_widget.graphs_chbx.isChecked())
-        self.stream.update(freq, time, checkbox=self.info_widget.graphs_chbx.isChecked())
-        self.info_widget.deg_num_label.setText(str(temp/10))
-        self.info_widget.device_on_connect = True
-
-    def sync_x(self, check):
-        if check == 2:
-            self.signals_plot.view.setXLink(self.stream.view)
-            self.lamp_temp_plot.setXLink(self.stream)
-            self.sensor_temp_plot.setXLink(self.stream)
-            self.dc_plot.setXLink(self.stream)
-        else:
-            self.signals_plot.setXLink(self.signals_plot)
-            self.lamp_temp_plot.setXLink(self.lamp_temp_plot)
-            self.sensor_temp_plot.setXLink(self.sensor_temp_plot)
-            self.dc_plot.setXLink(self.dc_plot)
-
-    def change_grid(self, size):
-        if size.size().width() < 600:
-            self.graphs_6x1_gridlayout.addWidget(self.stream, 0, 0, 1, 20)
-            self.graphs_6x1_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 20)
-            self.graphs_6x1_gridlayout.addWidget(self.signal_freq_plot, 2, 0, 1, 20)
-            self.graphs_6x1_gridlayout.addWidget(self.lamp_temp_plot, 3, 0, 1, 20)
-            self.graphs_6x1_gridlayout.addWidget(self.sensor_temp_plot, 4, 0, 1, 20)
-            self.graphs_6x1_gridlayout.addWidget(self.dc_plot, 5, 0, 1, 20)
-            self.stack_widget.setCurrentWidget(self.scroll_6x1_widget)
-        elif size.size().width() >= 600:
-            self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.signals_plot, 1, 0, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.signal_freq_plot, 2, 0, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 1, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 1, 1, 1)
-            self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 1, 1, 1)
-            self.stack_widget.setCurrentWidget(self.scroll_3x2_widget)
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.graphs_widget))
 
     def add_config(self):
         if self.tabwidget_left.indexOf(self.configuration_widget) == -1:
