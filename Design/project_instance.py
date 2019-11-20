@@ -18,7 +18,8 @@ class CurrentProject(QObject):
     def __init__(self, parent):
         QObject.__init__(self)
         self.parent = parent
-        self.expanduser_dir = os.path.expanduser('~')
+        # self.expanduser_dir = os.path.expanduser('~')
+        self.expanduser_dir = r'D:\a.bulygin\QMCenter_projects'
         self.progress = QProgressDialog("Load files", None, 0, 100)
         self.progress.close()
         self.project_path = None
@@ -31,11 +32,11 @@ class CurrentProject(QObject):
 
     def reset_project(self):
         self.project_path = None
-        self.parent.three_d_plot.reset_data()
+        self.parent.three_d_widget.three_d_plot.reset_data()
         self.parent.workspace_widget.add_view()
-        self.parent.longitude_value_label.setText('')
-        self.parent.latitude_value_label.setText('')
-        self.parent.magnet_value_label.setText('')
+        self.parent.three_d_widget.longitude_value_label.setText('')
+        self.parent.three_d_widget.latitude_value_label.setText('')
+        self.parent.three_d_widget.magnet_value_label.setText('')
         self.parent.file_manager_widget.left_dir_path.setText(self.expanduser_dir)
         self.parent.file_manager_widget.left_file_model_go_to_dir()
 
@@ -73,7 +74,7 @@ class CurrentProject(QObject):
             value = (it + 1)/lenght * 99
             it += 1
 
-            self.parent.three_d_plot.add_fly(file, self.progress, value)
+            self.parent.three_d_widget.three_d_plot.add_fly(file, self.progress, value)
 
         for geo in self.geo_data.getchildren():
             file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.tag)
@@ -85,7 +86,7 @@ class CurrentProject(QObject):
             value = (it + 1)/lenght * 99
             it += 1
 
-            self.parent.three_d_plot.add_terrain(file, self.progress, value)
+            self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, value)
         self.send_tree_to_view()
         self.progress.setValue(100)
 
@@ -354,7 +355,7 @@ class CurrentProject(QObject):
             if self.magnet_data.find(os.path.basename(destination)) is None:
                 element = ET.SubElement(self.magnet_data, os.path.basename(destination))
                 element.set("indicator", "Off")
-            self.parent.three_d_plot.add_fly(destination, self.progress, value)
+            self.parent.three_d_widget.three_d_plot.add_fly(destination, self.progress, value)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
         self.progress.setValue(100)
@@ -373,8 +374,8 @@ class CurrentProject(QObject):
         else:
             filename = os.path.join(path_to_save, filename)
 
-        if os.path.basename(filename) in self.parent.three_d_plot.objects:
-            self.parent.three_d_plot.remove_object(os.path.basename(filename))
+        if os.path.basename(filename) in self.parent.three_d_widget.three_d_plot.objects:
+            self.parent.three_d_widget.three_d_plot.remove_object(os.path.basename(filename))
 
         it = 0
         self.progress.open()
@@ -393,7 +394,7 @@ class CurrentProject(QObject):
         if self.magnet_data.find(os.path.basename(filename)) is None:
             element = ET.SubElement(self.magnet_data, os.path.basename(filename))
             element.set("indicator", "Off")
-        self.parent.three_d_plot.add_fly(filename, self.progress, value+18)
+        self.parent.three_d_widget.three_d_plot.add_fly(filename, self.progress, value+18)
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
         self.send_tree_to_view()
         self.progress.setValue(100)
@@ -431,7 +432,7 @@ class CurrentProject(QObject):
                         pass
 
             if self.geo_data.find(os.path.basename(file)) is None:
-                self.parent.three_d_plot.add_terrain(file, self.progress, 55)
+                self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
                 element = ET.SubElement(self.geo_data, os.path.basename(file))
                 element.set("indicator", "Off")
             else:
@@ -439,7 +440,7 @@ class CurrentProject(QObject):
         elif extension == '.tif':
             try:
                 if self.geo_data.find('{}.ply'.format(filename)) is None:
-                    self.parent.three_d_plot.add_terrain(file, self.progress,
+                    self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress,
                                                          path_to_save=os.path.join(self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename)))
                     element = ET.SubElement(self.geo_data, '{}.ply'.format(filename))
                     element.set('indicator', 'Off')

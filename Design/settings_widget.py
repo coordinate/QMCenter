@@ -30,9 +30,7 @@ class SettingsWidget(QWidget):
         self.ip_label = QLabel("IP")
         self.port_label = QLabel("Port")
 
-        ipRange = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"  # Part of the regular expression
-        # Regular expression
-        ipRegex = QRegExp("^" + ipRange + "\\." + ipRange + "\\." + ipRange + "\\." + ipRange + "$")
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         ipValidator = QRegExpValidator(ipRegex, self)
 
         self.lineEdit_ip = QLineEdit()
@@ -51,6 +49,8 @@ class SettingsWidget(QWidget):
         self.connection_layout.addWidget(self.apply_btn, 3, 2)
         self.connection_layout.addWidget(self.cancel_btn, 3, 3)
         self.connection_layout.addWidget(self.ok_btn, 3, 4)
+        self.apply_btn.clicked.connect(lambda: self.define_server())
+        self.ok_btn.clicked.connect(lambda: self.define_server(True))
 
         # create file manager menu item
         self.settings_menu_items.addItem(QListWidgetItem(_('File Manager')))
@@ -95,3 +95,8 @@ class SettingsWidget(QWidget):
         for key, value in self.settings_menu_dict.items():
             if key == item:
                 self.paint_settings_menu_item.setCurrentWidget(value)
+
+    def define_server(self, close=False):
+        self.parent.server = ':'.join([self.lineEdit_ip, self.lineEdit_port])
+        if close:
+            self.close()

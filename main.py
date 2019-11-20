@@ -56,7 +56,6 @@ class MainWindow(QMainWindow, UIForm):
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
         self.tabwidget_left.signal.connect(lambda ev: self.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
-        self.three_d_plot.set_label_signal.connect(lambda lat, lon, magnet: self.set_labels(lat, lon, magnet))
 
         self.configuration_tree.itemDoubleClicked.connect(lambda item, col: self.tree_item_double_clicked(item, col))
         self.read_tree_btn.clicked.connect(lambda: self.request_device_config())
@@ -124,8 +123,6 @@ class MainWindow(QMainWindow, UIForm):
             self.graphs_6x1_gridlayout.addWidget(self.lamp_temp_plot, 3, 0, 1, 20)
             self.graphs_6x1_gridlayout.addWidget(self.sensor_temp_plot, 4, 0, 1, 20)
             self.graphs_6x1_gridlayout.addWidget(self.dc_plot, 5, 0, 1, 20)
-            # self.graphs_6x1_gridlayout.addWidget(self.sync_time_chbx, 6, 0, 1, 1)
-            # self.graphs_6x1_gridlayout.addWidget(self.sync_time_label, 6, 1, 1, 1)
             self.stack_widget.setCurrentWidget(self.scroll_6x1_widget)
         elif size.size().width() >= 600:
             self.graphs_3x2_gridlayout.addWidget(self.stream, 0, 0, 1, 1)
@@ -134,8 +131,6 @@ class MainWindow(QMainWindow, UIForm):
             self.graphs_3x2_gridlayout.addWidget(self.lamp_temp_plot, 0, 1, 1, 1)
             self.graphs_3x2_gridlayout.addWidget(self.sensor_temp_plot, 1, 1, 1, 1)
             self.graphs_3x2_gridlayout.addWidget(self.dc_plot, 2, 1, 1, 1)
-            # self.graphs_3x2_gridlayout.addWidget(self.sync_time_chbx, 3, 0, 1, 1)
-            # self.graphs_3x2_gridlayout.addWidget(self.sync_time_label, 3, 1, 1, 8)
             self.stack_widget.setCurrentWidget(self.scroll_3x2_widget)
 
     def add_config(self):
@@ -151,11 +146,6 @@ class MainWindow(QMainWindow, UIForm):
             self.tabwidget_left.setCurrentIndex(idx)
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.three_d_widget))
-
-    def set_labels(self, lat, lon, magnet):
-        self.latitude_value_label.setText(str(lat))
-        self.longitude_value_label.setText(str(lon))
-        self.magnet_value_label.setText(str(magnet))
 
     def close_in_left_tabs(self, index):
         self.tabwidget_left.removeTab(index)

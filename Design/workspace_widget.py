@@ -40,11 +40,11 @@ class WorkspaceView(QTreeView):
             if indicator.data(3) == 'Off':
                 indicator.setData(QIcon('images/green_light_icon.png'), 1)
                 indicator.setData('On', 3)
-                self.parent.three_d_plot.show_hide_elements(object_name, 'On')
+                self.parent.three_d_widget.three_d_plot.show_hide_elements(object_name, 'On')
             elif indicator.data(3) == 'On':
                 indicator.setData(QIcon('images/gray_light_icon.png'), 1)
                 indicator.setData('Off', 3)
-                self.parent.three_d_plot.show_hide_elements(object_name, 'Off')
+                self.parent.three_d_widget.three_d_plot.show_hide_elements(object_name, 'Off')
             for ch in self.parent.project_instance.root.getchildren():
                 try:
                     ch.find(object_name).attrib['indicator'] = indicator.data(3)
@@ -60,7 +60,7 @@ class WorkspaceView(QTreeView):
         if parent_click_item.text() == 'RAW':
             return
         indicator = parent_click_item.child(idx.row(), 1)
-        self.parent.three_d_plot.focus_element(idx.data(), indicator.data(3))
+        self.parent.three_d_widget.three_d_plot.focus_element(idx.data(), indicator.data(3))
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)
 
@@ -131,7 +131,7 @@ class WorkspaceView(QTreeView):
 
                 item.setData(ch.attrib['indicator'], 3)
                 self.magnet_data_item.setChild(j, 1, item)
-                self.parent.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
+                self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
 
             self.setExpanded(self.model.indexFromItem(self.geo_item),
                              True if view['Geography'].attrib['expanded'] == 'True' else False)
@@ -141,7 +141,7 @@ class WorkspaceView(QTreeView):
                                                                              else 'green')), '')
                 item.setData(ch.attrib['indicator'], 3)
                 self.geo_item.setChild(k, 1, item)
-                self.parent.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
+                self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
 
         self.setColumnWidth(0, 200)
         self.setColumnWidth(1, 50)
@@ -237,7 +237,7 @@ class WorkspaceView(QTreeView):
             # context_menu[_('Create .magnete files')] = lambda: self.parent.project_instance.create_magnet_files(lst)
             context_menu[_('Create .magnete files')] = lambda: self.magnet_creator.show_widget(lst)
         elif len(extension_set) == 1 and '.magnete' in extension_set:
-            context_menu[_('Concatenate')] = lambda: self.parent.three_d_plot.concatenate_magnet(lst)
+            context_menu[_('Concatenate')] = lambda: self.parent.three_d_widget.three_d_plot.concatenate_magnet(lst)
 
         context_menu[_('Remove elements')] = lambda: self.remove_selected_group(lst)
 
@@ -250,14 +250,14 @@ class WorkspaceView(QTreeView):
             context_menu[action.text()]()
 
     def cut_magnet_data(self, item_index):
-        if self.parent.palette.settings_widget.isVisible():
-            self.parent.palette.settings_widget.activateWindow()
+        if self.parent.three_d_widget.palette.settings_widget.isVisible():
+            self.parent.three_d_widget.palette.settings_widget.activateWindow()
             return
 
         indicator = self.model.itemFromIndex(item_index.parent()).child(item_index.row(), 1)
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)
-        self.parent.three_d_plot.preprocessing_for_cutting(item_index)
+        self.parent.three_d_widget.three_d_plot.preprocessing_for_cutting(item_index)
 
     def remove_selected_group(self, lst):
         answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove selected elements?'))
@@ -270,7 +270,7 @@ class WorkspaceView(QTreeView):
                 if child.text() in lst:
                     item_index = child.index()
                     self.parent.project_instance.remove_element(item_index.data())
-                    self.parent.three_d_plot.remove_object(item_index.data())
+                    self.parent.three_d_widget.three_d_plot.remove_object(item_index.data())
                     parent_item = self.model.item(item_index.parent().row())
                     parent_item.removeRow(item_index.row())
 
@@ -279,7 +279,7 @@ class WorkspaceView(QTreeView):
         if answer == QMessageBox.No:
             return
         self.parent.project_instance.remove_element(item_index.data())
-        self.parent.three_d_plot.remove_object(item_index.data())
+        self.parent.three_d_widget.three_d_plot.remove_object(item_index.data())
         parent_item = self.model.item(item_index.parent().row())
         parent_item.removeRow(item_index.row())
 

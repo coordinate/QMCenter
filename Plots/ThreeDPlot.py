@@ -116,7 +116,7 @@ class Palette(QLabel):
             for i in range(6):
                 grad_tic = QLabel('')
                 grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-                self.parent.layout_3d_widget.addWidget(grad_tic, i + 1, 1, 1, 1)
+                self.parent.layout.addWidget(grad_tic, i + 1, 1, 1, 1)
             return
 
         if not min and not max:
@@ -138,7 +138,7 @@ class Palette(QLabel):
                 grad_tic.setAlignment(Qt.AlignBottom)
 
             grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-            self.parent.layout_3d_widget.addWidget(grad_tic, i+1, 1, 1, 1)
+            self.parent.layout.addWidget(grad_tic, i+1, 1, 1, 1)
 
     def mouseDoubleClickEvent(self, event):
         if self.parent.three_d_plot.cut_widget.isVisible():
@@ -211,7 +211,7 @@ class Palette(QLabel):
             self.recolor_signal.emit(self.min, self.max)
 
 
-class ThreeDVisual(gl.GLViewWidget):
+class ThreeDPlot(gl.GLViewWidget):
     set_label_signal = pyqtSignal(object, object, object)
 
     def __init__(self, parent, palette):
@@ -381,7 +381,6 @@ class ThreeDVisual(gl.GLViewWidget):
         magnet = np.array(())
         lon_lat = np.array(())
 
-        # if self.parent.workspace_widget.cut_widget.isVisible():
         if self.cut_widget.isVisible():
             filename = self.cut_widget.shortcut_object
             objects = [filename]
@@ -444,7 +443,7 @@ class ThreeDVisual(gl.GLViewWidget):
         elif dis[print_index] <= 0.007:
             lon, lat = lon_lat[print_index]
             magnet = magnet[print_index]
-            self.set_label_signal.emit(lat, lon, magnet)
+            self.set_label_signal.emit(lon, lat, magnet)
         else:
             self.set_label_signal.emit('', '', '')
 

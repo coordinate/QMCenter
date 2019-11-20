@@ -1,4 +1,4 @@
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
     QGridLayout, QStackedWidget, QHBoxLayout, QLineEdit, QTreeWidget, QFrame, QTabWidget, QScrollArea
@@ -6,10 +6,10 @@ from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QActio
 from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
 from Design.info_widget import InfoWidget
+from Design.three_D_visual_widget import ThreeDVisual
 from Plots.plots import MagneticField, SignalsPlot, DCPlot, SignalsFrequency, LampTemp, SensorTemp
-from Plots.ThreeDPlot import ThreeDVisual, Palette
 from Design.settings_widget import SettingsWidget
-from Design.work_panel import WorkspaceView
+from Design.workspace_widget import WorkspaceView
 from Design.project_instance import *
 
 _ = lambda x: x
@@ -102,7 +102,7 @@ class UIForm:
         self.tabs_widget.addWidget(self.split_tabwidget)
         self.setCentralWidget(self.tabs_widget)
 
-        # Create work panel
+        # Create Work panel
         self.work_panel = QDockWidget()
         self.work_panel.setWindowTitle(_("Work panel"))
         self.addDockWidget(Qt.LeftDockWidgetArea, self.work_panel)
@@ -111,6 +111,7 @@ class UIForm:
         self.tab_work_panel.setTabPosition(QTabWidget.South)
         self.work_panel.setWidget(self.tab_work_panel)
 
+        # create Workspace widget
         self.workspace_widget = WorkspaceView(self)
         self.tab_work_panel.addTab(self.workspace_widget, _("Workspace"))
 
@@ -248,35 +249,4 @@ class UIForm:
         self.configuration_layout.addWidget(self.write_tree_btn, 1, 1, 1, 1)
 
         # create tab 3D visualization
-        self.three_d_widget = QWidget()
-        self.layout_3d_widget = QGridLayout(self.three_d_widget)
-        self.palette = Palette(self)
-        self.three_d_plot = ThreeDVisual(self, self.palette)
-        self.layout_3d_widget.setHorizontalSpacing(0)
-        self.layout_3d_widget.setVerticalSpacing(0)
-
-        self.layout_3d_widget.addWidget(self.three_d_plot, 0, 0, 100, 100)
-        self.layout_3d_widget.addWidget(self.palette, 1, 2, 6, 1)
-
-        self.longitude_label = QLabel(_("Longitude:"))
-        self.longitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.longitude_value_label = QLabel()
-        self.longitude_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.latitude_label = QLabel(_("Latitude:"))
-        self.latitude_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.latitude_value_label = QLabel()
-        self.latitude_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.magnet_label = QLabel(_("Magnet:"))
-        self.magnet_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-        self.magnet_value_label = QLabel()
-        self.magnet_value_label.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
-
-        self.layout_3d_widget.addWidget(self.longitude_label, 95, 1, 1, 2)
-        self.layout_3d_widget.addWidget(self.longitude_value_label, 95, 3, 1, 5)
-        self.layout_3d_widget.addWidget(self.latitude_label, 96, 1, 1, 2)
-        self.layout_3d_widget.addWidget(self.latitude_value_label, 96, 3, 1, 5)
-        self.layout_3d_widget.addWidget(self.magnet_label, 97, 1, 1, 2)
-        self.layout_3d_widget.addWidget(self.magnet_value_label, 97, 3, 1, 5)
-
-        # self.earth_widget = CesiumPlot()
-
+        self.three_d_widget = ThreeDVisual(self)
