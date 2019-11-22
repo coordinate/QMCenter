@@ -98,9 +98,9 @@ class InfoWidget(QWidget):
         self.device_on_connect = False
         self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
         self.parent.client.signal_autoconnection.connect(lambda: self.on_autoconnection())
-        self.parent.stream.signal_disconnect.emit()
-        self.parent.signals_plot.signal_disconnect.emit()
-        self.parent.dc_plot.signal_disconnect.emit()
-        self.parent.lamp_temp_plot.signal_disconnect.emit()
-        self.parent.sensor_temp_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.magnet.signal_disconnect.emit()
+        self.parent.graphs_widget.signals_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.dc_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.lamp_temp_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.sensor_temp_plot.signal_disconnect.emit()
 

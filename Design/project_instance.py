@@ -18,8 +18,7 @@ class CurrentProject(QObject):
     def __init__(self, parent):
         QObject.__init__(self)
         self.parent = parent
-        # self.expanduser_dir = os.path.expanduser('~')
-        self.expanduser_dir = r'D:\a.bulygin\QMCenter_projects'
+        self.expanduser_dir = os.path.expanduser('~')
         self.progress = QProgressDialog("Load files", None, 0, 100)
         self.progress.close()
         self.project_path = None

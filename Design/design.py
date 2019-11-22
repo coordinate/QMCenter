@@ -9,6 +9,7 @@ from Design.graphs_widget import GraphsWidget
 from Design.info_widget import InfoWidget
 from Design.three_D_visual_widget import ThreeDVisual
 from Design.settings_widget import SettingsWidget
+from Design.update_widget import UpdateWidget
 from Design.workspace_widget import WorkspaceView
 from Design.project_instance import *
 
@@ -40,7 +41,7 @@ class UIForm:
         # Create settings widget
         self.settings_widget = SettingsWidget(self)
 
-        # Create new project widget
+        # Create project instance
         self.project_instance = CurrentProject(self)
 
         # Create toolbar
@@ -85,7 +86,8 @@ class UIForm:
         self.toolbar.addWidget(self.full_tab_btn)
         # self.toolbar.setAllowedAreas(Qt.TopToolBarArea)
 
-        self.tabs_widget = QStackedWidget()
+        # Create Central widget
+        self.central_widget = QStackedWidget()
 
         self.split_tabwidget = QWidget()
         self.split_lay = QGridLayout(self.split_tabwidget)
@@ -98,9 +100,9 @@ class UIForm:
 
         self.tabwidget_right = DetachableTabWidget()
 
-        self.tabs_widget.addWidget(self.one_tabwidget)
-        self.tabs_widget.addWidget(self.split_tabwidget)
-        self.setCentralWidget(self.tabs_widget)
+        self.central_widget.addWidget(self.one_tabwidget)
+        self.central_widget.addWidget(self.split_tabwidget)
+        self.setCentralWidget(self.central_widget)
 
         # Create Work panel
         self.work_panel = QDockWidget()
@@ -120,64 +122,7 @@ class UIForm:
         self.tab_work_panel.addTab(self.info_widget, _("Info"))
 
         # Create update tabwidget
-        self.update_widget = QWidget()
-        self.gridlayout_update = QGridLayout(self.update_widget)
-
-        self.update_tree = QTreeWidget()
-        self.update_tree.setColumnCount(2)
-        self.update_tree.setHeaderLabels([_('Parameter'), _('Version')])
-        self.gridlayout_update.addWidget(self.update_tree, 0, 0, 1, 1)
-
-        self.update_tree_btn = QPushButton(_('Update'))
-        self.gridlayout_update.addWidget(self.update_tree_btn, 1, 1, 1, 1)
-
-        # create wizard
-        self.wizard = QStackedWidget()
-        self.wizard.setWindowTitle(_('Wizard'))
-        self.wizard.setFixedSize(500, 300)
-
-        # first page
-        self.wizard_first_page = QWidget()
-        self.fist_page_lay = QGridLayout(self.wizard_first_page)
-
-        first_page_label = QLabel(_('Open file to load into device'))
-        first_page_label.setStyleSheet("font: 14pt;")
-        self.first_page_lineedit = QLineEdit()
-        self.browse_btn = QPushButton(_("Browse..."))
-        self.check_file_label = QLabel()
-        self.first_page_line = QFrame()
-        self.first_page_line.setFrameShape(QFrame.HLine)
-        self.first_page_line.setStyleSheet("color: (0, 0, 0)")
-        self.first_page_upload_btn = QPushButton(_('Upload'))
-        self.first_page_upload_btn.setEnabled(False)
-
-        self.first_page_cancel_btn = QPushButton(_('Cancel'))
-        self.fist_page_lay.addWidget(first_page_label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
-        self.fist_page_lay.addWidget(self.first_page_lineedit, 1, 0, 1, 5)
-        self.fist_page_lay.addWidget(self.browse_btn, 1, 5, 1, 1)
-        self.fist_page_lay.addWidget(self.check_file_label, 2, 0, 1, 6, alignment=Qt.AlignCenter)
-        self.fist_page_lay.addWidget(self.first_page_line, 3, 0, 1, 6)
-        self.fist_page_lay.addWidget(self.first_page_upload_btn, 4, 4, 1, 1)
-        self.fist_page_lay.addWidget(self.first_page_cancel_btn, 4, 5, 1, 1)
-
-        self.file_dialog = QFileDialog()
-        self.file_dialog.setDirectory(self.expanduser_dir)
-        self.wizard.addWidget(self.wizard_first_page)
-
-        # self.wizard_load_progress = ProgressBar()
-
-        self.wizard_final_page = QWidget()
-        self.final_page_lay = QGridLayout(self.wizard_final_page)
-        self.final_page_label = QLabel(_('Success'))
-        self.final_page_label.setStyleSheet("font: 14pt;")
-        self.final_page_line = QFrame()
-        self.final_page_line.setFrameShape(QFrame.HLine)
-        self.final_page_line.setStyleSheet("color: (0, 0, 0)")
-        self.final_finish_btn = QPushButton(_('Finish'))
-        self.final_page_lay.addWidget(self.final_page_label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
-        self.final_page_lay.addWidget(self.final_page_line, 1, 0, 1, 6)
-        self.final_page_lay.addWidget(self.final_finish_btn, 2, 5, 1, 1)
-        self.wizard.addWidget(self.wizard_final_page)
+        self.update_widget = UpdateWidget(self)
 
         # create file manager tab
         self.file_manager_widget = FileManager(self)

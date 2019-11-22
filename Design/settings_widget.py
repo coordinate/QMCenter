@@ -1,12 +1,16 @@
-from PyQt5.QtCore import QRegExp, Qt
+from PyQt5.QtCore import QRegExp, Qt, pyqtSignal
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QWidget, QGridLayout, QListWidget, QStackedWidget, QListWidgetItem, QLabel, QLineEdit, \
     QPushButton, QFileDialog
+
+from Design.ui import show_error
 
 _ = lambda x: x
 
 
 class SettingsWidget(QWidget):
+    signal_ip_changed = pyqtSignal(object)
+
     def __init__(self, parent):
         QWidget.__init__(self)
         # Create settings widget
@@ -28,7 +32,7 @@ class SettingsWidget(QWidget):
         self.connection_layout = QGridLayout(self.connection_widget)
 
         self.ip_label = QLabel("IP")
-        self.port_label = QLabel("Port")
+        # self.port_label = QLabel("Port")
 
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         ipValidator = QRegExpValidator(ipRegex, self)
@@ -38,10 +42,10 @@ class SettingsWidget(QWidget):
         self.connection_layout.addWidget(self.ip_label, 0, 0)
         self.connection_layout.addWidget(self.lineEdit_ip, 0, 1, 1, 3)
 
-        self.lineEdit_port = QLineEdit()
-        self.lineEdit_port.setMaxLength(5)
-        self.connection_layout.addWidget(self.port_label, 1, 0)
-        self.connection_layout.addWidget(self.lineEdit_port, 1, 1, 1, 3)
+        # self.lineEdit_port = QLineEdit()
+        # self.lineEdit_port.setMaxLength(5)
+        # self.connection_layout.addWidget(self.port_label, 1, 0)
+        # self.connection_layout.addWidget(self.lineEdit_port, 1, 1, 1, 3)
 
         self.apply_btn = QPushButton(_("Apply"))
         self.cancel_btn = QPushButton(_("Cancel"))
@@ -51,6 +55,7 @@ class SettingsWidget(QWidget):
         self.connection_layout.addWidget(self.ok_btn, 3, 4)
         self.apply_btn.clicked.connect(lambda: self.define_server())
         self.ok_btn.clicked.connect(lambda: self.define_server(True))
+        self.cancel_btn.clicked.connect(lambda: self.connection_canceled())
 
         # create file manager menu item
         self.settings_menu_items.addItem(QListWidgetItem(_('File Manager')))
@@ -97,6 +102,15 @@ class SettingsWidget(QWidget):
                 self.paint_settings_menu_item.setCurrentWidget(value)
 
     def define_server(self, close=False):
-        self.parent.server = ':'.join([self.lineEdit_ip, self.lineEdit_port])
+        if len(self.lineEdit_ip.text().split('.')) < 4:
+            show_error(_('Error'), _('IP address is not correct.'))
+            return
+        self.parent.client.close()
+        self.signal_ip_changed.emit(self.lineEdit_ip.text())
+
         if close:
             self.close()
+
+    def connection_canceled(self):
+        self.lineEdit_ip.setText(self.parent.server)
+        self.close()

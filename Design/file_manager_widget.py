@@ -2,8 +2,10 @@ import datetime
 import json
 import os
 import shutil
-
 import requests
+
+from win32 import win32api
+
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QTableView, QFileSystemModel, QCheckBox, QLabel, \
@@ -20,7 +22,10 @@ class FileManager(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent
-        self.server = '127.0.0.1:5000'
+        self.port = '5000'
+        self.server = ':'.join([self.parent.server, self.port])
+        drives = win32api.GetLogicalDriveStrings().split('\\\000')[:-1]
+        self.logical_drives = drives + [d+'/' for d in drives]
         # create file manager tab
         self.file_manager_layout = QGridLayout(self)
 
@@ -116,6 +121,11 @@ class FileManager(QWidget):
         self.upload_file_to_device_btn.clicked.connect(lambda: self.upload_file_to_device())
         self.delete_file_btn.clicked.connect(lambda: self.delete_file_from_file_model())
 
+        self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
+
+    def change_ip(self, ip):
+        self.server = ':'.join([ip, self.port])
+
     def left_file_model_clicked(self, idx):
         if os.path.isfile(self.left_file_model.filePath(idx)) and self.parent.info_widget.device_on_connect:
             self.upload_file_to_device_btn.setEnabled(True)
@@ -135,7 +145,7 @@ class FileManager(QWidget):
     def left_file_model_up(self, idx):
         self.upload_file_to_device_btn.setEnabled(False)
         self.file_to_delete = None
-        if self.left_dir_path.text() in ["D:/", "D:", "C:/", "C:"]:
+        if self.left_dir_path.text() in self.logical_drives:
             self.left_file_model = QFileSystemModel()
             self.left_file_model.setFilter(QDir.AllEntries | QDir.NoDotAndDotDot)
             self.left_file_model.setRootPath('')

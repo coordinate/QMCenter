@@ -51,13 +51,13 @@ update = {
 
 
 # update tab [get(*read) update info] *automatically
-@app.route('/update', methods=['GET'])
+@app.route('/spec_update', methods=['GET'])
 def get_update():
     return jsonify({'update': update})
 
 
 # update tab, wizard upload btn [post(upload) update file]
-@app.route('/upload_file', methods=['POST'])
+@app.route('/update', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
         f = request.files['update_file']

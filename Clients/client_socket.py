@@ -15,10 +15,12 @@ class Client(QtCore.QObject):
     signal_autoconnection = pyqtSignal()
     signal_disconnect = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
 
-        self.server = '127.0.0.1'
+        self.parent = parent
+        self.ip = self.parent.server
+        self.port = '8765'
 
         self.ping_server_timer = QTimer()
         self.ping_server_timer.setInterval(800)
@@ -30,11 +32,16 @@ class Client(QtCore.QObject):
         self.client.textMessageReceived.connect(self.decoding_json)
         self.client.pong.connect(self.onPong)
 
+        self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
+
+    def change_ip(self, ip):
+        self.ip = ip
+
     def ping_server(self):  # standard (cmd) ping command
         def enqueue_output():
-            cmd = "ping -w 800 -n 1 {}".format(self.server)
+            cmd = "ping -w 800 -n 1 {}".format(self.ip)
             out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
-            lines = out.decode('cp1250').splitlines()
+            lines = out.decode('cp866').splitlines()
             try:
                 lost_percent = re.findall(r'\d+', lines[6].strip())[0]
                 if int(lost_percent) < 50:
@@ -44,6 +51,7 @@ class Client(QtCore.QObject):
                     self.signal_disconnect.emit()
             except IndexError:
                 print('ping command is not done')
+                self.signal_disconnect.emit()
 
         t = Thread(target=enqueue_output)
         t.daemon = True  # thread dies with the program
@@ -75,7 +83,7 @@ class Client(QtCore.QObject):
         self.client.close()
 
     def connect(self):
-        self.client.open(QtCore.QUrl("ws://{}:8765".format(self.server)))
+        self.client.open(QtCore.QUrl("ws://{}:{}".format(self.ip, self.port)))
 
     def decoding_json(self, jsn):
         if 'jsons' in jsn:

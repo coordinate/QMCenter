@@ -7,9 +7,8 @@ from PyQt5 import QtCore, QtWebSockets
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QTreeWidgetItemIterator, QTreeWidget
-from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
-from Design.ui import show_error, ProgressBar
+from Design.ui import show_error
 from Design.design import UIForm
 from Clients.client_socket import Client
 
@@ -23,7 +22,7 @@ class MainWindow(QMainWindow, UIForm):
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
         self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
-        self.server = '127.0.0.1:5000'
+        self.server = '127.0.0.1'
         self.tree_header = None
         self.setupUI(self)
 
@@ -32,7 +31,7 @@ class MainWindow(QMainWindow, UIForm):
         self.open_project.triggered.connect(lambda: self.project_instance.open_project())
         self.exit_action.triggered.connect(lambda: sys.exit())
 
-        self.client = Client()
+        self.client = Client(self)
         self.client.signal_directory_data.connect(lambda jsn: self.file_manager_widget.fill_right_file_model(jsn))
         self.client.signal_connection.connect(lambda: self.info_widget.on_connect())
         self.client.signal_autoconnection.connect(lambda: self.info_widget.on_autoconnection())
@@ -55,22 +54,14 @@ class MainWindow(QMainWindow, UIForm):
         self.read_tree_btn.clicked.connect(lambda: self.request_device_config())
         self.write_tree_btn.clicked.connect(lambda: self.write_tree())
 
-        self.update_tree_btn.clicked.connect(lambda: self.wizard.show())
-        self.browse_btn.clicked.connect(lambda: self.file_dialog.show())
-        self.file_dialog.fileSelected.connect(lambda url: self.update_file_selected(url))
-        self.first_page_lineedit.textChanged.connect(lambda: self.update_file_selected())
-        self.first_page_upload_btn.clicked.connect(lambda: self.upload_file(self.url))
-        self.first_page_cancel_btn.clicked.connect(lambda: self.wizard.close())
-        self.final_finish_btn.clicked.connect(lambda: self.finish_update())
-
     def split_tabs(self):
         self.split_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)
         self.split_lay.addWidget(self.tabwidget_right, 0, 1, 1, 1)
-        self.tabs_widget.setCurrentWidget(self.split_tabwidget)
+        self.central_widget.setCurrentWidget(self.split_tabwidget)
 
     def one_tab(self):
         self.one_lay.addWidget(self.tabwidget_left)
-        self.tabs_widget.setCurrentWidget(self.one_tabwidget)
+        self.central_widget.setCurrentWidget(self.one_tabwidget)
 
     def save_file_models_folder(self):
         self.file_manager_widget.left_file_model_auto_sync_label.setText(self.settings_widget.left_folder_tracked.text())
@@ -117,60 +108,7 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.update_widget))
 
-        url = 'http://{}/update'.format(self.server)
-        try:
-            res = requests.get(url, timeout=1).json()
-        except requests.exceptions.RequestException:
-            show_error(_('Error'), _('Server is not responding.'))
-            return
-        it = iter(res.keys())
-        root = next(it)
-        self.update_tree.clear()
-
-        self.fill_tree(self.update_tree, res[root])
-
-    def update_file_selected(self, url=None):
-        self.url = ''
-        if url:
-            self.url = url
-            self.first_page_lineedit.setText('')
-            self.first_page_lineedit.insert(url)
-        else:
-            url = self.first_page_lineedit.text()
-            self.file_dialog.setDirectory(url if url else self.expanduser_dir)
-            self.url = url
-        if os.path.isfile(url):
-            self.check_file_label.setText('File is good')
-            self.first_page_upload_btn.setEnabled(True)
-        else:
-            self.check_file_label.setText('File is not good')
-            self.first_page_upload_btn.setEnabled(False)
-
-    def upload_file(self, file_url):
-        url = 'http://{}/upload_file'.format(self.server)
-        filesize = os.path.getsize(file_url)
-        print(filesize)
-        filename = (os.path.basename(file_url))
-        m = MultipartEncoder(
-            fields={'update_file': (filename, open(file_url, 'rb'))}  # added mime-type here
-        )
-        progress = ProgressBar(text=_('Load file into device'), window_title=_('Upload File'))
-        e = MultipartEncoderMonitor(m, lambda monitor: progress.update((monitor.bytes_read/filesize)*99))
-
-        try:
-            res = requests.post(url, data=e, headers={'Content-Type': e.content_type}, timeout=5)
-        except requests.exceptions.RequestException:
-            show_error(_('Error'), _('Server is not responding.'))
-            progress.close()
-            return
-
-        if res.ok:
-            progress.update(100)
-            self.wizard.setCurrentWidget(self.wizard_final_page)
-
-    def finish_update(self):
-        self.wizard.close()
-        self.wizard.setCurrentWidget(self.wizard_first_page)
+        self.update_widget.get_update_tree()
 
     def add_file_manager(self):
         if self.tabwidget_left.indexOf(self.file_manager_widget) == -1:
