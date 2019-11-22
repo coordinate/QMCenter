@@ -1,8 +1,9 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, QLabel, \
-    QGridLayout, QStackedWidget, QLineEdit, QTreeWidget, QFrame, QTabWidget
+from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, \
+    QGridLayout, QStackedWidget, QTabWidget, QSizePolicy
 
+from Design.configuration_widget import ConfigurationWidget
 from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
 from Design.graphs_widget import GraphsWidget
@@ -20,7 +21,7 @@ class UIForm:
     def setupUI(self, Form):
         Form.setObjectName("MainWindow")
         self.setWindowTitle("QMCenter")
-        self.setMinimumSize(1000, 500)
+        self.setMinimumSize(1000, 650)
 
         # Create main menu
         self.menu = QMenuBar()
@@ -47,7 +48,6 @@ class UIForm:
         # Create toolbar
         self.graphs_btn = QPushButton()
         self.graphs_btn.setText(_("Graphs"))
-        self.graphs_btn.setMinimumSize(100, 30)
 
         self.config_btn = QPushButton()
         self.config_btn.setText(_("Config"))
@@ -55,21 +55,24 @@ class UIForm:
         self.visual_btn = QPushButton()
         self.visual_btn.setText(_("3D Visualization"))
 
-        # self.update_btn = QPushButton()
-        # self.update_btn.setText("Update")
+        self.update_btn = QPushButton()
+        self.update_btn.setText("Update")
 
-        self.update_btn = QAction()
-        self.update_btn.setText(_("Update"))
-
+        # self.update_btn = QAction()
+        # self.update_btn.setText(_("Update"))
+        #
         self.file_manager = QPushButton(_('File manager'))
 
-        self.split_vertical_btn = QPushButton()
-        self.split_vertical_btn.setIcon(QIcon('images/split_vertical.png'))
-        self.split_vertical_btn.setIconSize(QSize(32, 32))
+        empty = QWidget()
+        empty.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-        self.full_tab_btn = QPushButton()
-        self.full_tab_btn.setIcon(QIcon('images/full_tab.png'))
-        self.full_tab_btn.setIconSize(QSize(32, 32))
+        self.split_tab_btn = QPushButton()
+        self.split_tab_btn.setIcon(QIcon('images/split_vertical.png'))
+        self.split_tab_btn.setIconSize(QSize(25, 25))
+
+        self.one_tab_btn = QPushButton()
+        self.one_tab_btn.setIcon(QIcon('images/full_tab.png'))
+        self.one_tab_btn.setIconSize(QSize(25, 25))
 
         self.visual_btn = QPushButton()
         self.visual_btn.setText(_("3D Visualization"))
@@ -79,11 +82,13 @@ class UIForm:
         self.toolbar.addWidget(self.graphs_btn)
         self.toolbar.addWidget(self.config_btn)
         self.toolbar.addWidget(self.visual_btn)
-        self.toolbar.addAction(self.update_btn)
+        self.toolbar.addWidget(self.update_btn)
         self.toolbar.addWidget(self.file_manager)
         self.toolbar.addSeparator()
-        self.toolbar.addWidget(self.split_vertical_btn)
-        self.toolbar.addWidget(self.full_tab_btn)
+        self.toolbar.addWidget(empty)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.split_tab_btn)
+        self.toolbar.addWidget(self.one_tab_btn)
         # self.toolbar.setAllowedAreas(Qt.TopToolBarArea)
 
         # Create Central widget
@@ -131,20 +136,7 @@ class UIForm:
         self.graphs_widget = GraphsWidget(self)
 
         # Create configuration tab
-        self.configuration_widget = QWidget()
-        self.configuration_widget.setWindowTitle(_("Configuration"))
-        self.configuration_layout = QGridLayout(self.configuration_widget)
-
-        self.configuration_tree = QTreeWidget()
-        self.configuration_tree.setColumnCount(4)
-        self.configuration_tree.setHeaderLabels([_('Parameter'), _('Value'), _('Min'), _('Max')])
-        self.configuration_tree.editTriggers()
-        self.configuration_layout.addWidget(self.configuration_tree, 0, 0, 1, 10)
-
-        self.read_tree_btn = QPushButton(_('Read'))
-        self.configuration_layout.addWidget(self.read_tree_btn, 1, 0, 1, 1)
-        self.write_tree_btn = QPushButton(_('Write'))
-        self.configuration_layout.addWidget(self.write_tree_btn, 1, 1, 1, 1)
+        self.configuration_widget = ConfigurationWidget(self)
 
         # create tab 3D visualization
         self.three_d_widget = ThreeDVisual(self)

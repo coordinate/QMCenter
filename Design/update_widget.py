@@ -27,7 +27,9 @@ class UpdateWidget(QWidget):
         self.update_tree.setHeaderLabels([_('Parameter'), _('Version')])
         self.gridlayout_update.addWidget(self.update_tree, 0, 0, 1, 1)
 
+        self.read_update_btn = QPushButton(_('Read update file'))
         self.load_update_btn = QPushButton(_('Load update file'))
+        self.gridlayout_update.addWidget(self.read_update_btn, 1, 0, 1, 1, alignment=Qt.AlignRight)
         self.gridlayout_update.addWidget(self.load_update_btn, 1, 1, 1, 1)
 
         # create wizard
@@ -60,6 +62,7 @@ class UpdateWidget(QWidget):
         self.layout.addWidget(self.cancel_btn, 5, 5, 1, 1)
 
         self.load_update_btn.clicked.connect(lambda: self.wizard.show())
+        self.read_update_btn.clicked.connect(lambda: self.get_update_tree())
         self.browse_btn.clicked.connect(lambda: self.open_filedialog())
         self.lineedit.textChanged.connect(lambda: self.update_file_selected())
         self.upload_btn.clicked.connect(lambda: self.upload_update_file(self.url))
@@ -70,10 +73,10 @@ class UpdateWidget(QWidget):
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])
+        self.update_tree.clear()
 
     def get_update_tree(self):
         url = 'http://{}/spec_update'.format(self.server)
-        print(url)
         try:
             res = requests.get(url, timeout=1)
         except requests.exceptions.RequestException:
@@ -87,7 +90,7 @@ class UpdateWidget(QWidget):
         root = next(it)
         self.update_tree.clear()
 
-        self.parent.fill_tree(self.update_tree, res[root])
+        self.parent.configuration_widget.fill_tree(self.update_tree, res[root])
 
     def open_filedialog(self):
         file = QFileDialog.getOpenFileName(None, _("Open update file"),
@@ -111,7 +114,6 @@ class UpdateWidget(QWidget):
     def upload_update_file(self, file_url):
         url = 'http://{}/update'.format(self.server)
         filesize = os.path.getsize(file_url)
-        print(filesize)
         if filesize == 0:
             show_error(_('Error'), _('File size must be non zero.'))
             return

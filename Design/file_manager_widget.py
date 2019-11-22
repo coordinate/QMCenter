@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QTableView, QFileSy
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 from requests_toolbelt.downloadutils.tee import tee_to_bytearray
 
-from Design.ui import ProgressBar, show_error, show_warning_yes_no
+from Design.ui import ProgressBar, show_error, show_warning_yes_no, show_info
 
 _ = lambda x: x
 
@@ -68,6 +68,7 @@ class FileManager(QWidget):
         self.delete_file_btn = QPushButton()
         self.delete_file_btn.setIcon(QIcon('images/delete_btn.png'))
         self.delete_file_btn.setFixedWidth(30)
+        self.file_to_delete = None
         self.file_manager_layout.addWidget(self.download_file_from_device_btn, 2, 10, 1, 1)
         self.file_manager_layout.addWidget(self.upload_file_to_device_btn, 3, 10, 1, 1)
         self.file_manager_layout.addWidget(self.delete_file_btn, 4, 10, 1, 1)
@@ -91,7 +92,8 @@ class FileManager(QWidget):
         self.righttableview.verticalHeader().hide()
         self.righttableview.setShowGrid(False)
         self.right_file_model = QStandardItemModel()
-        self.right_file_model_path = ['start_folder']
+        self.device_start_folder = 'start_folder'
+        self.right_file_model_path = [self.device_start_folder]
 
         self.righttableview.setModel(self.right_file_model)
         self.file_manager_layout.addWidget(self.righttableview, 1, 11, 5, 10)
@@ -125,6 +127,8 @@ class FileManager(QWidget):
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])
+        self.right_file_model_path = [self.device_start_folder]
+        self.right_file_model.clear()
 
     def left_file_model_clicked(self, idx):
         if os.path.isfile(self.left_file_model.filePath(idx)) and self.parent.info_widget.device_on_connect:
@@ -167,8 +171,9 @@ class FileManager(QWidget):
             self.left_file_model.setRootPath(self.left_dir_path.text())
             self.lefttableview.setRootIndex(self.left_file_model.index(self.left_dir_path.text()))
 
-    def right_file_model_update(self):  # todo: update with QTimer?
+    def right_file_model_update(self):
         if not self.parent.info_widget.device_on_connect:
+            show_info(_('Info'), _('Please, connect to device.'))
             return
         folder = '/'.join(self.right_file_model_path)
         self.parent.client.send_folder_name(folder)
@@ -278,6 +283,9 @@ class FileManager(QWidget):
         filename = file.split('/')[-1]
         url = 'http://{}/upload_file_to_device/{}'.format(self.server, '/'.join(self.right_file_model_path))
         filesize = os.path.getsize(file)
+        if filesize == 0:
+            show_error(_('Error'), _('File size must be non zero.'))
+            return
         progress = ProgressBar(text=_('Load file into device'), window_title=_('Upload File'))
         encoder = MultipartEncoder(
             fields={'upload_file': (filename, open(file, 'rb'))}  # added mime-type here
@@ -316,3 +324,7 @@ class FileManager(QWidget):
                 return
             if res.ok:
                 self.right_file_model_update()
+
+    def save_file_models_folder(self):
+        self.left_file_model_auto_sync_label.setText(self.parent.settings_widget.left_folder_tracked.text())
+        self.right_file_model_auto_sync_label.setText(self.parent.settings_widget.right_folder_tracked.text())
