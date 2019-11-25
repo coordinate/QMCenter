@@ -1,5 +1,5 @@
 import requests
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QRegExp
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QTreeWidgetItem, QTreeWidgetItemIterator
 
@@ -13,7 +13,12 @@ class ConfigurationWidget(QWidget):
         QWidget.__init__(self)
         self.parent = parent
         self.port = '5000'
-        self.server = ':'.join([self.parent.server, self.port])
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        if ipRegex.exactMatch(self.parent.server):
+            self.server = ':'.join([self.parent.server, self.port])
+        else:
+            self.server = None
+
         self.setWindowTitle(_("Configuration"))
         self.layout = QGridLayout(self)
 
@@ -39,11 +44,13 @@ class ConfigurationWidget(QWidget):
         self.configuration_tree.clear()
 
     def request_device_config(self):
+        if self.server is None:
+            return
         url = 'http://{}/device'.format(self.server)
         try:
             res = requests.get(url, timeout=1)
         except requests.exceptions.RequestException:
-            show_error(_('Error'), _('Server is not responding.'))
+            show_error(_('Server error'), _('Server is not responding.'))
             return
         if res.ok:
             res = res.json()
@@ -90,6 +97,8 @@ class ConfigurationWidget(QWidget):
             item.setBackground(col, QColor(255, 255, 0))
 
     def write_tree(self):
+        if self.server is None:
+            return
         url = 'http://{}/api/add_message/{}'.format(self.server, self.tree_header)
         json = {}
         it = QTreeWidgetItemIterator(self.configuration_tree)
@@ -106,7 +115,7 @@ class ConfigurationWidget(QWidget):
         try:
             res = requests.post(url=url, json={'{}'.format(self.tree_header): json})
         except requests.exceptions.RequestException:
-            show_error(_('Error'), _("Configuration updating not completed.\nServer is not responding."))
+            show_error(_('Server error'), _("Configuration updating not completed.\nServer is not responding."))
             return
         if res.ok:
             print(res.json())
@@ -114,11 +123,13 @@ class ConfigurationWidget(QWidget):
         QTimer.singleShot(3000, self.check_configured_tree)
 
     def check_configured_tree(self):
+        if self.server is None:
+            return
         url = 'http://{}/{}'.format(self.server, self.tree_header)
         try:
             res = requests.get(url).json()
         except requests.exceptions.RequestException:
-            show_error(_('Error'), _("Configuration updating not completed.\nServer is not responding."))
+            show_error(_('Server error'), _("Configuration updating not completed.\nServer is not responding."))
             return
         temp_tree = QTreeWidget()
         self.fill_tree(temp_tree, res[self.tree_header])

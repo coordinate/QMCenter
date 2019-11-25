@@ -4,7 +4,7 @@ import subprocess
 from threading import Thread
 
 from PyQt5 import QtCore, QtWebSockets
-from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtCore import QTimer, pyqtSignal, QRegExp
 
 
 class Client(QtCore.QObject):
@@ -19,7 +19,11 @@ class Client(QtCore.QObject):
         super().__init__(parent)
 
         self.parent = parent
-        self.ip = self.parent.server
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        if ipRegex.exactMatch(self.parent.server):
+            self.ip = self.parent.server
+        else:
+            self.ip = None
         self.port = '8765'
 
         self.ping_server_timer = QTimer()
@@ -52,10 +56,10 @@ class Client(QtCore.QObject):
             except IndexError:
                 print('ping command is not done')
                 self.signal_disconnect.emit()
-
-        t = Thread(target=enqueue_output)
-        t.daemon = True  # thread dies with the program
-        t.start()
+        if self.ip is not None:
+            t = Thread(target=enqueue_output)
+            t.daemon = True  # thread dies with the program
+            t.start()
 
     def do_ping(self):  # check is connection still alive (Qt function)
         print("client: do_ping")

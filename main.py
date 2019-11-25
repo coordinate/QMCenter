@@ -1,7 +1,9 @@
 import os
 import sys
 import tempfile
+import lxml.etree as ET
 
+from PyQt5.QtCore import QRegExp
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from Design.design import UIForm
@@ -17,7 +19,7 @@ class MainWindow(QMainWindow, UIForm):
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
         self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
-        self.server = '127.0.0.1'
+        self.server = ''
         self.setupUI(self)
 
         self.settings.triggered.connect(lambda: self.settings_widget.show())
@@ -98,9 +100,44 @@ class MainWindow(QMainWindow, UIForm):
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.file_manager_widget))
             self.file_manager_widget.right_file_model_update()
 
+    def read_state(self):
+        if not os.path.isfile('state.xml'):
+            return
+        tree = ET.parse('state.xml')
+        root = tree.getroot()
+        server = root.find('server')
+        project = root.find('project')
+        language = root.find('language')
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        if ipRegex.exactMatch(server.attrib['ip']):
+            self.settings_widget.lineEdit_ip.setText(server.attrib['ip'])
+        if os.path.isfile(project.attrib['path']):
+            self.project_instance.open_project(project.attrib['path'])
+
+    def write_state(self):
+        root = ET.Element('program')
+        root.set('version', '0.8')
+        language = ET.SubElement(root, 'language')
+        language.set('language', 'english')
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        server = ET.SubElement(root, 'server')
+        server.set('ip', self.client.ip if ipRegex.exactMatch(self.client.ip) else '')
+        project = ET.SubElement(root, 'project')
+        if self.project_instance.project_path is not None and os.path.isfile(self.project_instance.project_path):
+            project.set('path', self.project_instance.project_path)
+        else:
+            project.set('path', '')
+        tree = ET.ElementTree(root)
+        tree.write('state.xml', xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+
+    def closeEvent(self, event):
+        self.write_state()
+        event.accept()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
+    window.read_state()
     app.exec_()

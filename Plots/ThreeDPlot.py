@@ -4,10 +4,10 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
 from PyQt5.QtGui import QVector3D, QPixmap
-from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QFrame, QCheckBox
+from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QFrame, QCheckBox, QMessageBox
 from PyQt5.QtCore import Qt, pyqtSignal
 
-from Design.ui import show_error, show_info
+from Design.ui import show_error, show_info, show_warning_yes_no
 from Utils.transform import magnet_color, get_point_cloud, save_point_cloud, read_point_cloud, project
 
 _ = lambda x: x
@@ -34,9 +34,9 @@ class CutMagnetWidget(QWidget):
         self.cancel = QPushButton(_('Cancel'))
         self.layout.addWidget(self.label, 0, 1, 1, 2)
         self.layout.addWidget(self.first, 1, 0, 1, 1)
-        self.layout.addWidget(self.first_point, 1, 1, 1, 1)
+        self.layout.addWidget(self.first_point, 1, 1, 1, 2)
         self.layout.addWidget(self.second, 2, 0, 1, 1)
-        self.layout.addWidget(self.second_point, 2, 1, 1, 1)
+        self.layout.addWidget(self.second_point, 2, 1, 1, 2)
         self.layout.addWidget(self.reset_btn, 1, 3, 2, 1)
         self.layout.addWidget(self.cut_save_btn, 3, 1, 1, 1)
         self.layout.addWidget(self.cancel, 3, 2, 1, 1)
@@ -166,7 +166,7 @@ class Palette(QLabel):
             arr = np.hstack((arr, value))
 
         if len(arr) == 0:
-            show_info(_('Info'), _('No borders'))
+            show_info(_('Border info'), _('No borders'))
             return
         self.min_value.setText(str(int(np.amin(arr))))
         self.max_value.setText(str(int(np.amax(arr))+1))
@@ -202,10 +202,10 @@ class Palette(QLabel):
             self.recolor_signal.emit(self.min, self.max)
         else:
             if len(self.min_value.text()) == 0 or len(self.max_value.text()) == 0:
-                show_error(_('Error'), _('Please fill Max, Min values or\nchoose Auto.'))
+                show_error(_('Border error'), _('Please fill Max, Min values or\nchoose Auto.'))
                 return
             if float(self.min_value.text()) > float(self.max_value.text()):
-                show_error(_('Error'), _('Max must be more than Min'))
+                show_error(_('Border error'), _('Max must be more than Min'))
                 return
             self.set_values(min=float(self.min_value.text()), max=float(self.max_value.text()))
             self.recolor_signal.emit(self.min, self.max)
@@ -315,7 +315,7 @@ class ThreeDPlot(gl.GLViewWidget):
                 filename = os.path.basename(path_to_save)
             except AssertionError as e:
                 progress.close()
-                show_error(_("Error"), _("File couldn't be downloaded\n{}".format(e.args[0])))
+                show_error(_("File error"), _("File couldn't be downloaded\n{}".format(e.args[0])))
                 raise AssertionError
         elif os.path.splitext(filename)[1] == '.ply':
             pcd = read_point_cloud(filename)
@@ -482,7 +482,10 @@ class ThreeDPlot(gl.GLViewWidget):
 
     def cut_save(self, save_as):
         if not self.cut_widget.first_idx or not self.cut_widget.second_idx:
-            show_error(_('Error'), _('You must define boundary points.'))
+            show_error(_('Border error'), _('You must define boundary points.'))
+            return
+        answer = show_warning_yes_no(_('Cutting info'), _('Unselected data will be deleted. Resume?'))
+        if answer == QMessageBox.No:
             return
         filename = self.cut_widget.shortcut_object
         start = self.cut_widget.first_idx

@@ -6,7 +6,7 @@ import requests
 
 from win32 import win32api
 
-from PyQt5.QtCore import QDir, Qt
+from PyQt5.QtCore import QDir, Qt, QRegExp
 from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QTableView, QFileSystemModel, QCheckBox, QLabel, \
     QMessageBox, QGridLayout, QFrame
@@ -23,7 +23,12 @@ class FileManager(QWidget):
         QWidget.__init__(self)
         self.parent = parent
         self.port = '5000'
-        self.server = ':'.join([self.parent.server, self.port])
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        if ipRegex.exactMatch(self.parent.server):
+            self.server = ':'.join([self.parent.server, self.port])
+        else:
+            self.server = None
+
         drives = win32api.GetLogicalDriveStrings().split('\\\000')[:-1]
         self.logical_drives = drives + [d+'/' for d in drives]
         # create file manager tab
@@ -173,7 +178,7 @@ class FileManager(QWidget):
 
     def right_file_model_update(self):
         if not self.parent.info_widget.device_on_connect:
-            show_info(_('Info'), _('Please, connect to device.'))
+            # show_info(_('Info'), _('Please, connect to device.'))
             return
         folder = '/'.join(self.right_file_model_path)
         self.parent.client.send_folder_name(folder)
@@ -245,7 +250,7 @@ class FileManager(QWidget):
         self.parent.client.send_folder_name(up_dir)
 
     def download_file_from_device(self, device_path=None, pc_path=None):
-        if not self.parent.info_widget.device_on_connect:
+        if not self.parent.info_widget.device_on_connect or self.server is None:
             return
         device_path = '/'.join(self.right_file_model_path +
                                [self.right_file_model_filename]) if not device_path else device_path
@@ -262,7 +267,7 @@ class FileManager(QWidget):
                 progress.update((len_b/total_length)*99)
         except:
             progress.close()
-            show_error(_('Error'), _('Server is not responding.'))
+            show_error(_('Server error'), _('Server is not responding.'))
             return
 
         if res.ok:
@@ -277,14 +282,14 @@ class FileManager(QWidget):
                 file.write(b)
 
     def upload_file_to_device(self):
-        if not self.parent.info_widget.device_on_connect:
+        if not self.parent.info_widget.device_on_connect or self.server is None:
             return
         file = self.left_file_model.filePath(self.lefttableview.currentIndex())
         filename = file.split('/')[-1]
         url = 'http://{}/upload_file_to_device/{}'.format(self.server, '/'.join(self.right_file_model_path))
         filesize = os.path.getsize(file)
         if filesize == 0:
-            show_error(_('Error'), _('File size must be non zero.'))
+            show_error(_('File error'), _('File size must be non zero.'))
             return
         progress = ProgressBar(text=_('Load file into device'), window_title=_('Upload File'))
         encoder = MultipartEncoder(
@@ -296,7 +301,7 @@ class FileManager(QWidget):
             res = requests.post(url, data=data, headers={'Content-Type': encoder.content_type}, timeout=5)
         except requests.exceptions.RequestException:
             progress.close()
-            show_error(_('Error'), _('Server is not responding.'))
+            show_error(_('Server error'), _('Server is not responding.'))
             return
         if res.ok:
             progress.update(100)
@@ -305,7 +310,8 @@ class FileManager(QWidget):
     def delete_file_from_file_model(self):
         if not self.file_to_delete:
             return
-        answer = show_warning_yes_no(_('Delete'), _("Do you really want to delete:\n{}").format(self.file_to_delete[1]))
+        answer = show_warning_yes_no(_('Remove file warning'),
+                                     _("Do you really want to remove:\n{}").format(self.file_to_delete[1]))
         if answer == QMessageBox.No:
             return
         if self.file_to_delete[0] == 'PC':
@@ -314,13 +320,13 @@ class FileManager(QWidget):
             elif os.path.isdir(self.file_to_delete[1]):
                 shutil.rmtree(self.file_to_delete[1])
         elif self.file_to_delete[0] == 'Device':
-            if not self.parent.info_widget.device_on_connect:
+            if not self.parent.info_widget.device_on_connect or self.server is None:
                 return
             url = 'http://{}/delete_file_from_device/{}'.format(self.server, self.file_to_delete[1])
             try:
                 res = requests.delete(url)
             except requests.exceptions.RequestException:
-                show_error(_('Error'), _('Server is not responding.'))
+                show_error(_('Server error'), _('Server is not responding.'))
                 return
             if res.ok:
                 self.right_file_model_update()

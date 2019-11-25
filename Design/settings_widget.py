@@ -34,8 +34,8 @@ class SettingsWidget(QWidget):
         self.ip_label = QLabel("IP")
         # self.port_label = QLabel("Port")
 
-        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
-        ipValidator = QRegExpValidator(ipRegex, self)
+        self.ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        ipValidator = QRegExpValidator(self.ipRegex, self)
 
         self.lineEdit_ip = QLineEdit()
         self.lineEdit_ip.setValidator(ipValidator)
@@ -95,6 +95,7 @@ class SettingsWidget(QWidget):
             self.paint_settings_menu_item.addWidget(value)
 
         self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
+        self.lineEdit_ip.textChanged.connect(lambda txt: self.ip_changed(txt))
 
     def show_menu_item(self, item):
         for key, value in self.settings_menu_dict.items():
@@ -103,7 +104,7 @@ class SettingsWidget(QWidget):
 
     def define_server(self, close=False):
         if len(self.lineEdit_ip.text().split('.')) < 4:
-            show_error(_('Error'), _('IP address is not correct.'))
+            show_error(_('IP error'), _('IP address is not correct.'))
             return
         self.parent.client.close()
         self.signal_ip_changed.emit(self.lineEdit_ip.text())
@@ -114,3 +115,7 @@ class SettingsWidget(QWidget):
     def connection_canceled(self):
         self.lineEdit_ip.setText(self.parent.server)
         self.close()
+
+    def ip_changed(self, txt):
+        if self.ipRegex.exactMatch(txt):
+            self.signal_ip_changed.emit(txt)

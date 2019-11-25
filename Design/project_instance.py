@@ -39,12 +39,15 @@ class CurrentProject(QObject):
         self.parent.file_manager_widget.left_dir_path.setText(self.expanduser_dir)
         self.parent.file_manager_widget.left_file_model_go_to_dir()
 
-    def open_project(self):
+    def open_project(self, path=None):
         self.reset_project()
-        fileName = QFileDialog.getOpenFileName(None, "Open File", self.expanduser_dir, "QMCenter project (*.qmcproj)")
-        if fileName[0] == '':
-            return
-        self.project_path = fileName[0]
+        if path:
+            self.project_path = path
+        else:
+            fileName = QFileDialog.getOpenFileName(None, "Open File", self.expanduser_dir, "QMCenter project (*.qmcproj)")
+            if fileName[0] == '':
+                return
+            self.project_path = fileName[0]
         self.files_path = '{}.files'.format(os.path.splitext(self.project_path)[0])
         self.progress.setWindowTitle(_("Load project files"))
         self.parse_proj_tree(self.project_path)
@@ -66,7 +69,7 @@ class CurrentProject(QObject):
         for magnet in self.magnet_data.getchildren():
             file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.tag)
             if not os.path.isfile(file):
-                show_error(_('Error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                show_error(_('File rror'), _('File not found\n{}'.format(file.replace('/', '\\'))))
                 self.remove_element(os.path.basename(file))
                 self.send_tree_to_view()
                 continue
@@ -78,7 +81,7 @@ class CurrentProject(QObject):
         for geo in self.geo_data.getchildren():
             file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.tag)
             if not os.path.isfile(file):
-                show_error(_('Error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                show_error(_('File error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
                 self.remove_element(os.path.basename(file))
                 self.send_tree_to_view()
                 continue
@@ -172,7 +175,7 @@ class CurrentProject(QObject):
         freq = mag_values[1] * 0.026062317
 
         if gpst.shape != freq.shape:
-            show_error(_('Error'), _('GPS time and frequency don\'t match'))
+            show_error(_('Match error'), _('GPS time and frequency don\'t match'))
             return
 
         if os.path.splitext(second_file)[-1] == '.ubx':
@@ -184,7 +187,7 @@ class CurrentProject(QObject):
                                                          os.path.join(files_path, '{}.ubx'.format(filename)).replace('/', '\\'))
 
             if not os.path.isfile(os.path.join(files_path, '{}.ubx'.format(filename))):
-                show_error(_('Error'), _('There is no match .ubx file for {}'.format(mag_file)))
+                show_error(_('Match error'), _('There is no match .ubx file for {}'.format(mag_file)))
                 return
 
             p1 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -200,8 +203,8 @@ class CurrentProject(QObject):
 
             if not os.path.isfile(os.path.join(self.files_path, '{}.obs'.format(filename))) or \
                 not os.path.isfile(os.path.join(self.files_path, '{}.nav'.format(filename))):
-                show_error(_('Error'), _('RTK Lib didn\'t create {}.obs and {}.nav files.\n'
-                                         'Please report us about this problem'.format(filename, filename)))
+                show_error(_('RTK LIB error'), _('RTK Lib didn\'t create {}.obs and {}.nav files.\n'
+                                                 'Please report us about this problem'.format(filename, filename)))
 
                 widget.close()
                 return
@@ -216,8 +219,8 @@ class CurrentProject(QObject):
 
             if not os.path.isfile(os.path.join(self.files_path, '{}.obs'.format(filename))) or \
                 not os.path.isfile(os.path.join(self.files_path, '{}.nav'.format(filename))):
-                show_error(_('Error'), _('RTK Lib didn\'t create {}.pos file.\n'
-                                         'Please report us about this problem'.format(filename, filename)))
+                show_error(_('RTK LIB error'), _('RTK Lib didn\'t create {}.pos file.\n'
+                                                 'Please report us about this problem'.format(filename, filename)))
 
                 widget.close()
                 return
@@ -230,7 +233,7 @@ class CurrentProject(QObject):
             pos = second_file
 
         else:
-            show_error(_('Error'), _('There is no match .ubx or pos file for {}'.format(mag_file)))
+            show_error(_('Match error'), _('There is no match .ubx or pos file for {}'.format(mag_file)))
             return
 
         widget.second_label.setText(_('Create {}'.format('{}.magnete'.format(filename))))
@@ -435,7 +438,7 @@ class CurrentProject(QObject):
                 element = ET.SubElement(self.geo_data, os.path.basename(file))
                 element.set("indicator", "Off")
             else:
-                show_info(_('Info'), _('File {} is already in project'.format(os.path.basename(file))))
+                show_info(_('File info'), _('File {} is already in project'.format(os.path.basename(file))))
         elif extension == '.tif':
             try:
                 if self.geo_data.find('{}.ply'.format(filename)) is None:
@@ -444,7 +447,7 @@ class CurrentProject(QObject):
                     element = ET.SubElement(self.geo_data, '{}.ply'.format(filename))
                     element.set('indicator', 'Off')
                 else:
-                    show_info(_('Info'), _('File {}.ply is already in project'.format(filename)))
+                    show_info(_('File info'), _('File {}.ply is already in project'.format(filename)))
             except AssertionError:
                 pass
 

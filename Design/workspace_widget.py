@@ -148,6 +148,8 @@ class WorkspaceView(QTreeView):
         self.header().setSectionResizeMode(QHeaderView.Fixed)
 
     def header_context_menu(self, event):
+        if not self.parent.project_instance.project_path:
+            return
         project_action = {
                 _('Add RAW'): self.parent.project_instance.add_raw_data,
                 _('Add magnet'): self.parent.project_instance.add_magnet_data,
@@ -260,7 +262,7 @@ class WorkspaceView(QTreeView):
         self.parent.three_d_widget.three_d_plot.preprocessing_for_cutting(item_index)
 
     def remove_selected_group(self, lst):
-        answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove selected elements?'))
+        answer = show_warning_yes_no(_('Remove files warning'), _('Do you really want to remove selected elements?'))
         if answer == QMessageBox.No:
             return
         for r in range(self.model.rowCount()):
@@ -275,7 +277,7 @@ class WorkspaceView(QTreeView):
                     parent_item.removeRow(item_index.row())
 
     def remove_element(self, item_index):
-        answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove this element?'))
+        answer = show_warning_yes_no(_('Remove file warning'), _('Do you really want to remove this element?'))
         if answer == QMessageBox.No:
             return
         self.parent.project_instance.remove_element(item_index.data())
@@ -284,7 +286,7 @@ class WorkspaceView(QTreeView):
         parent_item.removeRow(item_index.row())
 
     def remove_all(self, item_index):
-        answer = show_warning_yes_no(_('Warning'), _('Do you really want to remove all elements?'))
+        answer = show_warning_yes_no(_('Remove files warning'), _('Do you really want to remove all elements?'))
         if answer == QMessageBox.No:
             return
         self.parent.project_instance.remove_all(item_index.data())

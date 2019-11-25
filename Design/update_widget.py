@@ -3,7 +3,7 @@ import requests
 
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QLabel, QLineEdit, QFrame, \
     QFileDialog, QProgressBar
 
@@ -18,8 +18,11 @@ class UpdateWidget(QWidget):
         self.parent = parent
         self.url = None
         self.port = '5000'
-        self.server = ':'.join([self.parent.server, self.port])
-
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        if ipRegex.exactMatch(self.parent.server):
+            self.server = ':'.join([self.parent.server, self.port])
+        else:
+            self.server = None
         self.gridlayout_update = QGridLayout(self)
 
         self.update_tree = QTreeWidget()
@@ -76,11 +79,13 @@ class UpdateWidget(QWidget):
         self.update_tree.clear()
 
     def get_update_tree(self):
+        if self.server is None:
+            return
         url = 'http://{}/spec_update'.format(self.server)
         try:
             res = requests.get(url, timeout=1)
         except requests.exceptions.RequestException:
-            show_error(_('Error'), _('Server is not responding.'))
+            show_error(_('Server error'), _('Server is not responding.'))
             return
         if res.ok:
             res = res.json()
@@ -112,10 +117,12 @@ class UpdateWidget(QWidget):
             self.upload_btn.setEnabled(False)
 
     def upload_update_file(self, file_url):
+        if self.server is None:
+            return
         url = 'http://{}/update'.format(self.server)
         filesize = os.path.getsize(file_url)
         if filesize == 0:
-            show_error(_('Error'), _('File size must be non zero.'))
+            show_error(_('File error'), _('File size must be non zero.'))
             return
         filename = (os.path.basename(file_url))
         encoder = MultipartEncoder(
@@ -126,7 +133,7 @@ class UpdateWidget(QWidget):
         try:
             res = requests.post(url, data=monitor, headers={'Content-Type': monitor.content_type}, timeout=5)
         except requests.exceptions.RequestException:
-            show_error(_('Error'), _('Server is not responding. File wasn\'t uploaded into device.'))
+            show_error(_('Server error'), _('Server is not responding. File wasn\'t uploaded into device.'))
             self.progress.setValue(0)
             return
 
