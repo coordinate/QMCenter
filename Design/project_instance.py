@@ -108,7 +108,7 @@ class CurrentProject(QObject):
         self.create_project_tree(self.project_path)
         self.files_path = '{}.files'.format(os.path.splitext(self.project_path)[0])
         os.mkdir(self.files_path)
-        os.mkdir(os.path.join(self.files_path, 'Geography'))
+        os.mkdir(os.path.join(self.files_path, 'GeoData'))
         os.mkdir(os.path.join(self.files_path, 'Magnet'))
         os.mkdir(os.path.join(self.files_path, 'RAW'))
         self.parent.setWindowTitle('QMCenter — {}'.format(self.project_path))
@@ -127,7 +127,7 @@ class CurrentProject(QObject):
         self.magnet_data.set('name', 'Magnet')
         self.magnet_data.set('expanded', 'False')
         self.geo_data = ET.SubElement(self.root, 'geo_data')
-        self.geo_data.set('name', 'Geography')
+        self.geo_data.set('name', 'GeoData')
         self.geo_data.set('expanded', 'False')
         self.project_utm = ET.SubElement(self.root, 'project_utm')
         self.project_utm.set('zone', '')
@@ -471,7 +471,7 @@ class CurrentProject(QObject):
         view = {
             'RAW': self.root.find('raw_data'),
             'Magnet': self.root.find('magnet_data'),
-            'Geography': self.root.find('geo_data'),
+            'GeoData': self.root.find('geo_data'),
         }
 
         self.parent.workspace_widget.workspaceview.set_project_name(os.path.basename(self.project_path))
@@ -502,4 +502,3 @@ class CurrentProject(QObject):
 
     def write_proj_tree(self):
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
-        self.parse_proj_tree(self.project_path)

@@ -103,10 +103,18 @@ class WorkspaceView(QTreeView):
         parent_click_item = self.model.itemFromIndex(idx).parent()
         if parent_click_item.text() == 'RAW':
             return
+        object_name = idx.parent().child(idx.row(), 0).data()
         indicator = parent_click_item.child(idx.row(), 1)
         self.parent.three_d_widget.three_d_plot.focus_element(idx.data(), indicator.data(3))
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)
+        for ch in self.parent.project_instance.root.getchildren():
+            try:
+                ch.find(object_name).attrib['indicator'] = indicator.data(3)
+            except AttributeError:
+                pass
+            except TypeError:
+                pass
 
     def item_expanded(self, idx):
         object_name = idx.data()
@@ -151,7 +159,7 @@ class WorkspaceView(QTreeView):
         self.magnet_data_item.setSelectable(False)
         r1_c1 = QStandardItem()
         r1_c1.setSelectable(False)
-        self.geo_item = QStandardItem(_('Geography'))
+        self.geo_item = QStandardItem(_('GeoData'))
         self.geo_item.setSelectable(False)
         r2_c1 = QStandardItem()
         r2_c1.setSelectable(False)
@@ -182,8 +190,8 @@ class WorkspaceView(QTreeView):
                 self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
 
             self.setExpanded(self.model.indexFromItem(self.geo_item),
-                             True if view['Geography'].attrib['expanded'] == 'True' else False)
-            for k, ch in enumerate(view['Geography'].getchildren()):
+                             True if view['GeoData'].attrib['expanded'] == 'True' else False)
+            for k, ch in enumerate(view['GeoData'].getchildren()):
                 self.geo_item.setChild(k, 0, QStandardItem(ch.tag))
                 item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
                                                                              else 'green')), '')
@@ -240,7 +248,7 @@ class WorkspaceView(QTreeView):
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             self.geo_item.text(): {
-                _('Add Geodata'): self.parent.project_instance.add_geo_data,
+                _('Add GeoData'): self.parent.project_instance.add_geo_data,
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             'subitems': {

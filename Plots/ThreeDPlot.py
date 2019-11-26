@@ -230,6 +230,7 @@ class ThreeDPlot(gl.GLViewWidget):
         self.gridx.setSize(x=10000, y=10000, z=10000)
         self.gridx.setSpacing(x=1000, y=1000, z=1000, spacing=None)
         self.gridx.setDepthValue(10)
+        self.grid_start = [0, 0]
         self.addItem(self.gridx)
         self.objects['gridx'] = {'object': self.gridx}
 
@@ -555,6 +556,8 @@ class ThreeDPlot(gl.GLViewWidget):
         obj = self.objects[name]['object']
         x, y, z = obj.pos[0]
         self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)
+        self.gridx.translate(x - self.grid_start[0], y - self.grid_start[1], 0, local=True)
+        self.grid_start = [x, y]
 
     def setCameraPosition(self, center=None, distance=None, elevation=None, azimuth=None):
         if center is not None:
