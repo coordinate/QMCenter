@@ -233,15 +233,12 @@ class ThreeDPlot(gl.GLViewWidget):
         self.addItem(self.gridx)
         self.objects['gridx'] = {'object': self.gridx}
 
-        self.x0 = None
-        self.y0 = None
         self.utm_zone = None
+        self.utm_letter = None
 
         self.palette.recolor_signal.connect(lambda min, max: self.recolor_flying(min, max))
 
     def reset_data(self):
-        self.x0 = None
-        self.y0 = None
         self.utm_zone = None
         self.items.clear()
         self.addItem(self.gridx)
@@ -270,16 +267,18 @@ class ThreeDPlot(gl.GLViewWidget):
         size = np.empty((length, ))
         color = np.empty((length, ))
         time, latitude, longitude, height0, magnet = lst[0].split()
-        if not self.x0 and not self.y0 and not self.utm_zone:
-            self.x0, self.y0, self.utm_zone = project((float(longitude), float(latitude)))
+        if not self.utm_zone:
+            x, y, self.utm_zone, self.utm_letter = project((float(longitude), float(latitude)))
+            self.parent.project_instance.project_utm.attrib['zone'] = str(self.utm_zone)
+            self.parent.project_instance.project_utm.attrib['letter'] = self.utm_letter
 
         for i, s in enumerate(lst):
             try:
                 time, latitude, longitude, height, magnet = s.split()
             except ValueError:
                 continue
-            x, y, zone = project((float(longitude), float(latitude)), self.utm_zone)
-            points[i] = (x-self.x0, y-self.y0, float(height))
+            x, y, zone, letter = project((float(longitude), float(latitude)), self.utm_zone)
+            points[i] = (x, y, float(height))
             color[i] = float(magnet)
             size[i] = 5
             magnet_array[i] = float(magnet)
@@ -310,7 +309,9 @@ class ThreeDPlot(gl.GLViewWidget):
 
         if os.path.splitext(filename)[1] == '.tif':
             try:
-                pcd, self.utm_zone = get_point_cloud(filename, progress, self.utm_zone)
+                pcd, self.utm_zone, self.utm_letter = get_point_cloud(filename, progress, self.utm_zone)
+                self.parent.project_instance.project_utm.attrib['zone'] = str(self.utm_zone)
+                self.parent.project_instance.project_utm.attrib['letter'] = self.utm_letter
                 save_point_cloud(pcd, path_to_save)
                 filename = os.path.basename(path_to_save)
             except AssertionError as e:
@@ -327,14 +328,17 @@ class ThreeDPlot(gl.GLViewWidget):
             pcd = pcd[0::pcd.shape[0]//2000000, :]
 
         terrain_points = pcd[:, :3]
-        if not self.x0 and not self.y0:
-            self.x0 = terrain_points[0][0]
-            self.y0 = terrain_points[0][1]
+        # if not self.x0 and not self.y0:
+        #     self.x0 = terrain_points[0][0]
+        #     self.y0 = terrain_points[0][1]
 
-        terrain_points = np.column_stack((terrain_points[:, 0] - self.x0, terrain_points[:, 1] - self.y0,
-                                          terrain_points[:, 2]))
+        # terrain_points = np.column_stack((terrain_points[:, 0] - self.x0, terrain_points[:, 1] - self.y0,
+        #                                   terrain_points[:, 2]))
+        terrain_points = np.column_stack((terrain_points[:, 0], terrain_points[:, 1], terrain_points[:, 2]))
         point_size = np.full((pcd.shape[0], ), 2)
         point_color = pcd[:, 3:]
+        if np.amax(point_color) > 1:
+            point_color /= 255
         terrain = gl.GLScatterPlotItem(pos=terrain_points, size=point_size, color=point_color, pxMode=True)
         terrain.scale(1, 1, 1)
         terrain.translate(0, 0, 0)
@@ -456,7 +460,7 @@ class ThreeDPlot(gl.GLViewWidget):
         self.update()
         self.cut_widget.shortcut_object = filename
         self.cut_widget.show()
-        self.parent.workspace_widget.setEnabled(False)
+        self.parent.workspace_widget.workspaceview.setEnabled(False)
 
     def reset_cutting_preprocessing(self):
         self.cut_widget.first_idx = None
@@ -478,15 +482,16 @@ class ThreeDPlot(gl.GLViewWidget):
         self.cut_widget.second_idx = None
         self.update()
         self.cut_widget.close()
-        self.parent.workspace_widget.setEnabled(True)
+        self.parent.workspace_widget.workspaceview.setEnabled(True)
 
     def cut_save(self, save_as):
         if not self.cut_widget.first_idx or not self.cut_widget.second_idx:
             show_error(_('Border error'), _('You must define boundary points.'))
             return
-        answer = show_warning_yes_no(_('Cutting info'), _('Unselected data will be deleted. Resume?'))
-        if answer == QMessageBox.No:
-            return
+        if not save_as:
+            answer = show_warning_yes_no(_('Cutting info'), _('Unselected data will be deleted. Resume?'))
+            if answer == QMessageBox.No:
+                return
         filename = self.cut_widget.shortcut_object
         start = self.cut_widget.first_idx
         finish = self.cut_widget.second_idx

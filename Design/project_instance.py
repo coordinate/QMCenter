@@ -28,11 +28,12 @@ class CurrentProject(QObject):
         self.raw_data = None
         self.magnet_data = None
         self.geo_data = None
+        self.project_utm = None
 
     def reset_project(self):
         self.project_path = None
         self.parent.three_d_widget.three_d_plot.reset_data()
-        self.parent.workspace_widget.add_view()
+        self.parent.workspace_widget.workspaceview.add_view()
         self.parent.three_d_widget.longitude_value_label.setText('')
         self.parent.three_d_widget.latitude_value_label.setText('')
         self.parent.three_d_widget.magnet_value_label.setText('')
@@ -58,22 +59,28 @@ class CurrentProject(QObject):
         self.raw_data = self.root.find('raw_data')
         self.magnet_data = self.root.find('magnet_data')
         self.geo_data = self.root.find('geo_data')
+        self.project_utm = self.root.find('project_utm')
         self.parent.setWindowTitle('QMCenter — {}'.format(self.project_path))
         self.parent.file_manager_widget.left_dir_path.setText(self.root.attrib['path'])
         self.parent.file_manager_widget.left_file_model_go_to_dir()
+        if self.project_utm.attrib['zone'] != '':
+            try:
+                self.parent.three_d_widget.three_d_plot.utm_zone = int(self.project_utm.attrib['zone'])
+            except ValueError:
+                show_error(_('UTM error'), _('Couldn\'t define UTM zone form .proj file.'))
 
-        lenght = len(self.magnet_data.getchildren()) + len(self.geo_data.getchildren())
+        length = len(self.magnet_data.getchildren()) + len(self.geo_data.getchildren())
         it = 0
         self.progress.open()
         QApplication.processEvents()
         for magnet in self.magnet_data.getchildren():
             file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.tag)
             if not os.path.isfile(file):
-                show_error(_('File rror'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                show_error(_('File error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
                 self.remove_element(os.path.basename(file))
                 self.send_tree_to_view()
                 continue
-            value = (it + 1)/lenght * 99
+            value = (it + 1)/length * 99
             it += 1
 
             self.parent.three_d_widget.three_d_plot.add_fly(file, self.progress, value)
@@ -85,7 +92,7 @@ class CurrentProject(QObject):
                 self.remove_element(os.path.basename(file))
                 self.send_tree_to_view()
                 continue
-            value = (it + 1)/lenght * 99
+            value = (it + 1)/length * 99
             it += 1
 
             self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, value)
@@ -122,6 +129,9 @@ class CurrentProject(QObject):
         self.geo_data = ET.SubElement(self.root, 'geo_data')
         self.geo_data.set('name', 'Geography')
         self.geo_data.set('expanded', 'False')
+        self.project_utm = ET.SubElement(self.root, 'project_utm')
+        self.project_utm.set('zone', '')
+        self.project_utm.set('letter', '')
         self.tree = ET.ElementTree(self.root)
         self.tree.write(path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
 
@@ -159,7 +169,7 @@ class CurrentProject(QObject):
             if self.raw_data.find(os.path.basename(destination)) is None:
                 ET.SubElement(self.raw_data, os.path.basename(file))
             self.progress.setValue((i/len(files[0])*99))
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.write_proj_tree()
         self.send_tree_to_view()
         self.progress.setValue(100)
 
@@ -358,7 +368,7 @@ class CurrentProject(QObject):
                 element = ET.SubElement(self.magnet_data, os.path.basename(destination))
                 element.set("indicator", "Off")
             self.parent.three_d_widget.three_d_plot.add_fly(destination, self.progress, value)
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.write_proj_tree()
         self.send_tree_to_view()
         self.progress.setValue(100)
 
@@ -397,7 +407,7 @@ class CurrentProject(QObject):
             element = ET.SubElement(self.magnet_data, os.path.basename(filename))
             element.set("indicator", "Off")
         self.parent.three_d_widget.three_d_plot.add_fly(filename, self.progress, value+18)
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.write_proj_tree()
         self.send_tree_to_view()
         self.progress.setValue(100)
 
@@ -453,7 +463,7 @@ class CurrentProject(QObject):
 
         else:
             return
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.write_proj_tree()
         self.send_tree_to_view()
         self.progress.setValue(100)
 
@@ -464,8 +474,12 @@ class CurrentProject(QObject):
             'Geography': self.root.find('geo_data'),
         }
 
-        self.parent.workspace_widget.set_project_name(os.path.basename(self.project_path))
-        self.parent.workspace_widget.add_view(view)
+        self.parent.workspace_widget.workspaceview.set_project_name(os.path.basename(self.project_path))
+        self.parent.workspace_widget.workspaceview.add_view(view)
+        self.parent.workspace_widget.utm_label.setText('UTM zone: {}{}'.format(self.project_utm.attrib['zone']
+                                                                               if self.project_utm.attrib['zone'] != ''
+                                                                               else 'Local(m)',
+                                                                               self.project_utm.attrib['letter']))
 
     def remove_element(self, element):
         for ch in self.root.getchildren():
@@ -476,7 +490,7 @@ class CurrentProject(QObject):
                 pass
             except FileNotFoundError:
                 pass
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.write_proj_tree()
 
     def remove_all(self, element):
         for child in self.root.getchildren():
@@ -484,4 +498,8 @@ class CurrentProject(QObject):
                 for ch in child.getchildren():
                     child.remove(ch)
                     os.remove(os.path.join(self.files_path, element, ch.tag))
+        self.write_proj_tree()
+
+    def write_proj_tree(self):
         self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        self.parse_proj_tree(self.project_path)

@@ -32,14 +32,14 @@ def letter(coordinates):
 def project(coordinates, zone=None):  # coordinates = (longitude, latitude)
     if not zone:
         zone = utm_zone(coordinates)
-    l = letter(coordinates)
+    l = 'N' if coordinates[1] > 0 else 'S'
     # print(zone, l)
     if zone not in _projections:
         _projections[zone] = pyproj.Proj(proj='utm', zone=zone, ellps='WGS84')
     x, y = _projections[zone](coordinates[0], coordinates[1])
     if y < 0:
         y += 10000000
-    return x, y, zone
+    return x, y, zone, l
 
 
 def project_array(x, y, srcp='latlong', dstp='utm', zone=None):
@@ -49,11 +49,12 @@ def project_array(x, y, srcp='latlong', dstp='utm', zone=None):
     """
     if not zone:
         zone = utm_zone((x[0], y[0]))
+    l = 'N' if y[0] > 0 else 'S'
     p1 = pyproj.Proj(proj=srcp, datum='WGS84')
     p2 = pyproj.Proj(proj=dstp, zone=zone, ellps='WGS84')
     fx, fy = pyproj.transform(p1, p2, x, y)
     # Re-create (n,2) coordinates
-    return fx, fy, zone
+    return fx, fy, zone, l
 
 
 def unproject(z, l, x, y):
@@ -105,6 +106,7 @@ def get_point_cloud(filename, progress, zone):
     gdal_dem_data = gdal.Open(filename)
     no_data = gdal_dem_data.GetRasterBand(1).GetNoDataValue()
     dem = gdal_dem_data.ReadAsArray()
+    assert len(dem.shape) < 3, _('Wrong tif type. Too many channels.')
     top_left_lon, pixel_w, turn, top_left_lat, turn_, pixel_h = gdal_dem_data.GetGeoTransform()
     assert top_left_lon != 0 and top_left_lat != 0, _("Couldn't define metadata (top left corner)!")
 
@@ -149,13 +151,13 @@ def get_point_cloud(filename, progress, zone):
         im_color[:, i] = cv2.LUT(colors, lut[:, i]).reshape(-1)
 
     progress.setValue(84)
-    X, Y, zone = project_array(X, Y, zone=zone)
+    X, Y, zone, letter = project_array(X, Y, zone=zone)
     progress.setValue(98)
-    pcd = np.column_stack((X, Y, Z-min_z, im_color/255))
+    pcd = np.column_stack((X, Y, Z, im_color))
     #print(pcd.shape, len(X))
     #print(pcd[:, 0], pcd.T[0])
     assert len(pcd.shape) == 2 and pcd.shape[0] == len(X) and pcd.shape[1] == 6
-    return pcd, zone
+    return pcd, zone, letter
 
 
 def save_point_cloud(point_cloud, path):
@@ -177,9 +179,9 @@ def read_point_cloud(path):
     x = np.array(data['x'])
     y = np.array(data['y'])
     z = np.array(data['z'])
-    red = np.array(data['red']) / 255
-    green = np.array(data['green']) / 255
-    blue = np.array(data['blue']) / 255
+    red = np.array(data['red'])
+    green = np.array(data['green'])
+    blue = np.array(data['blue'])
     points = np.column_stack((x, y, z, red, green, blue))
     return points
 

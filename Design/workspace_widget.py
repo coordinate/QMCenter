@@ -4,11 +4,54 @@ import subprocess
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon
 from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog, QWidget, QGridLayout, QStackedWidget, \
-    QLabel, QRadioButton, QPushButton, QProgressBar, QMessageBox
+    QLabel, QRadioButton, QPushButton, QProgressBar, QMessageBox, QComboBox
 
 from Design.ui import show_warning_yes_no
 
 _ = lambda x: x
+
+
+class WorkspaceWidget(QWidget):
+    def __init__(self, parent):
+        QWidget.__init__(self)
+        self.parent = parent
+        self.layout = QGridLayout(self)
+        self.layout.setContentsMargins(5, 0, 0, 0)
+        self.utm_label = QLabel(_('No UTM'))
+        self.change_utm_btn = QPushButton(_('Set UTM zone'))
+
+        self.workspaceview = WorkspaceView(self.parent)
+
+        self.layout.addWidget(self.workspaceview, 0, 0, 10, 2)
+
+        self.layout.addWidget(self.utm_label, 10, 0, 1, 1)
+        self.layout.addWidget(self.change_utm_btn, 10, 1, 1, 1)
+
+        self.change_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
+        self.change_widget.setWindowTitle(_('Change UTM zone'))
+        self.change_widget.setMinimumSize(300, 100)
+        self.change_lay = QGridLayout(self.change_widget)
+        self.select_label = QLabel(_('Select new zone'))
+        utms = [str(i) for i in range(1, 61)]
+        self.combobox = QComboBox()
+        self.combobox.addItems(utms)
+        self.apply_btn = QPushButton(_('Apply'))
+        self.cancel_btn = QPushButton(_('Cancel'))
+
+        self.change_lay.addWidget(self.select_label, 0, 0, 1, 2)
+        self.change_lay.addWidget(self.combobox, 0, 2, 1, 2)
+        self.change_lay.addWidget(self.apply_btn, 1, 2, 1, 1)
+        self.change_lay.addWidget(self.cancel_btn, 1, 3, 1, 1)
+
+        self.change_utm_btn.clicked.connect(lambda: self.change_widget.show())
+        self.apply_btn.clicked.connect(lambda: self.apply_new_zone())
+        self.cancel_btn.clicked.connect(lambda: self.change_widget.close())
+
+    def apply_new_zone(self):
+        self.parent.three_d_widget.three_d_plot.utm_zone = int(self.combobox.currentText())
+        self.parent.project_instance.project_utm.attrib['zone'] = self.combobox.currentText()
+        self.parent.project_instance.write_proj_tree()
+        self.parent.project_instance.parse_proj_tree(self.parent.project_instance.project_path)
 
 
 class WorkspaceView(QTreeView):
@@ -16,6 +59,7 @@ class WorkspaceView(QTreeView):
         QTreeView.__init__(self)
         self.parent = parent
         self.setMinimumSize(200, 500)
+        self.setFrameStyle(0)
         self.setEditTriggers(QTreeView.NoEditTriggers)
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.project_name = QStandardItem()
@@ -72,6 +116,8 @@ class WorkspaceView(QTreeView):
                     ch.attrib['expanded'] = 'True'
         except TypeError:
             pass
+        except KeyError:
+            pass
 
     def item_collapsed(self, idx):
         object_name = idx.data()
@@ -80,6 +126,8 @@ class WorkspaceView(QTreeView):
                 if ch.attrib['name'] == object_name:
                     ch.attrib['expanded'] = 'False'
         except TypeError:
+            pass
+        except KeyError:
             pass
 
     def set_project_name(self, name):

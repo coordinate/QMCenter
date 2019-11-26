@@ -11,7 +11,7 @@ from Design.info_widget import InfoWidget
 from Design.three_D_visual_widget import ThreeDVisual
 from Design.settings_widget import SettingsWidget
 from Design.update_widget import UpdateWidget
-from Design.workspace_widget import WorkspaceView
+from Design.workspace_widget import WorkspaceWidget
 from Design.project_instance import *
 
 _ = lambda x: x
@@ -119,7 +119,7 @@ class UIForm:
         self.work_panel.setWidget(self.tab_work_panel)
 
         # create Workspace widget
-        self.workspace_widget = WorkspaceView(self)
+        self.workspace_widget = WorkspaceWidget(self)
         self.tab_work_panel.addTab(self.workspace_widget, _("Workspace"))
 
         # create Info widget

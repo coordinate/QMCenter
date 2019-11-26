@@ -132,6 +132,7 @@ class MainWindow(QMainWindow, UIForm):
 
     def closeEvent(self, event):
         self.write_state()
+        self.project_instance.write_proj_tree()
         event.accept()
 
 
