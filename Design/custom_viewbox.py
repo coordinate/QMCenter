@@ -4,12 +4,11 @@ import pyqtgraph as pg
 import pyqtgraph.functions as fn
 from pyqtgraph.Point import Point
 
-from PyQt5.QtCore import Qt, QPoint, QMimeData, pyqtSignal, QEvent, QRectF, QRect
-from PyQt5.QtGui import QPixmap, QRegion, QDrag, QCursor, QMouseEvent, QWheelEvent, QVector2D
-from PyQt5.QtWidgets import QTabWidget, QScrollArea, QTabBar, QApplication, QWidget, QLabel, QMenu, QWidgetAction, \
-    QCheckBox
+from PyQt5.QtCore import QRectF
+from PyQt5.QtGui import QWheelEvent
+from PyQt5.QtWidgets import QMenu, QWidgetAction, QCheckBox
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class Menu(QMenu):
@@ -22,7 +21,7 @@ class Menu(QMenu):
         center_plot.triggered.connect(lambda: widget.view.setRange(yRange=(widget.left_axis[-1], widget.left_axis[-1])))
         vertical_autorange = self.addAction(_('Vertical Autorange'))
         vertical_autorange.triggered.connect(lambda: widget.view.autoRange())
-        sync_x_chbx = QCheckBox('\t\t\t\t\tSynchronize time')
+        sync_x_chbx = QCheckBox(_('\t\t\t\t\tSynchronize time'))
         sync_x_chbx.setChecked(Menu.sync_chbx_state)
         sync_x_chbx.stateChanged.connect(lambda i: self.state_changed(i))
         sync_x = QWidgetAction(self)

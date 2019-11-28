@@ -7,6 +7,7 @@ class GraphsWidget(QStackedWidget):
     def __init__(self, parent):
         QStackedWidget.__init__(self)
         self.parent = parent
+        self.name = 'Graphs'
         self.magnet = MagneticField()
         self.signals_plot = SignalsPlot()
         self.signal_freq_plot = SignalsFrequency()
@@ -60,6 +61,16 @@ class GraphsWidget(QStackedWidget):
         self.lamp_temp_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
         self.sensor_temp_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
         self.dc_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
+
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.magnet.retranslate()
+        self.signals_plot.retranslate()
+        self.signal_freq_plot.retranslate()
+        self.lamp_temp_plot.retranslate()
+        self.sensor_temp_plot.retranslate()
+        self.dc_plot.retranslate()
 
     def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
         self.signals_plot.update(sig1, time, sig2, checkbox=self.parent.info_widget.graphs_chbx.isChecked())

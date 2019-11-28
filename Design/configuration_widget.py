@@ -5,13 +5,14 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QTre
 
 from Design.ui import show_error
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class ConfigurationWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent
+        self.name = 'Configuration'
         self.port = '5000'
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(self.parent.server):
@@ -19,7 +20,7 @@ class ConfigurationWidget(QWidget):
         else:
             self.server = None
 
-        self.setWindowTitle(_("Configuration"))
+        self.setWindowTitle(_(self.name))
         self.layout = QGridLayout(self)
 
         self.tree_header = None
@@ -38,6 +39,14 @@ class ConfigurationWidget(QWidget):
         self.read_tree_btn.clicked.connect(lambda: self.request_device_config())
         self.write_tree_btn.clicked.connect(lambda: self.write_tree())
         self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
+
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.setWindowTitle(_(self.name))
+        self.configuration_tree.setHeaderLabels([_('Parameter'), _('Value'), _('Min'), _('Max')])
+        self.read_tree_btn.setText(_('Read'))
+        self.write_tree_btn.setText(_('Write'))
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])

@@ -9,13 +9,14 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QLab
 
 from Design.ui import show_error
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class UpdateWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent
+        self.name = 'Update'
         self.url = None
         self.port = '5000'
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
@@ -40,8 +41,8 @@ class UpdateWidget(QWidget):
         self.wizard.setWindowTitle(_('Wizard'))
         self.wizard.setFixedSize(500, 300)
         self.layout = QGridLayout(self.wizard)
-        label = QLabel(_('Open file to load into device'))
-        label.setStyleSheet("font: 14pt;")
+        self.label = QLabel(_('Open file to load into device'))
+        self.label.setStyleSheet("font: 14pt;")
         self.lineedit = QLineEdit()
         self.browse_btn = QPushButton(_("Browse..."))
         self.progress = QProgressBar()
@@ -55,7 +56,7 @@ class UpdateWidget(QWidget):
 
         self.cancel_btn = QPushButton(_('Cancel'))
         self.finish_btn = QPushButton(_('Finish'))
-        self.layout.addWidget(label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
+        self.layout.addWidget(self.label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
         self.layout.addWidget(self.lineedit, 1, 0, 1, 5)
         self.layout.addWidget(self.browse_btn, 1, 5, 1, 1)
         self.layout.addWidget(self.check_file_label, 2, 0, 1, 6, alignment=Qt.AlignCenter)
@@ -73,6 +74,18 @@ class UpdateWidget(QWidget):
         self.finish_btn.clicked.connect(lambda: self.finish_update())
 
         self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.update_tree.setHeaderLabels([_('Parameter'), _('Version')])
+        self.read_update_btn.setText(_('Read update file'))
+        self.load_update_btn.setText(_('Load update file'))
+        self.wizard.setWindowTitle(_('Wizard'))
+        self.label.setText(_('Open file to load into device'))
+        self.browse_btn.setText(_("Browse..."))
+        self.upload_btn.setText(_('Upload'))
+        self.cancel_btn.setText(_('Cancel'))
+        self.finish_btn.setText(_('Finish'))
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])

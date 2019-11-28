@@ -1,21 +1,23 @@
 import os
 import sys
 import tempfile
-import lxml.etree as ET
+import gettext
 
-from PyQt5.QtCore import QRegExp
+from PyQt5.QtCore import QRegExp, QSettings, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from Design.design import UIForm
 from Clients.client_socket import Client
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class MainWindow(QMainWindow, UIForm):
+    signal_language_changed = pyqtSignal()
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.app_settings = QSettings('qmcenter.ini', QSettings.IniFormat)
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
         self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
@@ -46,6 +48,16 @@ class MainWindow(QMainWindow, UIForm):
         self.tabwidget_left.signal.connect(lambda ev: self.graphs_widget.change_grid(ev))
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
 
+        self.settings_widget.signal_language_changed.connect(lambda lang: self.language_changed(lang))
+        self.signal_language_changed.connect(lambda: self.retranslate())
+
+    def language_changed(self, lang):
+        trans = gettext.translation('qmcenter', 'locales', [lang])
+        trans.install()
+        _ = trans.gettext
+        self.signal_language_changed.emit()
+        self.app_settings.setValue('language', lang)
+
     def split_tabs(self):
         self.split_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)
         self.split_lay.addWidget(self.tabwidget_right, 0, 1, 1, 1)
@@ -65,35 +77,35 @@ class MainWindow(QMainWindow, UIForm):
 
     def add_graphs(self):
         if self.tabwidget_left.indexOf(self.graphs_widget) == -1:
-            idx = self.tabwidget_left.addTab(self.graphs_widget, _("Graphs"))
+            idx = self.tabwidget_left.addTab(self.graphs_widget, _(self.graphs_widget.name))
             self.tabwidget_left.setCurrentIndex(idx)
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.graphs_widget))
 
     def add_config(self):
         if self.tabwidget_left.indexOf(self.configuration_widget) == -1:
-            idx = self.tabwidget_left.addTab(self.configuration_widget, _("Configuration"))
+            idx = self.tabwidget_left.addTab(self.configuration_widget, _(self.configuration_widget.name))
             self.tabwidget_left.setCurrentIndex(idx)
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.configuration_widget))
 
     def add_visual(self):
         if self.tabwidget_left.indexOf(self.three_d_widget) == -1:
-            idx = self.tabwidget_left.addTab(self.three_d_widget, _("3D visual"))
+            idx = self.tabwidget_left.addTab(self.three_d_widget, _(self.three_d_widget.name))
             self.tabwidget_left.setCurrentIndex(idx)
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.three_d_widget))
 
     def add_update(self):
         if self.tabwidget_left.indexOf(self.update_widget) == -1:
-            idx = self.tabwidget_left.addTab(self.update_widget, _("Update"))
+            idx = self.tabwidget_left.addTab(self.update_widget, _(self.update_widget.name))
             self.tabwidget_left.setCurrentIndex(idx)
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.update_widget))
 
     def add_file_manager(self):
         if self.tabwidget_left.indexOf(self.file_manager_widget) == -1:
-            idx = self.tabwidget_left.addTab(self.file_manager_widget, _("File manager"))
+            idx = self.tabwidget_left.addTab(self.file_manager_widget, _(self.file_manager_widget.name))
             self.tabwidget_left.setCurrentIndex(idx)
             self.file_manager_widget.right_file_model_update()
         else:
@@ -101,34 +113,25 @@ class MainWindow(QMainWindow, UIForm):
             self.file_manager_widget.right_file_model_update()
 
     def read_state(self):
-        if not os.path.isfile('state.xml'):
-            return
-        tree = ET.parse('state.xml')
-        root = tree.getroot()
-        server = root.find('server')
-        project = root.find('project')
-        language = root.find('language')
+        server = self.app_settings.value('ip')
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
-        if ipRegex.exactMatch(server.attrib['ip']):
-            self.settings_widget.lineEdit_ip.setText(server.attrib['ip'])
-        if os.path.isfile(project.attrib['path']):
-            self.project_instance.open_project(project.attrib['path'])
+        if ipRegex.exactMatch(server):
+            self.settings_widget.lineEdit_ip.setText(server)
+        if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
+            self.project_instance.open_project(self.app_settings.value('path'))
+        if self.app_settings.value('language') and self.app_settings.value('language') == 'ru':
+            self.settings_widget.language_combo.setCurrentText('Russian')
+        else:
+            self.settings_widget.language_combo.setCurrentText('English')
 
     def write_state(self):
-        root = ET.Element('program')
-        root.set('version', '0.8')
-        language = ET.SubElement(root, 'language')
-        language.set('language', 'english')
+        self.app_settings.setValue('version', '0.8')
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
-        server = ET.SubElement(root, 'server')
-        server.set('ip', self.client.ip if ipRegex.exactMatch(self.client.ip) else '')
-        project = ET.SubElement(root, 'project')
+        self.app_settings.setValue('ip', self.client.ip if ipRegex.exactMatch(self.client.ip) else '')
         if self.project_instance.project_path is not None and os.path.isfile(self.project_instance.project_path):
-            project.set('path', self.project_instance.project_path)
+            self.app_settings.setValue('path', self.project_instance.project_path)
         else:
-            project.set('path', '')
-        tree = ET.ElementTree(root)
-        tree.write('state.xml', xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+            self.app_settings.setValue('path', '')
 
     def closeEvent(self, event):
         self.write_state()
@@ -138,6 +141,10 @@ class MainWindow(QMainWindow, UIForm):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    settings = QSettings('qmcenter.ini', QSettings.IniFormat)
+    lang = settings.value('language') if settings.value('language') else 'en'
+    trans = gettext.translation('qmcenter', 'locales', [lang])
+    trans.install()
     window = MainWindow()
     window.show()
     window.read_state()

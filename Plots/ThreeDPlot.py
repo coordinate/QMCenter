@@ -10,13 +10,14 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from Design.ui import show_error, show_info, show_warning_yes_no
 from Utils.transform import magnet_color, get_point_cloud, save_point_cloud, read_point_cloud, project
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class CutMagnetWidget(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, main):
         QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
         self.parent = parent
+        self.main = main
         self.shortcut_object = None
         self.first_idx = None
         self.second_idx = None
@@ -46,6 +47,17 @@ class CutMagnetWidget(QWidget):
         self.cancel.clicked.connect(lambda: self.parent.cancel_cutting())
         self.cut_save_btn.clicked.connect(lambda: self.parent.cut_save(False))
         self.cut_save_as_btn.clicked.connect(lambda: self.parent.cut_save(True))
+        self.main.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.setWindowTitle(_('Cut magnet data'))
+        self.label.setText(_('Choose points'))
+        self.first.setText(_('First point: '))
+        self.second.setText(_('Second point: '))
+        self.reset_btn.setText(_('Reset points'))
+        self.cut_save_btn.setText(_('Cut and Save'))
+        self.cut_save_as_btn.setText(_('Cut and Save as'))
+        self.cancel.setText(_('Cancel'))
 
     def closeEvent(self, event):
         if self.shortcut_object:
@@ -55,9 +67,10 @@ class CutMagnetWidget(QWidget):
 class Palette(QLabel):
     recolor_signal = pyqtSignal(object, object)
 
-    def __init__(self, parent):
+    def __init__(self, parent, main):
         QLabel.__init__(self)
         self.parent = parent
+        self.main = main
         self.all_values = {}
         pixmap = QPixmap('images/red-blue.png')
         self.setPixmap(pixmap)
@@ -67,8 +80,8 @@ class Palette(QLabel):
         self.max = None
         self.settings_widget.setWindowTitle(_('Palette values'))
         self.layout = QGridLayout(self.settings_widget)
-        self.max_label = QLabel(_("Max"))
-        self.min_label = QLabel(_("Min"))
+        self.max_label = QLabel(_('Max'))
+        self.min_label = QLabel(_('Min'))
         self.max_value = QLineEdit()
         self.min_value = QLineEdit()
         self.define_border_btn = QPushButton(_('Define borders'))
@@ -105,6 +118,18 @@ class Palette(QLabel):
         self.ok_btn.clicked.connect(lambda: self.ok_clicked())
         self.cancel_btn.clicked.connect(lambda: self.cancel_clicked())
         self.apply_btn.clicked.connect(lambda: self.apply_clicked())
+        self.main.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.settings_widget.setWindowTitle(_('Palette values'))
+        self.max_label.setText(_('Max'))
+        self.min_label.setText(_('Min'))
+        self.define_border_btn.setText(_('Define borders'))
+        self.auto_label.setText(_('Auto'))
+        self.all_visible_label.setText(_('(all visible)'))
+        self.ok_btn.setText('Ok')
+        self.cancel_btn.setText(_('Cancel'))
+        self.apply_btn.setText(_('Apply'))
 
     def set_values(self, arr=None, min=None, max=None):
         if arr is None:
@@ -115,7 +140,7 @@ class Palette(QLabel):
         if len(arr) == 0:
             for i in range(6):
                 grad_tic = QLabel('')
-                grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+                grad_tic.setStyleSheet('QLabel { background-color : rgb(0, 0, 0); color: white}')
                 self.parent.layout.addWidget(grad_tic, i + 1, 1, 1, 1)
             return
 
@@ -137,7 +162,7 @@ class Palette(QLabel):
             elif i == 5:
                 grad_tic.setAlignment(Qt.AlignBottom)
 
-            grad_tic.setStyleSheet("QLabel { background-color : rgb(0, 0, 0); color: white}")
+            grad_tic.setStyleSheet('QLabel { background-color : rgb(0, 0, 0); color: white}')
             self.parent.layout.addWidget(grad_tic, i+1, 1, 1, 1)
 
     def mouseDoubleClickEvent(self, event):
@@ -219,7 +244,7 @@ class ThreeDPlot(gl.GLViewWidget):
         self.parent = parent
         self.palette = palette
         self.release_ignore = False
-        self.cut_widget = CutMagnetWidget(self)
+        self.cut_widget = CutMagnetWidget(self, parent)
 
         self.objects = {}
 
@@ -317,7 +342,7 @@ class ThreeDPlot(gl.GLViewWidget):
                 filename = os.path.basename(path_to_save)
             except AssertionError as e:
                 progress.close()
-                show_error(_("File error"), _("File couldn't be downloaded\n{}".format(e.args[0])))
+                show_error(_('File error'), _("File couldn't be downloaded\n{}").format(e.args[0]))
                 raise AssertionError
         elif os.path.splitext(filename)[1] == '.ply':
             pcd = read_point_cloud(filename)
@@ -528,14 +553,14 @@ class ThreeDPlot(gl.GLViewWidget):
             return
         fly_len = len(self.palette.all_values)
         obj = self.objects[name]['object']
-        if visible == "Off":
+        if visible == 'Off':
             obj.setVisible(False)
             try:
                 del self.palette.all_values[name]
             except KeyError:
                 pass
             # self.setCameraPosition(QVector3D(0, 0, 0), 300, 30, 45)
-        elif visible == "On":
+        elif visible == 'On':
             obj.setVisible(True)
             try:
                 self.palette.all_values[name] = self.objects[name]['magnet']

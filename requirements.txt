@@ -1,0 +1,12 @@
+crcmod==1.7
+numpy==1.17.4
+opencv-python==4.1.1.26
+PyOpenGL==3.1.0
+pyproj==2.4.1
+PyQt5==5.13.0
+pyqtgraph==0.10.0
+requests==2.22.0
+requests-toolbelt==0.9.1
+plyfile==0.7.1
+lxml==4.4.1
+GDAL==3.0.1

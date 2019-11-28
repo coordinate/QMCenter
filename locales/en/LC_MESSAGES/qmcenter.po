@@ -1,0 +1,679 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-11-28 13:52+0300\n"
+"PO-Revision-Date: 2019-11-28 14:00+0300\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.2.4\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: en\n"
+
+#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
+msgid "Value"
+msgstr ""
+
+#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
+#: Design\update_widget.py:31 Design\update_widget.py:80
+msgid "Parameter"
+msgstr ""
+
+#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
+#: Plots\ThreeDPlot.py:83 Plots\ThreeDPlot.py:125
+msgid "Max"
+msgstr ""
+
+#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
+#: Plots\ThreeDPlot.py:84 Plots\ThreeDPlot.py:126
+msgid "Min"
+msgstr ""
+
+#: Design\configuration_widget.py:33 Design\configuration_widget.py:48
+msgid "Read"
+msgstr ""
+
+#: Design\configuration_widget.py:35 Design\configuration_widget.py:49
+msgid "Write"
+msgstr ""
+
+#: Design\configuration_widget.py:62 Design\configuration_widget.py:127
+#: Design\configuration_widget.py:141 Design\file_manager_widget.py:277
+#: Design\file_manager_widget.py:311 Design\file_manager_widget.py:336
+#: Design\update_widget.py:101 Design\update_widget.py:149
+msgid "Server error"
+msgstr ""
+
+#: Design\configuration_widget.py:62 Design\file_manager_widget.py:277
+#: Design\file_manager_widget.py:311 Design\file_manager_widget.py:336
+#: Design\update_widget.py:101
+msgid "Server is not responding."
+msgstr ""
+
+#: Design\configuration_widget.py:127 Design\configuration_widget.py:141
+msgid ""
+"Configuration updating not completed.\n"
+"Server is not responding."
+msgstr ""
+
+#: Design\custom_viewbox.py:20 Design\custom_viewbox.py:39
+msgid "Center Plot"
+msgstr ""
+
+#: Design\custom_viewbox.py:22 Design\custom_viewbox.py:41
+msgid "Vertical Autorange"
+msgstr ""
+
+#: Design\custom_viewbox.py:24
+msgid "\t\t\t\t\tSynchronize time"
+msgstr ""
+
+#: Design\design.py:29 Design\design.py:144
+msgid "&File"
+msgstr ""
+
+#: Design\design.py:31 Design\design.py:145
+msgid "New project"
+msgstr ""
+
+#: Design\design.py:33 Design\design.py:146
+msgid "Open project"
+msgstr ""
+
+#: Design\design.py:35 Design\design.py:147 Design\settings_widget.py:22
+#: Design\settings_widget.py:152
+msgid "Settings"
+msgstr ""
+
+#: Design\design.py:38 Design\design.py:148
+msgid "&Quit"
+msgstr ""
+
+#: Design\design.py:49 Design\design.py:149 Design\info_widget.py:50
+#: Design\info_widget.py:87
+msgid "Graphs"
+msgstr ""
+
+#: Design\design.py:52 Design\design.py:150
+msgid "Configuration"
+msgstr ""
+
+#: Design\design.py:55 Design\design.py:77 Design\design.py:151
+#: Design\design.py:154
+msgid "3D Visualization"
+msgstr ""
+
+#: Design\design.py:58 Design\design.py:152
+msgid "Update"
+msgstr ""
+
+#: Design\design.py:63 Design\design.py:153
+msgid "File manager"
+msgstr ""
+
+#: Design\design.py:79
+msgid "Toolbar"
+msgstr ""
+
+#: Design\design.py:113 Design\design.py:155
+msgid "Work panel"
+msgstr ""
+
+#: Design\design.py:122 Design\design.py:156
+msgid "Workspace"
+msgstr ""
+
+#: Design\design.py:126 Design\design.py:157
+msgid "Info"
+msgstr ""
+
+#: Design\file_manager_widget.py:111 Design\file_manager_widget.py:137
+msgid "Auto sync"
+msgstr ""
+
+#: Design\file_manager_widget.py:138 Design\file_manager_widget.py:207
+msgid "Changed date"
+msgstr ""
+
+#: Design\file_manager_widget.py:138 Design\file_manager_widget.py:207
+msgid "Name"
+msgstr ""
+
+#: Design\file_manager_widget.py:138 Design\file_manager_widget.py:207
+msgid "Size"
+msgstr ""
+
+#: Design\file_manager_widget.py:266
+msgid "Download File"
+msgstr ""
+
+#: Design\file_manager_widget.py:266
+msgid "Download file"
+msgstr ""
+
+#: Design\file_manager_widget.py:299 Design\project_instance.py:79
+#: Design\project_instance.py:91 Design\update_widget.py:138
+#: Plots\ThreeDPlot.py:345
+msgid "File error"
+msgstr ""
+
+#: Design\file_manager_widget.py:299 Design\update_widget.py:138
+msgid "File size must be non zero."
+msgstr ""
+
+#: Design\file_manager_widget.py:301
+msgid "Load file into device"
+msgstr ""
+
+#: Design\file_manager_widget.py:301
+msgid "Upload File"
+msgstr ""
+
+#: Design\file_manager_widget.py:320 Design\workspace_widget.py:345
+msgid "Remove file warning"
+msgstr ""
+
+#: Design\file_manager_widget.py:321
+msgid ""
+"Do you really want to remove:\n"
+"{}"
+msgstr ""
+
+#: Design\info_widget.py:16 Design\info_widget.py:81
+#: Design\settings_widget.py:31 Design\settings_widget.py:112
+#: Design\settings_widget.py:153 Design\settings_widget.py:166
+msgid "Connection"
+msgstr ""
+
+#: Design\info_widget.py:23 Design\info_widget.py:82
+msgid "Connect"
+msgstr ""
+
+#: Design\info_widget.py:27 Design\info_widget.py:83
+msgid "Disconnect"
+msgstr ""
+
+#: Design\info_widget.py:30 Design\info_widget.py:84
+msgid "Auto connect"
+msgstr ""
+
+#: Design\info_widget.py:39 Design\info_widget.py:85
+msgid "State"
+msgstr ""
+
+#: Design\info_widget.py:42 Design\info_widget.py:86
+msgid "Scaled"
+msgstr ""
+
+#: Design\info_widget.py:56 Design\info_widget.py:88
+msgid "Enlarge"
+msgstr ""
+
+#: Design\info_widget.py:59 Design\info_widget.py:89
+msgid "Temperature:"
+msgstr ""
+
+#: Design\project_instance.py:53
+msgid "Load project files"
+msgstr ""
+
+#: Design\project_instance.py:70
+msgid "Couldn't define UTM zone form .proj file."
+msgstr ""
+
+#: Design\project_instance.py:70
+msgid "UTM error"
+msgstr ""
+
+#: Design\project_instance.py:79 Design\project_instance.py:91
+msgid ""
+"File not found\n"
+"{}"
+msgstr ""
+
+#: Design\project_instance.py:139 Design\project_instance.py:335
+msgid "Select one or more files to open"
+msgstr ""
+
+#: Design\project_instance.py:153 Design\project_instance.py:350
+#: Design\project_instance.py:431
+msgid "File warning"
+msgstr ""
+
+#: Design\project_instance.py:153 Design\project_instance.py:350
+#: Design\project_instance.py:431
+msgid ""
+"This filename is already in proj.files.\n"
+"Do you want to \"save as\" and add to project:\n"
+"{}\n"
+"Or just add existed file to project"
+msgstr ""
+
+#: Design\project_instance.py:182
+msgid "Parse {}"
+msgstr ""
+
+#: Design\project_instance.py:188
+msgid "GPS time and frequency don't match"
+msgstr ""
+
+#: Design\project_instance.py:188 Design\project_instance.py:200
+#: Design\project_instance.py:246
+msgid "Match error"
+msgstr ""
+
+#: Design\project_instance.py:193 Design\project_instance.py:249
+msgid "Create {}"
+msgstr ""
+
+#: Design\project_instance.py:200
+msgid "There is no match .ubx file for {}"
+msgstr ""
+
+#: Design\project_instance.py:216
+msgid ""
+"RTK Lib didn't create {}.obs and {}.nav files.\n"
+"Please report us about this problem"
+msgstr ""
+
+#: Design\project_instance.py:216 Design\project_instance.py:232
+msgid "RTK LIB error"
+msgstr ""
+
+#: Design\project_instance.py:232
+msgid ""
+"RTK Lib didn't create {}.pos file.\n"
+"Please report us about this problem"
+msgstr ""
+
+#: Design\project_instance.py:246
+msgid "There is no match .ubx or pos file for {}"
+msgstr ""
+
+#: Design\project_instance.py:265 Design\project_instance.py:321
+msgid "Didn't match GPST with time in {} file"
+msgstr ""
+
+#: Design\project_instance.py:325
+msgid "Magnet file was created"
+msgstr ""
+
+#: Design\project_instance.py:383
+msgid "Save File"
+msgstr ""
+
+#: Design\project_instance.py:415 Design\workspace_widget.py:416
+msgid "Open file"
+msgstr ""
+
+#: Design\project_instance.py:451
+msgid "File {} is already in project"
+msgstr ""
+
+#: Design\project_instance.py:451 Design\project_instance.py:460
+msgid "File info"
+msgstr ""
+
+#: Design\project_instance.py:460
+msgid "File {}.ply is already in project"
+msgstr ""
+
+#: Design\settings_widget.py:54 Design\settings_widget.py:101
+#: Design\settings_widget.py:154 Design\settings_widget.py:163
+#: Design\workspace_widget.py:38 Design\workspace_widget.py:56
+#: Plots\ThreeDPlot.py:98 Plots\ThreeDPlot.py:132
+msgid "Apply"
+msgstr ""
+
+#: Design\settings_widget.py:55 Design\settings_widget.py:155
+#: Design\update_widget.py:57 Design\update_widget.py:87
+#: Design\workspace_widget.py:39 Design\workspace_widget.py:57
+#: Plots\ThreeDPlot.py:35 Plots\ThreeDPlot.py:60 Plots\ThreeDPlot.py:97
+#: Plots\ThreeDPlot.py:131
+msgid "Cancel"
+msgstr ""
+
+#: Design\settings_widget.py:56 Design\settings_widget.py:156
+msgid "OK"
+msgstr ""
+
+#: Design\settings_widget.py:65 Design\settings_widget.py:113
+#: Design\settings_widget.py:157 Design\settings_widget.py:167
+msgid "File Manager"
+msgstr ""
+
+#: Design\settings_widget.py:71
+msgid "Left tracked folder"
+msgstr ""
+
+#: Design\settings_widget.py:73 Design\settings_widget.py:84
+#: Design\settings_widget.py:158 Design\settings_widget.py:159
+#: Design\update_widget.py:47 Design\update_widget.py:85
+msgid "Browse..."
+msgstr ""
+
+#: Design\settings_widget.py:82
+msgid "Right tracked folder"
+msgstr ""
+
+#: Design\settings_widget.py:88 Design\settings_widget.py:160
+msgid "Save changes"
+msgstr ""
+
+#: Design\settings_widget.py:92 Design\settings_widget.py:114
+#: Design\settings_widget.py:161 Design\settings_widget.py:168
+msgid "Languages"
+msgstr ""
+
+#: Design\settings_widget.py:97 Design\settings_widget.py:162
+msgid "Select language:"
+msgstr ""
+
+#: Design\settings_widget.py:132
+msgid "IP address is not correct."
+msgstr ""
+
+#: Design\settings_widget.py:132
+msgid "IP error"
+msgstr ""
+
+#: Design\three_D_visual_widget.py:22 Design\three_D_visual_widget.py:46
+msgid "Longitude:"
+msgstr ""
+
+#: Design\three_D_visual_widget.py:26 Design\three_D_visual_widget.py:47
+msgid "Latitude:"
+msgstr ""
+
+#: Design\three_D_visual_widget.py:30 Design\three_D_visual_widget.py:48
+msgid "Magnet:"
+msgstr ""
+
+#: Design\update_widget.py:31 Design\update_widget.py:80
+msgid "Version"
+msgstr ""
+
+#: Design\update_widget.py:34 Design\update_widget.py:81
+msgid "Read update file"
+msgstr ""
+
+#: Design\update_widget.py:35 Design\update_widget.py:82
+msgid "Load update file"
+msgstr ""
+
+#: Design\update_widget.py:41 Design\update_widget.py:83
+msgid "Wizard"
+msgstr ""
+
+#: Design\update_widget.py:44 Design\update_widget.py:84
+msgid "Open file to load into device"
+msgstr ""
+
+#: Design\update_widget.py:54 Design\update_widget.py:86
+msgid "Upload"
+msgstr ""
+
+#: Design\update_widget.py:58 Design\update_widget.py:88
+msgid "Finish"
+msgstr ""
+
+#: Design\update_widget.py:114
+msgid "Open update file"
+msgstr ""
+
+#: Design\update_widget.py:149
+msgid "Server is not responding. File wasn't uploaded into device."
+msgstr ""
+
+#: Design\update_widget.py:155
+msgid "File was uploaded into device"
+msgstr ""
+
+#: Design\update_widget.py:158
+msgid "File wasn't uploaded into device"
+msgstr ""
+
+#: Design\workspace_widget.py:20 Design\workspace_widget.py:52
+msgid "No UTM"
+msgstr ""
+
+#: Design\workspace_widget.py:21 Design\workspace_widget.py:53
+msgid "Set UTM zone"
+msgstr ""
+
+#: Design\workspace_widget.py:31 Design\workspace_widget.py:54
+msgid "Change UTM zone"
+msgstr ""
+
+#: Design\workspace_widget.py:34 Design\workspace_widget.py:55
+msgid "Select new zone"
+msgstr ""
+
+#: Design\workspace_widget.py:163
+msgid "RAW"
+msgstr ""
+
+#: Design\workspace_widget.py:167
+msgid "Magnet"
+msgstr ""
+
+#: Design\workspace_widget.py:171
+msgid "GeoData"
+msgstr ""
+
+#: Design\workspace_widget.py:219 Design\workspace_widget.py:252
+msgid "Add RAW"
+msgstr ""
+
+#: Design\workspace_widget.py:220
+msgid "Add magnet"
+msgstr ""
+
+#: Design\workspace_widget.py:221
+msgid "Add geo"
+msgstr ""
+
+#: Design\workspace_widget.py:253 Design\workspace_widget.py:257
+#: Design\workspace_widget.py:261
+msgid "Remove all"
+msgstr ""
+
+#: Design\workspace_widget.py:256
+msgid "Add Magnet data"
+msgstr ""
+
+#: Design\workspace_widget.py:260
+msgid "Add GeoData"
+msgstr ""
+
+#: Design\workspace_widget.py:264 Design\workspace_widget.py:269
+msgid "Remove element"
+msgstr ""
+
+#: Design\workspace_widget.py:265 Design\workspace_widget.py:270
+msgid "Show in explorer"
+msgstr ""
+
+#: Design\workspace_widget.py:268 Plots\ThreeDPlot.py:25 Plots\ThreeDPlot.py:53
+msgid "Cut magnet data"
+msgstr ""
+
+#: Design\workspace_widget.py:305
+msgid "Create .magnete files"
+msgstr ""
+
+#: Design\workspace_widget.py:307
+msgid "Concatenate"
+msgstr ""
+
+#: Design\workspace_widget.py:309
+msgid "Remove elements"
+msgstr ""
+
+#: Design\workspace_widget.py:330
+msgid "Do you really want to remove selected elements?"
+msgstr ""
+
+#: Design\workspace_widget.py:330 Design\workspace_widget.py:354
+msgid "Remove files warning"
+msgstr ""
+
+#: Design\workspace_widget.py:345
+msgid "Do you really want to remove this element?"
+msgstr ""
+
+#: Design\workspace_widget.py:354
+msgid "Do you really want to remove all elements?"
+msgstr ""
+
+#: Design\workspace_widget.py:373
+msgid "Create magnet file"
+msgstr ""
+
+#: Design\workspace_widget.py:378
+msgid "Create .magnete file from:"
+msgstr ""
+
+#: Design\workspace_widget.py:379
+msgid "Use chosen .ubx file"
+msgstr ""
+
+#: Design\workspace_widget.py:381
+msgid "Use own .pos file"
+msgstr ""
+
+#: Design\workspace_widget.py:382
+msgid "Create"
+msgstr ""
+
+#: Design\workspace_widget.py:383
+msgid "Browse"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:27 Plots\ThreeDPlot.py:54
+msgid "Choose points"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:28 Plots\ThreeDPlot.py:55
+msgid "First point: "
+msgstr ""
+
+#: Plots\ThreeDPlot.py:30 Plots\ThreeDPlot.py:56
+msgid "Second point: "
+msgstr ""
+
+#: Plots\ThreeDPlot.py:32 Plots\ThreeDPlot.py:57
+msgid "Reset points"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:33 Plots\ThreeDPlot.py:58
+msgid "Cut and Save"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:34 Plots\ThreeDPlot.py:59
+msgid "Cut and Save as"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:81 Plots\ThreeDPlot.py:124
+msgid "Palette values"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:87 Plots\ThreeDPlot.py:127
+msgid "Define borders"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:91 Plots\ThreeDPlot.py:128
+msgid "Auto"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:94 Plots\ThreeDPlot.py:129
+msgid "(all visible)"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:194
+msgid "Border info"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:194
+msgid "No borders"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:230
+msgid ""
+"Please fill Max, Min values or\n"
+"choose Auto."
+msgstr ""
+
+#: Plots\ThreeDPlot.py:230 Plots\ThreeDPlot.py:233 Plots\ThreeDPlot.py:515
+msgid "Border error"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:233
+msgid "Max must be more than Min"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:345
+msgid ""
+"File couldn't be downloaded\n"
+"{}"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:515
+msgid "You must define boundary points."
+msgstr ""
+
+#: Plots\ThreeDPlot.py:518
+msgid "Cutting info"
+msgstr ""
+
+#: Plots\ThreeDPlot.py:518
+msgid "Unselected data will be deleted. Resume?"
+msgstr ""
+
+#: Plots\plots.py:83 Plots\plots.py:194 Plots\plots.py:253 Plots\plots.py:400
+#: Plots\plots.py:445 Plots\plots.py:491
+msgid "Time, s"
+msgstr ""
+
+#: Plots\plots.py:185 Plots\plots.py:193
+msgid "Magnetic Field, nT"
+msgstr ""
+
+#: Plots\plots.py:234 Plots\plots.py:252 Plots\plots.py:309
+msgid "Signal S1, uA"
+msgstr ""
+
+#: Plots\plots.py:237 Plots\plots.py:254 Plots\plots.py:310
+msgid "Signal S2, uA"
+msgstr ""
+
+#: Plots\plots.py:311
+msgid "Frequency, Hz"
+msgstr ""
+
+#: Plots\plots.py:392 Plots\plots.py:399
+msgid "Lamp Temperature, C"
+msgstr "Lamp Temperature, °C"
+
+#: Plots\plots.py:438 Plots\plots.py:444
+msgid "Sensor Temperature, C"
+msgstr "Sensor Temperature, °C"
+
+#: Plots\plots.py:483 Plots\plots.py:490
+msgid "Photodiode current, A"
+msgstr "Photodiode current, µA"
+
+#: Utils\transform.py:109
+msgid "Wrong tif type. Too many channels."
+msgstr ""
+
+#: Utils\transform.py:111
+msgid "Couldn't define metadata (top left corner)!"
+msgstr ""

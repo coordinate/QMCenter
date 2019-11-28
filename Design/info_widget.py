@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QCheckBox, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class InfoWidget(QWidget):
@@ -20,7 +20,7 @@ class InfoWidget(QWidget):
         self.connection_icon.setPixmap(QPixmap('images/gray_light_icon.png'))
         self.gridlayout_connection.addWidget(self.connection_icon, 0, 0, 1, 1)
 
-        self.connect_btn = QPushButton(_("Connect"))
+        self.connect_btn = QPushButton(_('Connect'))
         self.device_on_connect = False
         self.gridlayout_connection.addWidget(self.connect_btn, 1, 0, 1, 3)
 
@@ -36,10 +36,10 @@ class InfoWidget(QWidget):
         self.layout.addWidget(self.connection_groupbox, alignment=Qt.AlignTop)
 
         self.state_groupbox = QGroupBox()
-        self.state_groupbox.setTitle(_("State"))
+        self.state_groupbox.setTitle(_('State'))
         self.gridlayout_state = QGridLayout(self.state_groupbox)
 
-        self.static_btn = QPushButton(_("Scaled"))
+        self.static_btn = QPushButton(_('Scaled'))
         self.gridlayout_state.addWidget(self.static_btn, 1, 0, 1, 1)
 
         self.graphs_chbx = QCheckBox()
@@ -47,18 +47,18 @@ class InfoWidget(QWidget):
         self.gridlayout_state.addWidget(self.graphs_chbx, 0, 1, 1, 1)
 
         self.graphs_label = QLabel()
-        self.graphs_label.setText(_("Graphs"))
+        self.graphs_label.setText(_('Graphs'))
         self.gridlayout_state.addWidget(self.graphs_label, 0, 2, 1, 1)
 
         self.enlarge_chbx = QCheckBox()
         self.gridlayout_state.addWidget(self.enlarge_chbx, 1, 1, 1, 1)
 
-        self.enlarge_label = QLabel(_("Enlarge"))
+        self.enlarge_label = QLabel(_('Enlarge'))
         self.gridlayout_state.addWidget(self.enlarge_label, 1, 2, 1, 1)
 
-        self.temp_label = QLabel(_("Temperature:"))
-        self.deg_label = QLabel("°C")
-        self.deg_num_label = QLabel("0")
+        self.temp_label = QLabel(_('Temperature:'))
+        self.deg_label = QLabel('°C')
+        self.deg_num_label = QLabel('0')
         self.deg_num_label.setAlignment(Qt.AlignRight)
 
         self.gridlayout_state.addWidget(self.temp_label, 2, 0, 1, 1)
@@ -74,6 +74,19 @@ class InfoWidget(QWidget):
         self.disconnect_btn.clicked.connect(lambda: self.parent.client.close())
         self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
         self.test_btn.clicked.connect(self.test)
+
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.connection_groupbox.setTitle(_('Connection'))
+        self.connect_btn.setText(_('Connect'))
+        self.disconnect_btn.setText(_('Disconnect'))
+        self.auto_connect_label.setText(_('Auto connect'))
+        self.state_groupbox.setTitle(_('State'))
+        self.static_btn.setText(_('Scaled'))
+        self.graphs_label.setText(_('Graphs'))
+        self.enlarge_label.setText(_('Enlarge'))
+        self.temp_label.setText(_('Temperature:'))
 
     def client_connect(self):
         self.parent.client.connect()

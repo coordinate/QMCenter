@@ -9,7 +9,7 @@ from PyQt5.QtGui import QGuiApplication
 
 from Design.custom_viewbox import CustomViewBox
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class NonScientificYLeft(pg.AxisItem):
@@ -167,6 +167,13 @@ class MainPlot(pg.PlotWidget):
         self.view.disableAutoRange(axis=self.view.XAxis)
         self.view.setMouseEnabled(x=True, y=True)
 
+    # def retranslate(self):
+    #     self.item.getAxis('left').setLabel(_(self.left_axis_name))
+    #     self.item.getAxis('bottom').setLabel(_(self.bottom_axis_name))
+    #     right = self.item.getAxis('right').labelText
+    #     if len(right.split('\n')) == 1:
+    #         self.item.getAxis('right').setLabel(_(right))
+
 
 class MagneticField(MainPlot):
     s = -10000
@@ -181,6 +188,10 @@ class MagneticField(MainPlot):
         self.view.setYRange(-20000, 100000)
 
         self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
+
+    def retranslate(self):
+        self.item.getAxis('left').setLabel(_('Magnetic Field, nT'))
+        self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
         if (MagneticField.s + value*10)/60000 <= -1:
@@ -237,6 +248,11 @@ class SignalsPlot(MainPlot):
 
         self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
 
+    def retranslate(self):
+        self.item.getAxis('left').setLabel(_('Signal S1, uA'))
+        self.item.getAxis('bottom').setLabel(_('Time, s'))
+        self.item.getAxis('right').setLabel(_('Signal S2, uA'))
+
     def set_scale(self, value):
         if (SignalsPlot.s + value*10)/60000 <= -1:
             SignalsPlot.s = -60000
@@ -290,6 +306,10 @@ class SignalsFrequency(pg.PlotWidget):
         self.item.setClipToView(True)
         self.item.setRange(xRange=[100000, 700000])
 
+        self.left_axis_name = _('Signal S1, uA')
+        self.right_axis_name = _('Signal S2, uA')
+        self.bottom_axis_name = _('Frequency, Hz')
+
         self.data = pg.PlotDataItem()
         self.data.setPen(pg.mkPen(width=1, color='r'))
         self.data.sigClicked.connect(lambda: self.test())
@@ -299,13 +319,13 @@ class SignalsFrequency(pg.PlotWidget):
         self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
 
         self.data2 = pg.PlotDataItem(pen=pg.mkPen(width=1, color='b'))
-        self.item.setLabel('left', _('Signal S1, uA'), **{'font-size': '8pt', 'color': 'red'})
+        self.item.setLabel('left', _(self.left_axis_name), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-100, 100)
         right_axis = self.item.getAxis('right')
-        right_axis.setLabel(_('Signal S2, uA'), **{'font-size': '8pt'})
+        right_axis.setLabel(_(self.right_axis_name), **{'font-size': '8pt'})
         right_axis.setPen(pg.mkPen(color='b'))
         self.item.showAxis('right')
-        self.item.setLabel('bottom', _('Frequency, Hz'), **{'font-size': '8pt'})
+        self.item.setLabel('bottom', _(self.bottom_axis_name), **{'font-size': '8pt'})
 
         self.viewbox = CustomViewBox(self, 'Right')  # create new viewbox for sig2
         self.viewbox.setYRange(0, 500)
@@ -356,6 +376,11 @@ class SignalsFrequency(pg.PlotWidget):
             # pg.PlotWidget.wheelEvent(self, event)
             pass
 
+    def retranslate(self):
+        self.item.getAxis('left').setLabel(_(self.left_axis_name))
+        self.item.getAxis('bottom').setLabel(_(self.bottom_axis_name))
+        self.item.getAxis('right').setLabel(_(self.right_axis_name))
+
 
 class LampTemp(MainPlot):
     s = -10000
@@ -364,10 +389,15 @@ class LampTemp(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Lamp Temperature, °C'), **{'font-size': '8pt', 'color': 'red'})
+        self.left_axis_name = _('Lamp Temperature, C')
+        self.item.setLabel('left', _(self.left_axis_name), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-50, 200)
 
         self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
+
+    def retranslate(self):
+        self.item.getAxis('left').setLabel(_('Lamp Temperature, C'))
+        self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
         if (LampTemp.s + value*10)/60000 <= -1:
@@ -405,9 +435,14 @@ class SensorTemp(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Sensor Temperature, °C'), **{'font-size': '8pt', 'color': 'red'})
+        self.left_axis_name = _('Sensor Temperature, C')
+        self.item.setLabel('left', _(self.left_axis_name), **{'font-size': '8pt', 'color': 'red'})
         self.view.setYRange(-50, 100)
         self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
+
+    def retranslate(self):
+        self.item.getAxis('left').setLabel(_('Sensor Temperature, C'))
+        self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
         if (SensorTemp.s + value*10)/60000 <= -1:
@@ -445,10 +480,15 @@ class DCPlot(MainPlot):
 
     def __init__(self):
         MainPlot.__init__(self)
-        self.item.setLabel('left', _('Photodiode current, µA'), **{'font-size': '8pt', 'color': 'red'})
+        self.left_axis_name = _('Photodiode current, A')
+        self.item.setLabel('left', _(self.left_axis_name), **{'font-size': '8pt', 'color': 'red'})
         self.item.getAxis('left').setPen(pg.mkPen(color='r'))
         self.view.setYRange(0, 900)
         self.signal_sync_chbx_changed.connect(lambda i: self.signal_sync_chbx_changed_to_main.emit(i))
+
+    def retranslate(self):
+        self.item.getAxis('left').setLabel(_('Photodiode current, A'))
+        self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
         if (DCPlot.s + value*10)/60000 <= -1:

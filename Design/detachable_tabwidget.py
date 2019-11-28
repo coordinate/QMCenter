@@ -2,8 +2,6 @@ from PyQt5.QtCore import Qt, QPoint, QMimeData, pyqtSignal, QRect
 from PyQt5.QtGui import QPixmap, QRegion, QDrag, QCursor
 from PyQt5.QtWidgets import QTabWidget, QTabBar
 
-_ = lambda x: x
-
 
 class TabBar(QTabBar):
     def __init__(self, parent=None):

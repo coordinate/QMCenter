@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication
 from Design.ui import show_error, show_info, show_message_saveas_cancel_add
 from Utils.transform import parse_mag_file
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class CurrentProject(QObject):
@@ -76,7 +76,7 @@ class CurrentProject(QObject):
         for magnet in self.magnet_data.getchildren():
             file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.tag)
             if not os.path.isfile(file):
-                show_error(_('File error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
                 self.remove_element(os.path.basename(file))
                 self.send_tree_to_view()
                 continue
@@ -88,7 +88,7 @@ class CurrentProject(QObject):
         for geo in self.geo_data.getchildren():
             file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.tag)
             if not os.path.isfile(file):
-                show_error(_('File error'), _('File not found\n{}'.format(file.replace('/', '\\'))))
+                show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
                 self.remove_element(os.path.basename(file))
                 self.send_tree_to_view()
                 continue
@@ -151,8 +151,8 @@ class CurrentProject(QObject):
                 path = os.path.splitext(destination)
                 destination = '{}_copy{}'.format(path[0], path[1])
                 answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
-                                                        'Do you want to save as and add to project:\n{}\n'
-                                                        'Or just add existed file to project'.format(destination.replace('\\', '/'))))
+                                                        'Do you want to "save as" and add to project:\n{}\n'
+                                                        'Or just add existed file to project').format(destination.replace('\\', '/')))
                 if answer == 0:
                     copyfile(file, destination)
                 elif answer == 1:
@@ -179,7 +179,7 @@ class CurrentProject(QObject):
         files_path = os.path.join(self.files_path, self.raw_data.attrib['name'])
 
         filename = os.path.splitext(mag_file)[0]
-        widget.second_label.setText(_('Parse {}'.format(mag_file)))
+        widget.second_label.setText(_('Parse {}').format(mag_file))
         mag_values = parse_mag_file(os.path.join(files_path, mag_file), widget.progress)
         gpst = mag_values[0] / 1e6
         freq = mag_values[1] * 0.026062317
@@ -190,14 +190,14 @@ class CurrentProject(QObject):
 
         if os.path.splitext(second_file)[-1] == '.ubx':
             # do command with RTKLIB and get .pos file bin or txt
-            widget.second_label.setText(_('Create {}'.format('{}.pos'.format(filename))))
+            widget.second_label.setText(_('Create {}').format('{}.pos').format(filename))
             widget.progress.setValue(0)
 
             cmd = 'rtk_lib\\convbin.exe -d {} {}'.format(self.files_path.replace('/', '\\'),
                                                          os.path.join(files_path, '{}.ubx'.format(filename)).replace('/', '\\'))
 
             if not os.path.isfile(os.path.join(files_path, '{}.ubx'.format(filename))):
-                show_error(_('Match error'), _('There is no match .ubx file for {}'.format(mag_file)))
+                show_error(_('Match error'), _('There is no match .ubx file for {}').format(mag_file))
                 return
 
             p1 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -214,7 +214,7 @@ class CurrentProject(QObject):
             if not os.path.isfile(os.path.join(self.files_path, '{}.obs'.format(filename))) or \
                 not os.path.isfile(os.path.join(self.files_path, '{}.nav'.format(filename))):
                 show_error(_('RTK LIB error'), _('RTK Lib didn\'t create {}.obs and {}.nav files.\n'
-                                                 'Please report us about this problem'.format(filename, filename)))
+                                                 'Please report us about this problem').format(filename, filename))
 
                 widget.close()
                 return
@@ -230,7 +230,7 @@ class CurrentProject(QObject):
             if not os.path.isfile(os.path.join(self.files_path, '{}.obs'.format(filename))) or \
                 not os.path.isfile(os.path.join(self.files_path, '{}.nav'.format(filename))):
                 show_error(_('RTK LIB error'), _('RTK Lib didn\'t create {}.pos file.\n'
-                                                 'Please report us about this problem'.format(filename, filename)))
+                                                 'Please report us about this problem').format(filename, filename))
 
                 widget.close()
                 return
@@ -243,10 +243,10 @@ class CurrentProject(QObject):
             pos = second_file
 
         else:
-            show_error(_('Match error'), _('There is no match .ubx or pos file for {}'.format(mag_file)))
+            show_error(_('Match error'), _('There is no match .ubx or pos file for {}').format(mag_file))
             return
 
-        widget.second_label.setText(_('Create {}'.format('{}.magnete'.format(filename))))
+        widget.second_label.setText(_('Create {}').format('{}.magnete'.format(filename)))
         widget.progress.setValue(0)
         # with open(os.path.join(self.files_path, '{}.magnete'.format(filename)), 'w') as magnet_file:
         #     magnet_len = 0
@@ -262,7 +262,7 @@ class CurrentProject(QObject):
             start = np.argsort(np.absolute(time - gpst))[0]
             if gpst[start] == gpst[-1]:
                 widget.second_label.setText(
-                    _('Didn\'t match GPST with time in {} file'.format(os.path.basename(second_file))))
+                    _('Didn\'t match GPST with time in {} file').format(os.path.basename(second_file)))
                 return
 
             length = len(file)
@@ -318,7 +318,7 @@ class CurrentProject(QObject):
 
         if len(time_arr) == 0:
             widget.progress.setValue(100)
-            widget.second_label.setText(_('Didn\'t match GPST with time in {} file'.format(os.path.basename(second_file))))
+            widget.second_label.setText(_('Didn\'t match GPST with time in {} file').format(os.path.basename(second_file)))
 
         else:
             widget.progress.setValue(100)
@@ -348,8 +348,8 @@ class CurrentProject(QObject):
                 path = os.path.splitext(destination)
                 destination = '{}_copy{}'.format(path[0], path[1])
                 answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
-                                                        'Do you want to "save as" and add to project\n{}\n'
-                                                        'Or just add existed file to project'.format(destination.replace('\\', '/'))))
+                                                        'Do you want to "save as" and add to project:\n{}\n'
+                                                        'Or just add existed file to project').format(destination.replace('\\', '/')))
                 if answer == 0:
                     copyfile(file, destination)
                 elif answer == 1:
@@ -429,8 +429,8 @@ class CurrentProject(QObject):
                 path = os.path.splitext(destination)
                 destination = '{}_copy{}'.format(path[0], path[1])
                 answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
-                                                        'Do you want to "save as" and add to project\n{}\n'
-                                                        'Or just add existed file to project'.format(destination.replace('\\', '/'))))
+                                                        'Do you want to "save as" and add to project:\n{}\n'
+                                                        'Or just add existed file to project').format(destination.replace('\\', '/')))
                 if answer == 0:
                     copyfile(file, destination)
                 elif answer == 1:
@@ -448,7 +448,7 @@ class CurrentProject(QObject):
                 element = ET.SubElement(self.geo_data, os.path.basename(file))
                 element.set("indicator", "Off")
             else:
-                show_info(_('File info'), _('File {} is already in project'.format(os.path.basename(file))))
+                show_info(_('File info'), _('File {} is already in project').format(os.path.basename(file)))
         elif extension == '.tif':
             try:
                 if self.geo_data.find('{}.ply'.format(filename)) is None:
@@ -457,7 +457,7 @@ class CurrentProject(QObject):
                     element = ET.SubElement(self.geo_data, '{}.ply'.format(filename))
                     element.set('indicator', 'Off')
                 else:
-                    show_info(_('File info'), _('File {}.ply is already in project'.format(filename)))
+                    show_info(_('File info'), _('File {}.ply is already in project').format(filename))
             except AssertionError:
                 pass
 
@@ -501,4 +501,5 @@ class CurrentProject(QObject):
         self.write_proj_tree()
 
     def write_proj_tree(self):
-        self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
+        if self.project_path:
+            self.tree.write(self.project_path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)

@@ -15,13 +15,14 @@ from requests_toolbelt.downloadutils.tee import tee_to_bytearray
 
 from Design.ui import ProgressBar, show_error, show_warning_yes_no, show_info
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class FileManager(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent
+        self.name = 'File manager'
         self.port = '5000'
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(self.parent.server):
@@ -129,6 +130,12 @@ class FileManager(QWidget):
         self.delete_file_btn.clicked.connect(lambda: self.delete_file_from_file_model())
 
         self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
+
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.file_models_auto_sync.setText(_('Auto sync'))
+        self.right_file_model.setHorizontalHeaderLabels([_('Name'), _('Size'), _('Changed date')])
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])

@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog,
 
 from Design.ui import show_warning_yes_no
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class WorkspaceWidget(QWidget):
@@ -46,6 +46,16 @@ class WorkspaceWidget(QWidget):
         self.change_utm_btn.clicked.connect(lambda: self.change_widget.show())
         self.apply_btn.clicked.connect(lambda: self.apply_new_zone())
         self.cancel_btn.clicked.connect(lambda: self.change_widget.close())
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
+
+    def retranslate(self):
+        self.utm_label.setText(_('No UTM'))
+        self.change_utm_btn.setText(_('Set UTM zone'))
+        self.change_widget.setWindowTitle(_('Change UTM zone'))
+        self.select_label.setText(_('Select new zone'))
+        self.apply_btn.setText(_('Apply'))
+        self.cancel_btn.setText(_('Cancel'))
+        self.workspaceview.magnet_creator.retranslate()
 
     def apply_new_zone(self):
         self.parent.three_d_widget.three_d_plot.utm_zone = int(self.combobox.currentText())
@@ -366,18 +376,18 @@ class MagnetCreator(QWidget):
 
         self.first_page = QWidget()
         first_lay = QGridLayout(self.first_page)
-        first_label = QLabel(_('Create .magnete file from:'))
+        self.first_label = QLabel(_('Create .magnete file from:'))
         self.ubx_radiobtn = QRadioButton(_('Use chosen .ubx file'))
         self.ubx_radiobtn.setChecked(True)
         self.pos_radiobtn = QRadioButton(_('Use own .pos file'))
-        create_btn = QPushButton(_('Create'))
+        self.create_btn = QPushButton(_('Create'))
         self.browse_btn = QPushButton(_('Browse'))
         self.browse_btn.setEnabled(False)
-        first_lay.addWidget(first_label, 0, 0, 1, 3)
+        first_lay.addWidget(self.first_label, 0, 0, 1, 3)
         first_lay.addWidget(self.ubx_radiobtn, 1, 0, 1, 1)
         first_lay.addWidget(self.pos_radiobtn, 2, 0, 1, 1)
         first_lay.addWidget(self.browse_btn, 3, 1, 1, 1)
-        first_lay.addWidget(create_btn, 3, 2, 1, 1)
+        first_lay.addWidget(self.create_btn, 3, 2, 1, 1)
 
         self.second_page = QWidget()
         self.second_lay = QGridLayout(self.second_page)
@@ -395,7 +405,15 @@ class MagnetCreator(QWidget):
         self.ubx_radiobtn.clicked.connect(lambda: self.browse_btn.setEnabled(False))
         self.pos_radiobtn.clicked.connect(lambda: self.browse_btn.setEnabled(True))
         self.browse_btn.clicked.connect(lambda: self.open_filedialog())
-        create_btn.clicked.connect(lambda: self.create_magnet())
+        self.create_btn.clicked.connect(lambda: self.create_magnet())
+
+    def retranslate(self):
+        self.setWindowTitle(_('Create magnet file'))
+        self.first_label.setText(_('Create .magnete file from:'))
+        self.ubx_radiobtn.setText(_('Use chosen .ubx file'))
+        self.pos_radiobtn.setText(_('Use own .pos file'))
+        self.create_btn.setText(_('Create'))
+        self.browse_btn.setText(_('Browse'))
 
     def show_widget(self, files_list):
         self.mag_file = [m for m in files_list if os.path.splitext(m)[-1] == '.mag'][0]
@@ -405,7 +423,7 @@ class MagnetCreator(QWidget):
 
     def open_filedialog(self):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
-                                                       self.parent.project_instance.files_path, "GPS file (*.pos)")[0]
+                                           self.parent.project_instance.files_path, "GPS file (*.pos)")[0]
 
         if not file:
             return

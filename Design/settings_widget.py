@@ -1,22 +1,25 @@
+import gettext
+
 from PyQt5.QtCore import QRegExp, Qt, pyqtSignal
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QWidget, QGridLayout, QListWidget, QStackedWidget, QListWidgetItem, QLabel, QLineEdit, \
-    QPushButton, QFileDialog
+    QPushButton, QFileDialog, QComboBox
 
 from Design.ui import show_error
 
-_ = lambda x: x
+# _ = lambda x: x
 
 
 class SettingsWidget(QWidget):
     signal_ip_changed = pyqtSignal(object)
+    signal_language_changed = pyqtSignal(object)
 
     def __init__(self, parent):
         QWidget.__init__(self)
         # Create settings widget
         self.parent = parent
         self.setMinimumSize(700, 500)
-        self.setWindowTitle(_("Settings"))
+        self.setWindowTitle(_('Settings'))
         self.settings_layout = QGridLayout(self)
 
         self.settings_menu_items = QListWidget()
@@ -25,16 +28,17 @@ class SettingsWidget(QWidget):
         self.paint_settings_menu_item = QStackedWidget()
         self.settings_layout.addWidget(self.paint_settings_menu_item, 0, 3, 10, 1)
 
-        self.settings_menu_items.addItem(QListWidgetItem(_('Connection')))
+        self.connection_item = QListWidgetItem(_('Connection'))
+        self.settings_menu_items.addItem(self.connection_item)
 
         # Create connection menu item
         self.connection_widget = QWidget()
         self.connection_layout = QGridLayout(self.connection_widget)
 
-        self.ip_label = QLabel("IP")
-        # self.port_label = QLabel("Port")
+        self.ip_label = QLabel('IP')
+        # self.port_label = QLabel('Port')
 
-        self.ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        self.ipRegex = QRegExp('(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})')
         ipValidator = QRegExpValidator(self.ipRegex, self)
 
         self.lineEdit_ip = QLineEdit()
@@ -47,9 +51,9 @@ class SettingsWidget(QWidget):
         # self.connection_layout.addWidget(self.port_label, 1, 0)
         # self.connection_layout.addWidget(self.lineEdit_port, 1, 1, 1, 3)
 
-        self.apply_btn = QPushButton(_("Apply"))
-        self.cancel_btn = QPushButton(_("Cancel"))
-        self.ok_btn = QPushButton(_("OK"))
+        self.apply_btn = QPushButton(_('Apply'))
+        self.cancel_btn = QPushButton(_('Cancel'))
+        self.ok_btn = QPushButton(_('OK'))
         self.connection_layout.addWidget(self.apply_btn, 3, 2)
         self.connection_layout.addWidget(self.cancel_btn, 3, 3)
         self.connection_layout.addWidget(self.ok_btn, 3, 4)
@@ -58,7 +62,8 @@ class SettingsWidget(QWidget):
         self.cancel_btn.clicked.connect(lambda: self.connection_canceled())
 
         # create file manager menu item
-        self.settings_menu_items.addItem(QListWidgetItem(_('File Manager')))
+        self.file_manager_item = QListWidgetItem(_('File Manager'))
+        self.settings_menu_items.addItem(self.file_manager_item)
 
         self.file_manager_menu_widget = QWidget()
         self.file_manager_menu_layout = QGridLayout(self.file_manager_menu_widget)
@@ -83,11 +88,30 @@ class SettingsWidget(QWidget):
         self.save_btn = QPushButton(_('Save changes'))
         self.file_manager_menu_layout.addWidget(self.save_btn, 3, 1, 1, 1)
 
+        # Language settings
+        self.language_item = QListWidgetItem(_('Languages'))
+        self.settings_menu_items.addItem(self.language_item)
+
+        self.language_widget = QWidget()
+        self.language_lay = QGridLayout(self.language_widget)
+        self.language_label = QLabel(_('Select language:'))
+        lang_lst = ['Russian', 'English']
+        self.language_combo = QComboBox()
+        self.language_combo.addItems(lang_lst)
+        self.language_apply_btn = QPushButton(_('Apply'))
+
+        self.language_apply_btn.clicked.connect(lambda: self.language_changed())
+
+        self.language_lay.addWidget(self.language_label, 0, 0, 1, 1)
+        self.language_lay.addWidget(self.language_combo, 0, 1, 1, 1)
+        self.language_lay.addWidget(self.language_apply_btn, 1, 1, 1, 1)
+
         # Fill settings menu items list
         self.settings_menu_dict = {
             'Start': QWidget(),
-            'Connection': self.connection_widget,
-            'File Manager': self.file_manager_menu_widget,
+            _('Connection'): self.connection_widget,
+            _('File Manager'): self.file_manager_menu_widget,
+            _('Languages'): self.language_widget,
 
         }
 
@@ -96,6 +120,7 @@ class SettingsWidget(QWidget):
 
         self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
         self.lineEdit_ip.textChanged.connect(lambda txt: self.ip_changed(txt))
+        self.parent.signal_language_changed.connect(lambda: self.retranslate())
 
     def show_menu_item(self, item):
         for key, value in self.settings_menu_dict.items():
@@ -119,3 +144,38 @@ class SettingsWidget(QWidget):
     def ip_changed(self, txt):
         if self.ipRegex.exactMatch(txt):
             self.signal_ip_changed.emit(txt)
+
+    def language_changed(self):
+        self.signal_language_changed.emit(self.language_combo.currentText()[:2].lower())
+
+    def retranslate(self):
+        self.setWindowTitle(_('Settings'))
+        self.connection_item.setText(_('Connection'))
+        self.apply_btn.setText(_('Apply'))
+        self.cancel_btn.setText(_('Cancel'))
+        self.ok_btn.setText(_('OK'))
+        self.file_manager_item.setText(_('File Manager'))
+        self.left_browse_btn.setText(_('Browse...'))
+        self.right_browse_btn.setText(_('Browse...'))
+        self.save_btn.setText(_('Save changes'))
+        self.language_item.setText(_('Languages'))
+        self.language_label.setText(_('Select language:'))
+        self.language_apply_btn.setText(_('Apply'))
+
+        self.settings_menu_dict = {
+            _('Connection'): self.connection_widget,
+            _('File Manager'): self.file_manager_menu_widget,
+            _('Languages'): self.language_widget,
+
+        }
+
+        for value in self.settings_menu_dict.values():
+            self.paint_settings_menu_item.addWidget(value)
+
+        self.paint_settings_menu_item.setCurrentWidget(self.language_widget)
+
+
+
+
+
+
