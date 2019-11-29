@@ -1,0 +1,8 @@
+build:
+  stage: build
+  tags:
+    - qmcenter_runner
+  script:
+    - dir
+    - cd C:\Python\Venvs\qmcenter_env\Scripts
+    - activate
