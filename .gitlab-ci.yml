@@ -1,8 +1,38 @@
+stages:
+  - build
+  - sign
+
 build:
   stage: build
   tags:
     - qmcenter
   script:
-    - dir
-    - cd C:\Python\Venvs\qmcenter_env\Scripts
-    - activate
+    - cd C:\GitLab-Runner\builds\y__svr7t\0\geophysic\qmcenter
+    - xcopy /E /Y C:\qmcenter\rtk_lib rtk_lib\
+    - xcopy /Y C:\qmcenter\main.spec .
+    - xcopy /Y C:\qmcenter\qmcenter.iss .
+    - C:\Python\Venvs\qmcenter_env\Scripts\pyinstaller.exe main.spec
+    - C:\InnoSetup6\ISCC.exe qmcenter.iss
+    - move Output\qmcenter.exe .
+
+  when: manual
+  allow_failure: false
+
+  artifacts:
+      paths:
+      - qmcenter.exe
+
+sign:
+  stage: sign
+  dependencies:
+    - build
+  script:
+    - sign.sh "QMCenter" qmcenter.exe
+  tags:
+  - shell
+  when: on_success
+  artifacts:
+    paths:
+    - qmcenter.exe
+
+    expire_in: 1 month
