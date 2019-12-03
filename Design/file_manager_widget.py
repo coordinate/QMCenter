@@ -23,7 +23,7 @@ class FileManager(QWidget):
         QWidget.__init__(self)
         self.parent = parent
         self.name = 'File manager'
-        self.port = '5000'
+        self.port = '9080'
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(self.parent.server):
             self.server = ':'.join([self.parent.server, self.port])
@@ -75,8 +75,8 @@ class FileManager(QWidget):
         self.delete_file_btn.setIcon(QIcon('images/delete_btn.png'))
         self.delete_file_btn.setFixedWidth(30)
         self.file_to_delete = None
-        self.file_manager_layout.addWidget(self.download_file_from_device_btn, 2, 10, 1, 1)
-        self.file_manager_layout.addWidget(self.upload_file_to_device_btn, 3, 10, 1, 1)
+        self.file_manager_layout.addWidget(self.download_file_from_device_btn, 3, 10, 1, 1)
+        # self.file_manager_layout.addWidget(self.upload_file_to_device_btn, 3, 10, 1, 1)
         self.file_manager_layout.addWidget(self.delete_file_btn, 4, 10, 1, 1)
 
         # create right manager (Device)
@@ -98,8 +98,7 @@ class FileManager(QWidget):
         self.righttableview.verticalHeader().hide()
         self.righttableview.setShowGrid(False)
         self.right_file_model = QStandardItemModel()
-        self.device_start_folder = 'start_folder'
-        self.right_file_model_path = [self.device_start_folder]
+        self.right_file_model_path = []
 
         self.righttableview.setModel(self.right_file_model)
         self.file_manager_layout.addWidget(self.righttableview, 1, 11, 5, 10)
@@ -139,7 +138,7 @@ class FileManager(QWidget):
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])
-        self.right_file_model_path = [self.device_start_folder]
+        self.right_file_model_path = []
         self.right_file_model.clear()
 
     def left_file_model_clicked(self, idx):
@@ -187,44 +186,56 @@ class FileManager(QWidget):
         if not self.parent.info_widget.device_on_connect:
             # show_info(_('Info'), _('Please, connect to device.'))
             return
-        folder = '/'.join(self.right_file_model_path)
-        self.parent.client.send_folder_name(folder)
+        self.get_folder_list()
         self.download_file_from_device_btn.setEnabled(False)
 
-    def fill_right_file_model(self, jsn):
-        if len(self.right_file_model_path) < 2:
+    def get_folder_list(self, folder_path=None):
+        if self.server is None:
+            return
+        if folder_path is None:
+            folder_path = '/'.join(self.right_file_model_path)
+        url = 'http://{}/data/{}'.format(self.server, folder_path)
+        try:
+            res = requests.get(url, timeout=1)
+        except requests.exceptions.RequestException:
+            show_error(_('Server error'), _('Server is not responding.'))
+            return
+        if res.ok:
+            res = res.json()
+            self.right_file_model_path = folder_path.split('/')
+            self.fill_right_file_model(res)
+        else:
+            return
+
+    def fill_right_file_model(self, directory):
+        if len(self.right_file_model_path) < 1:
             self.right_up_btn.setEnabled(False)
         else:
             self.right_up_btn.setEnabled(True)
-        jsn = json.loads(jsn)
-        directory = jsn['directory']
-        if directory == 0:
-            self.right_file_model_path.pop()
-            return
         self.file_to_delete = None
         self.right_file_model.clear()
         self.right_dir_path.setText('/'.join(self.right_file_model_path))
         self.right_file_model.setHorizontalHeaderLabels([_('Name'), _('Size'), _('Changed date')])
-        for row, file in enumerate(directory.keys()):
-            item = QStandardItem(QIcon('images/{}.png'.format(directory[file]['type'])), file)
-            item.setData(directory[file]['type'])
+        for row, instance in enumerate(directory):
+            item = QStandardItem(QIcon('images/{}.png'.format(instance['type'])), instance['name'])
+            item.setData(instance['type'])
             item.setEditable(False)
             self.right_file_model.setItem(row, 0, item)
-            item = QStandardItem(str(directory[file]['size']))
+            item = QStandardItem(str(instance['size']))
             item.setEditable(False)
             self.right_file_model.setItem(row, 1, item)
-            item = QStandardItem(str(datetime.datetime.fromtimestamp(directory[file]['changed_date']).strftime('%d/%m/%y')))
+            item = QStandardItem(str(datetime.datetime.fromtimestamp(instance['changed']).strftime('%d.%m.%Y %H:%M')))
             item.setEditable(False)
             self.right_file_model.setItem(row, 2, item)
 
-        if self.file_models_auto_sync.isChecked():
-            right_list_of_files = jsn['tracked_folder']
-            left_list_of_files = os.listdir(self.left_file_model_auto_sync_label.text())
-            for f in right_list_of_files:
-                if f not in left_list_of_files:
-                    self.download_file_from_device(
-                        device_path='{}/{}'.format(self.right_file_model_auto_sync_label.text(), f),
-                        pc_path=self.left_file_model_auto_sync_label.text())
+        # if self.file_models_auto_sync.isChecked():
+        #     right_list_of_files = jsn['tracked_folder']
+        #     left_list_of_files = os.listdir(self.left_file_model_auto_sync_label.text())
+        #     for f in right_list_of_files:
+        #         if f not in left_list_of_files:
+        #             self.download_file_from_device(
+        #                 device_path='{}/{}'.format(self.right_file_model_auto_sync_label.text(), f),
+        #                 pc_path=self.left_file_model_auto_sync_label.text())
 
     def right_file_model_clicked(self, idx):
         if not self.parent.info_widget.device_on_connect:
@@ -242,9 +253,7 @@ class FileManager(QWidget):
         model_path = '/'.join(self.right_file_model_path)
         idx_name = self.right_file_model.item(idx.row(), 0).text()
         dir = '{}/{}'.format(model_path, idx_name)
-        if idx_name not in self.right_file_model_path:
-            self.right_file_model_path.append(idx_name)
-        self.parent.client.send_folder_name(dir)
+        self.get_folder_list(dir)
 
     def right_file_model_up(self):
         if not self.parent.info_widget.device_on_connect:
@@ -252,9 +261,7 @@ class FileManager(QWidget):
         self.download_file_from_device_btn.setEnabled(False)
         self.file_to_delete = None
         up_dir = '/'.join(self.right_file_model_path[:-1])
-        if len(self.right_file_model_path) > 1:
-            self.right_file_model_path.pop()
-        self.parent.client.send_folder_name(up_dir)
+        self.get_folder_list(up_dir)
 
     def download_file_from_device(self, device_path=None, pc_path=None):
         if not self.parent.info_widget.device_on_connect or self.server is None:
@@ -262,7 +269,7 @@ class FileManager(QWidget):
         device_path = '/'.join(self.right_file_model_path +
                                [self.right_file_model_filename]) if not device_path else device_path
         right_file_model_filename = device_path.split('/')[-1]
-        url = 'http://{}/download_from_start_folder/{}'.format(self.server, device_path)
+        url = 'http://{}/data/{}'.format(self.server, device_path)
         progress = ProgressBar(text=_('Download file'), window_title=_('Download File'))
         try:
             b = bytearray()
@@ -281,7 +288,6 @@ class FileManager(QWidget):
             progress.update(100)
             save_to_file = '{}/{}'.format(self.left_file_model_path, right_file_model_filename) \
                 if not pc_path else '{}/{}'.format(pc_path, right_file_model_filename)
-            # save_to = 'D:/a.bulygin/QMCenter/workdocs/from_device/{}'.format(self.right_file_model_filename)
             if os.path.isfile(save_to_file):
                 save_to_file = '{}/(2){}'.format(self.left_file_model_path, right_file_model_filename)
 
@@ -293,7 +299,7 @@ class FileManager(QWidget):
             return
         file = self.left_file_model.filePath(self.lefttableview.currentIndex())
         filename = file.split('/')[-1]
-        url = 'http://{}/upload_file_to_device/{}'.format(self.server, '/'.join(self.right_file_model_path))
+        url = 'http://{}/data/{}'.format(self.server, '/'.join(self.right_file_model_path))
         filesize = os.path.getsize(file)
         if filesize == 0:
             show_error(_('File error'), _('File size must be non zero.'))
@@ -329,7 +335,7 @@ class FileManager(QWidget):
         elif self.file_to_delete[0] == 'Device':
             if not self.parent.info_widget.device_on_connect or self.server is None:
                 return
-            url = 'http://{}/delete_file_from_device/{}'.format(self.server, self.file_to_delete[1])
+            url = 'http://{}/data/{}'.format(self.server, self.file_to_delete[1])
             try:
                 res = requests.delete(url)
             except requests.exceptions.RequestException:
