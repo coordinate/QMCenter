@@ -45,9 +45,9 @@ class Client(QtCore.QObject):
         def enqueue_output():
             cmd = "ping -w 800 -n 1 {}".format(self.ip)
             out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
-            lines = out.decode('cp866').splitlines()
+            lines = out.decode('cp866')
             try:
-                lost_percent = re.findall(r'\d+', lines[6].strip())[0]
+                lost_percent = re.findall(r'\d+%', lines)[0].split('%')[0]
                 if int(lost_percent) < 50:
                     self.signal_connection.emit()
                     self.signal_autoconnection.emit()

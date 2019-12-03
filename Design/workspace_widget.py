@@ -116,6 +116,7 @@ class WorkspaceView(QTreeView):
         object_name = idx.parent().child(idx.row(), 0).data()
         indicator = parent_click_item.child(idx.row(), 1)
         self.parent.three_d_widget.three_d_plot.focus_element(idx.data(), indicator.data(3))
+        self.parent.add_visual()
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)
         for ch in self.parent.project_instance.root.getchildren():
@@ -184,30 +185,39 @@ class WorkspaceView(QTreeView):
         if view:
             self.setExpanded(self.model.indexFromItem(self.raw_data_item),
                              True if view['RAW'].attrib['expanded'] == 'True' else False)
+
             for i, ch in enumerate(view['RAW'].getchildren()):
-                self.raw_data_item.setChild(i, 0, QStandardItem(ch.tag))
-                self.raw_data_item.setChild(i, 1, QStandardItem())
+                try:
+                    self.raw_data_item.setChild(i, 0, QStandardItem(ch.attrib['filename']))
+                    self.raw_data_item.setChild(i, 1, QStandardItem())
+                except KeyError:
+                    pass
 
             self.setExpanded(self.model.indexFromItem(self.magnet_data_item),
                              True if view['Magnet'].attrib['expanded'] == 'True' else False)
             for j, ch in enumerate(view['Magnet'].getchildren()):
-                self.magnet_data_item.setChild(j, 0, QStandardItem(ch.tag))
-                item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
-                                                                             else 'green')), '')
-
-                item.setData(ch.attrib['indicator'], 3)
-                self.magnet_data_item.setChild(j, 1, item)
-                self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
+                try:
+                    self.magnet_data_item.setChild(j, 0, QStandardItem(ch.attrib['filename']))
+                    item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
+                                                                                 else 'green')), '')
+                    item.setData(ch.attrib['indicator'], 3)
+                    self.magnet_data_item.setChild(j, 1, item)
+                    self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.attrib['filename'], ch.attrib['indicator'])
+                except KeyError:
+                    pass
 
             self.setExpanded(self.model.indexFromItem(self.geo_item),
                              True if view['GeoData'].attrib['expanded'] == 'True' else False)
             for k, ch in enumerate(view['GeoData'].getchildren()):
-                self.geo_item.setChild(k, 0, QStandardItem(ch.tag))
-                item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
-                                                                             else 'green')), '')
-                item.setData(ch.attrib['indicator'], 3)
-                self.geo_item.setChild(k, 1, item)
-                self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.tag, ch.attrib['indicator'])
+                try:
+                    self.geo_item.setChild(k, 0, QStandardItem(ch.attrib['filename']))
+                    item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
+                                                                                 else 'green')), '')
+                    item.setData(ch.attrib['indicator'], 3)
+                    self.geo_item.setChild(k, 1, item)
+                    self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.attrib['filename'], ch.attrib['indicator'])
+                except KeyError:
+                    pass
 
         self.setColumnWidth(0, 200)
         self.setColumnWidth(1, 50)
@@ -219,7 +229,8 @@ class WorkspaceView(QTreeView):
         project_action = {
                 _('Add RAW'): self.parent.project_instance.add_raw_data,
                 _('Add magnet'): self.parent.project_instance.add_magnet_data,
-                _('Add geo'): self.parent.project_instance.add_geo_data,
+                _('Import DEM'): lambda: self.parent.project_instance.add_geo_data('*.tif'),
+                _('Import Point Cloud'): lambda: self.parent.project_instance.add_geo_data('*.ply'),
             }
         menu = QMenu()
 
@@ -258,7 +269,8 @@ class WorkspaceView(QTreeView):
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             self.geo_item.text(): {
-                _('Add GeoData'): self.parent.project_instance.add_geo_data,
+                _('Import DEM'): lambda: self.parent.project_instance.add_geo_data('*.tif'),
+                _('Import Point Cloud'): lambda: self.parent.project_instance.add_geo_data('*.ply'),
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
             'subitems': {

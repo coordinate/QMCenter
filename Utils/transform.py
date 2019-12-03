@@ -1,3 +1,4 @@
+import os
 import struct
 import crcmod
 import gdal
@@ -102,11 +103,16 @@ def magnet_color(magnet, min_m=None, max_m=None):
 
 
 def get_point_cloud(filename, progress, zone):
-    progress.setValue(12)
     gdal_dem_data = gdal.Open(filename)
+    assert gdal_dem_data.RasterCount == 1, _('Wrong tif type. Too many channels.')
     no_data = gdal_dem_data.GetRasterBand(1).GetNoDataValue()
-    dem = gdal_dem_data.ReadAsArray()
-    assert len(dem.shape) < 3, _('Wrong tif type. Too many channels.')
+    step = os.path.getsize(filename) // (512*1024*1024)
+    step = step if step > 1 else 1
+    arr = []
+    for i in range(0, gdal_dem_data.RasterYSize, step):
+        arr.append(gdal_dem_data.ReadAsArray(0, i, gdal_dem_data.RasterXSize, 1)[:, ::step])
+        progress.setValue((i / gdal_dem_data.RasterYSize) * 25)
+    dem = np.vstack(tuple(arr))
     top_left_lon, pixel_w, turn, top_left_lat, turn_, pixel_h = gdal_dem_data.GetGeoTransform()
     assert top_left_lon != 0 and top_left_lat != 0, _("Couldn't define metadata (top left corner)!")
 

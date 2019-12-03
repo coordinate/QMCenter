@@ -1,12 +1,13 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QAction, QWidget, \
-    QGridLayout, QStackedWidget, QTabWidget, QSizePolicy
+from PyQt5.QtWidgets import QPushButton, QMenuBar, QToolBar, QDockWidget, QWidget, QGridLayout, QStackedWidget, \
+    QTabWidget, QSizePolicy, QSplitter
 
 from Design.configuration_widget import ConfigurationWidget
 from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
 from Design.graphs_widget import GraphsWidget
+from Design.help_widget import HelpWidget
 from Design.info_widget import InfoWidget
 from Design.three_D_visual_widget import ThreeDVisual
 from Design.settings_widget import SettingsWidget
@@ -37,6 +38,21 @@ class UIForm:
         self.fileMenu.addSeparator()
         self.exit_action = self.fileMenu.addAction(_('&Quit'))
         self.exit_action.setShortcut('Ctrl+Q')
+
+        self.view = self.menu.addMenu(_('&View'))
+        self.graphs_action = self.view.addAction(_('Graphs'))
+        self.config_action = self.view.addAction(_('Configuration'))
+        self.visual_action = self.view.addAction(_('3D Visualization'))
+        self.update_action = self.view.addAction(_('Update'))
+        self.file_manager_action = self.view.addAction(_('File manager'))
+        self.view.addSeparator()
+        self.toolbar_action = self.view.addAction(_('Toolbar'))
+        self.work_panel_action = self.view.addAction(_('Work panel'))
+
+
+        self.helpMenu = self.menu.addMenu(_('Help'))
+        self.about = self.helpMenu.addAction(_('About QMCenter'))
+        self.about_widget = HelpWidget()
 
         # Create settings widget
         self.settings_widget = SettingsWidget(self)
@@ -93,11 +109,12 @@ class UIForm:
         # Create Central widget
         self.central_widget = QStackedWidget()
 
-        self.split_tabwidget = QWidget()
-        self.split_lay = QGridLayout(self.split_tabwidget)
+        self.split_tabwidget = QSplitter()
+        self.split_tabwidget.setChildrenCollapsible(False)
 
         self.one_tabwidget = QWidget()
         self.one_lay = QGridLayout(self.one_tabwidget)
+        self.one_lay.setContentsMargins(0, 0, 0, 0)
 
         self.tabwidget_left = DetachableTabWidget()
         self.one_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)

@@ -249,7 +249,7 @@ class ThreeDPlot(gl.GLViewWidget):
         self.objects = {}
 
         self.opts['distance'] = 300
-        self.setBackgroundColor(pg.mkColor((0, 0, 0)))
+        self.setBackgroundColor(pg.mkColor((127, 127, 127)))
         self.gridx = gl.GLGridItem()
         self.gridx.scale(1, 1, 1)
         self.gridx.setSize(x=10000, y=10000, z=10000)
@@ -306,7 +306,7 @@ class ThreeDPlot(gl.GLViewWidget):
             x, y, zone, letter = project((float(longitude), float(latitude)), self.utm_zone)
             points[i] = (x, y, float(height))
             color[i] = float(magnet)
-            size[i] = 5
+            size[i] = 3
             magnet_array[i] = float(magnet)
             time_array[i] = float(time)
             lon_lat[i] = [float(longitude), float(latitude)]
@@ -473,9 +473,23 @@ class ThreeDPlot(gl.GLViewWidget):
         elif dis[print_index] <= 0.007:
             lon, lat = lon_lat[print_index]
             magnet = magnet[print_index]
-            self.set_label_signal.emit(lon, lat, magnet)
+            self.set_label_signal.emit(round(lon, 8), round(lat, 8), round(magnet, 5))
+            for name in self.palette.all_values.keys():
+                self.objects[name]['object'].size[:] = 5
+            for name in self.palette.all_values.keys():
+                obj = self.objects[name]
+                idxs = np.where(obj['magnet'] == magnet)
+                if len(idxs[0]) > 0:
+                    for i in idxs[0]:
+                        if obj['lon_lat'][i][0] == lon:
+                            obj['object'].size[:] = 1
+                            obj['object'].size[i] = 10
+            self.update()
         else:
+            for name in self.palette.all_values.keys():
+                self.objects[name]['object'].size[:] = 3
             self.set_label_signal.emit('', '', '')
+            self.update()
 
     def preprocessing_for_cutting(self, item_index):
         filename = item_index.data()

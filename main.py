@@ -28,6 +28,7 @@ class MainWindow(QMainWindow, UIForm):
         self.new_project.triggered.connect(lambda: self.project_instance.create_new_project())
         self.open_project.triggered.connect(lambda: self.project_instance.open_project())
         self.exit_action.triggered.connect(lambda: sys.exit())
+        self.about.triggered.connect(lambda: self.about_widget.exec_())
 
         self.client = Client(self)
         self.client.signal_directory_data.connect(lambda jsn: self.file_manager_widget.fill_right_file_model(jsn))
@@ -41,6 +42,13 @@ class MainWindow(QMainWindow, UIForm):
         self.visual_btn.clicked.connect(lambda: self.add_visual())
         self.update_btn.clicked.connect(lambda: self.add_update())
         self.file_manager.clicked.connect(lambda: self.add_file_manager())
+        self.graphs_action.triggered.connect(lambda: self.add_graphs())
+        self.config_action.triggered.connect(lambda: self.add_config())
+        self.visual_action.triggered.connect(lambda: self.add_visual())
+        self.update_action.triggered.connect(lambda: self.add_update())
+        self.file_manager_action.triggered.connect(lambda: self.add_file_manager())
+        self.toolbar_action.triggered.connect(lambda: self.toolbar.show())
+        self.work_panel_action.triggered.connect(lambda: self.work_panel.show())
         self.split_tab_btn.clicked.connect(lambda: self.split_tabs())
         self.one_tab_btn.clicked.connect(lambda: self.one_tab())
 
@@ -59,8 +67,9 @@ class MainWindow(QMainWindow, UIForm):
         self.app_settings.setValue('language', lang)
 
     def split_tabs(self):
-        self.split_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)
-        self.split_lay.addWidget(self.tabwidget_right, 0, 1, 1, 1)
+        self.split_tabwidget.addWidget(self.tabwidget_left)
+        self.split_tabwidget.addWidget(self.tabwidget_right)
+        self.split_tabwidget.setSizes([self.central_widget.width()//2, self.central_widget.width()//2])
         self.central_widget.setCurrentWidget(self.split_tabwidget)
 
     def one_tab(self):

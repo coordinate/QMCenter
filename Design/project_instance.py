@@ -54,12 +54,23 @@ class CurrentProject(QObject):
         self.parse_proj_tree(self.project_path)
 
     def parse_proj_tree(self, path):
-        self.tree = ET.parse(path)
-        self.root = self.tree.getroot()
-        self.raw_data = self.root.find('raw_data')
-        self.magnet_data = self.root.find('magnet_data')
-        self.geo_data = self.root.find('geo_data')
-        self.project_utm = self.root.find('project_utm')
+        try:
+            self.tree = ET.parse(path)
+            self.root = self.tree.getroot()
+            self.raw_data = self.root.find('raw_data')
+            self.magnet_data = self.root.find('magnet_data')
+            self.geo_data = self.root.find('geo_data')
+            self.project_utm = self.root.find('project_utm')
+        except ET.XMLSyntaxError:
+            show_error(_('Project error'), _('Couldn\'t open .qmcproj file.'))
+            self.reset_project()
+            return
+
+        if self.raw_data is None or self.magnet_data is None or self.geo_data is None or self.project_utm is None:
+            show_error(_('Project error'), _('Couldn\'t open .qmcproj file.'))
+            self.reset_project()
+            return
+
         self.parent.setWindowTitle('QMCenter — {}'.format(self.project_path))
         self.parent.file_manager_widget.left_dir_path.setText(self.root.attrib['path'])
         self.parent.file_manager_widget.left_file_model_go_to_dir()
@@ -67,14 +78,14 @@ class CurrentProject(QObject):
             try:
                 self.parent.three_d_widget.three_d_plot.utm_zone = int(self.project_utm.attrib['zone'])
             except ValueError:
-                show_error(_('UTM error'), _('Couldn\'t define UTM zone form .proj file.'))
+                show_error(_('UTM error'), _('Couldn\'t define UTM zone form .qmcproj file.'))
 
         length = len(self.magnet_data.getchildren()) + len(self.geo_data.getchildren())
         it = 0
         self.progress.open()
         QApplication.processEvents()
         for magnet in self.magnet_data.getchildren():
-            file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.tag)
+            file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.attrib['filename'])
             if not os.path.isfile(file):
                 show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
                 self.remove_element(os.path.basename(file))
@@ -86,7 +97,7 @@ class CurrentProject(QObject):
             self.parent.three_d_widget.three_d_plot.add_fly(file, self.progress, value)
 
         for geo in self.geo_data.getchildren():
-            file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.tag)
+            file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.attrib['filename'])
             if not os.path.isfile(file):
                 show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
                 self.remove_element(os.path.basename(file))
@@ -165,9 +176,9 @@ class CurrentProject(QObject):
                     except SameFileError:
                         pass
 
-            # copyfile(file, os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file)))
-            if self.raw_data.find(os.path.basename(destination)) is None:
-                ET.SubElement(self.raw_data, os.path.basename(file))
+            if not self.raw_data.xpath("//raw_data[@filename='{}']".format(os.path.basename(destination))):
+                ET.SubElement(self.raw_data, 'raw_data', {'filename': '{}'.format(os.path.basename(destination))})
+
             self.progress.setValue((i/len(files[0])*99))
         self.write_proj_tree()
         self.send_tree_to_view()
@@ -248,8 +259,6 @@ class CurrentProject(QObject):
 
         widget.second_label.setText(_('Create {}').format('{}.magnete'.format(filename)))
         widget.progress.setValue(0)
-        # with open(os.path.join(self.files_path, '{}.magnete'.format(filename)), 'w') as magnet_file:
-        #     magnet_len = 0
         magnet_obj = dict()
         with open(pos, 'r') as pos_file:
             file = pos_file.readlines()
@@ -364,9 +373,10 @@ class CurrentProject(QObject):
 
             value = (it + 1) / len(files) * 99
             it += 1
-            if self.magnet_data.find(os.path.basename(destination)) is None:
-                element = ET.SubElement(self.magnet_data, os.path.basename(destination))
-                element.set("indicator", "Off")
+            if not self.magnet_data.xpath("//magnet_data[@filename='{}']".format(os.path.basename(destination))):
+                ET.SubElement(self.magnet_data, 'magnet_data', {'filename': '{}'.format(os.path.basename(destination)),
+                                                                'indicator': 'Off'})
+
             self.parent.three_d_widget.three_d_plot.add_fly(destination, self.progress, value)
         self.write_proj_tree()
         self.send_tree_to_view()
@@ -403,17 +413,18 @@ class CurrentProject(QObject):
         except FileNotFoundError:
             return
 
-        if self.magnet_data.find(os.path.basename(filename)) is None:
-            element = ET.SubElement(self.magnet_data, os.path.basename(filename))
-            element.set("indicator", "Off")
+        if not self.magnet_data.xpath("//magnet_data[@filename='{}']".format(os.path.basename(filename))):
+            ET.SubElement(self.magnet_data, 'magnet_data', {'filename': '{}'.format(os.path.basename(filename)),
+                                                            'indicator': 'Off'})
+
         self.parent.three_d_widget.three_d_plot.add_fly(filename, self.progress, value+18)
         self.write_proj_tree()
         self.send_tree_to_view()
         self.progress.setValue(100)
 
-    def add_geo_data(self):
+    def add_geo_data(self, filetype):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
-                                           self.files_path, "Geo files (*.tif *.ply)")[0]
+                                           self.files_path, "Geo files ({})".format(filetype))[0]
 
         if file == '':
             return
@@ -443,19 +454,20 @@ class CurrentProject(QObject):
                     except SameFileError:
                         pass
 
-            if self.geo_data.find(os.path.basename(file)) is None:
+            if not self.geo_data.xpath("//geo_data[@filename='{}']".format(os.path.basename(file))):
                 self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
-                element = ET.SubElement(self.geo_data, os.path.basename(file))
-                element.set("indicator", "Off")
+                ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
+                                                          'indicator': 'Off'})
+
             else:
                 show_info(_('File info'), _('File {} is already in project').format(os.path.basename(file)))
         elif extension == '.tif':
             try:
-                if self.geo_data.find('{}.ply'.format(filename)) is None:
-                    self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress,
-                                                         path_to_save=os.path.join(self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename)))
-                    element = ET.SubElement(self.geo_data, '{}.ply'.format(filename))
-                    element.set('indicator', 'Off')
+                if not self.geo_data.xpath("//geo_data[@filename='{}.ply']".format(os.path.basename(filename))):
+                    self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, path_to_save=os.path.join(
+                        self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename)))
+                    ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}.ply'.format(os.path.basename(filename)),
+                                                              'indicator': 'Off'})
                 else:
                     show_info(_('File info'), _('File {}.ply is already in project').format(filename))
             except AssertionError:
@@ -482,10 +494,11 @@ class CurrentProject(QObject):
                                                                                self.project_utm.attrib['letter']))
 
     def remove_element(self, element):
-        for ch in self.root.getchildren():
+        for el in self.root.xpath("//*[@filename='{}']".format(element)):
             try:
-                ch.remove(ch.find(element))
-                os.remove(os.path.join(self.files_path, ch.attrib['name'], element))
+                parent = el.getparent()
+                parent.remove(el)
+                os.remove(os.path.join(self.files_path, parent.attrib['name'], element))
             except TypeError:
                 pass
             except FileNotFoundError:
@@ -494,10 +507,13 @@ class CurrentProject(QObject):
 
     def remove_all(self, element):
         for child in self.root.getchildren():
-            if child.attrib['name'] == element:
-                for ch in child.getchildren():
-                    child.remove(ch)
-                    os.remove(os.path.join(self.files_path, element, ch.tag))
+            try:
+                if child.attrib['name'] == element:
+                    for ch in child.getchildren():
+                        child.remove(ch)
+                        os.remove(os.path.join(self.files_path, element, ch.attrib['filename']))
+            except KeyError:
+                pass
         self.write_proj_tree()
 
     def write_proj_tree(self):
