@@ -8,11 +8,11 @@ from Design.detachable_tabwidget import DetachableTabWidget
 from Design.file_manager_widget import FileManager
 from Design.graphs_widget import GraphsWidget
 from Design.help_widget import HelpWidget
-from Design.info_widget import InfoWidget
+from Design.geoshark_widget import GeosharkWidget
 from Design.three_D_visual_widget import ThreeDVisual
 from Design.settings_widget import SettingsWidget
 from Design.update_widget import UpdateWidget
-from Design.workspace_widget import WorkspaceWidget
+from Design.project_widget import ProjectWidget
 from Design.project_instance import *
 
 # _ = lambda x: x
@@ -40,15 +40,14 @@ class UIForm:
         self.exit_action.setShortcut('Ctrl+Q')
 
         self.view = self.menu.addMenu(_('&View'))
-        self.graphs_action = self.view.addAction(_('Graphs'))
+        self.graphs_action = self.view.addAction(_('Telemetry'))
         self.config_action = self.view.addAction(_('Configuration'))
-        self.visual_action = self.view.addAction(_('3D Visualization'))
+        self.visual_action = self.view.addAction(_('3D Viewer'))
         self.update_action = self.view.addAction(_('Update'))
         self.file_manager_action = self.view.addAction(_('File manager'))
         self.view.addSeparator()
         self.toolbar_action = self.view.addAction(_('Toolbar'))
-        self.work_panel_action = self.view.addAction(_('Work panel'))
-
+        self.workspace_action = self.view.addAction(_('Workspace'))
 
         self.helpMenu = self.menu.addMenu(_('Help'))
         self.about = self.helpMenu.addAction(_('About QMCenter'))
@@ -62,35 +61,24 @@ class UIForm:
 
         # Create toolbar
         self.graphs_btn = QPushButton()
-        self.graphs_btn.setText(_('Graphs'))
+        self.graphs_btn.setText(_('Telemetry'))
 
         self.config_btn = QPushButton()
         self.config_btn.setText(_('Configuration'))
 
         self.visual_btn = QPushButton()
-        self.visual_btn.setText(_('3D Visualization'))
+        self.visual_btn.setText(_('3D Viewer'))
 
         self.update_btn = QPushButton()
         self.update_btn.setText(_('Update'))
 
-        # self.update_btn = QAction()
-        # self.update_btn.setText(_('Update'))
-        #
         self.file_manager = QPushButton(_('File manager'))
 
         empty = QWidget()
         empty.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-        self.split_tab_btn = QPushButton()
-        self.split_tab_btn.setIcon(QIcon('images/split_vertical.png'))
-        self.split_tab_btn.setIconSize(QSize(25, 25))
-
-        self.one_tab_btn = QPushButton()
-        self.one_tab_btn.setIcon(QIcon('images/full_tab.png'))
-        self.one_tab_btn.setIconSize(QSize(25, 25))
-
         self.visual_btn = QPushButton()
-        self.visual_btn.setText(_('3D Visualization'))
+        self.visual_btn.setText(_('3D Viewer'))
 
         self.toolbar = QToolBar(_('Toolbar'))
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -101,10 +89,6 @@ class UIForm:
         self.toolbar.addWidget(self.file_manager)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(empty)
-        self.toolbar.addSeparator()
-        self.toolbar.addWidget(self.split_tab_btn)
-        self.toolbar.addWidget(self.one_tab_btn)
-        # self.toolbar.setAllowedAreas(Qt.TopToolBarArea)
 
         # Create Central widget
         self.central_widget = QStackedWidget()
@@ -116,31 +100,31 @@ class UIForm:
         self.one_lay = QGridLayout(self.one_tabwidget)
         self.one_lay.setContentsMargins(0, 0, 0, 0)
 
-        self.tabwidget_left = DetachableTabWidget()
+        self.tabwidget_left = DetachableTabWidget(self)
         self.one_lay.addWidget(self.tabwidget_left, 0, 0, 1, 1)
 
-        self.tabwidget_right = DetachableTabWidget()
+        self.tabwidget_right = DetachableTabWidget(self)
 
         self.central_widget.addWidget(self.one_tabwidget)
         self.central_widget.addWidget(self.split_tabwidget)
         self.setCentralWidget(self.central_widget)
 
         # Create Work panel
-        self.work_panel = QDockWidget()
-        self.work_panel.setWindowTitle(_('Work panel'))
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.work_panel)
+        self.workspace = QDockWidget()
+        self.workspace.setWindowTitle(_('Workspace'))
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.workspace)
 
-        self.tab_work_panel = QTabWidget()
-        self.tab_work_panel.setTabPosition(QTabWidget.South)
-        self.work_panel.setWidget(self.tab_work_panel)
+        self.tab_workspace = QTabWidget()
+        self.tab_workspace.setTabPosition(QTabWidget.South)
+        self.workspace.setWidget(self.tab_workspace)
 
         # create Workspace widget
-        self.workspace_widget = WorkspaceWidget(self)
-        self.tab_work_panel.addTab(self.workspace_widget, _('Workspace'))
+        self.project_widget = ProjectWidget(self)
+        self.tab_workspace.addTab(self.project_widget, _('Project'))
 
         # create Info widget
-        self.info_widget = InfoWidget(self)
-        self.tab_work_panel.addTab(self.info_widget, _('Info'))
+        self.geoshark_widget = GeosharkWidget(self)
+        self.tab_workspace.addTab(self.geoshark_widget, _('GeoShark'))
 
         # Create update tab
         self.update_widget = UpdateWidget(self)
@@ -148,13 +132,13 @@ class UIForm:
         # create file manager tab
         self.file_manager_widget = FileManager(self)
 
-        # create Graphs tab
+        # create Telemetry tab
         self.graphs_widget = GraphsWidget(self)
 
         # Create configuration tab
         self.configuration_widget = ConfigurationWidget(self)
 
-        # create tab 3D visualization
+        # create tab 3D Viewer
         self.three_d_widget = ThreeDVisual(self)
 
     def retranslate(self):
@@ -163,15 +147,15 @@ class UIForm:
         self.open_project.setText(_('Open project'))
         self.settings.setText(_('Settings'))
         self.exit_action.setText(_('&Quit'))
-        self.graphs_btn.setText(_('Graphs'))
+        self.graphs_btn.setText(_('Telemetry'))
         self.config_btn.setText(_('Configuration'))
-        self.visual_btn.setText(_('3D Visualization'))
+        self.visual_btn.setText(_('3D Viewer'))
         self.update_btn.setText(_('Update'))
         self.file_manager.setText(_('File manager'))
-        self.visual_btn.setText(_('3D Visualization'))
-        self.work_panel.setWindowTitle(_('Work panel'))
-        self.tab_work_panel.setTabText(self.tab_work_panel.indexOf(self.workspace_widget), _('Workspace'))
-        self.tab_work_panel.setTabText(self.tab_work_panel.indexOf(self.info_widget), _('Info'))
+        self.visual_btn.setText(_('3D Viewer'))
+        self.workspace.setWindowTitle(_('Workspace'))
+        self.tab_workspace.setTabText(self.tab_workspace.indexOf(self.project_widget), _('Project'))
+        self.tab_workspace.setTabText(self.tab_workspace.indexOf(self.geoshark_widget), _('GeoShark'))
 
         for i in range(self.tabwidget_left.count()):
             self.tabwidget_left.setTabText(i, _(self.tabwidget_left.widget(i).name))

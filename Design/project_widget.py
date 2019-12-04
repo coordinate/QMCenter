@@ -11,7 +11,7 @@ from Design.ui import show_warning_yes_no
 # _ = lambda x: x
 
 
-class WorkspaceWidget(QWidget):
+class ProjectWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent

@@ -9,7 +9,7 @@ class ThreeDVisual(QWidget):
     def __init__(self, main):
         QWidget.__init__(self)
         self.parent = main
-        self.name = '3D Visualization'
+        self.name = '3D Viewer'
         self.layout = QGridLayout(self)
         self.palette = Palette(self, main)
         self.three_d_plot = ThreeDPlot(main, self.palette)
@@ -33,11 +33,11 @@ class ThreeDVisual(QWidget):
         self.magnet_value_label.setStyleSheet('QLabel { background-color : rgb(0, 0, 0); color: white}')
 
         self.layout.addWidget(self.longitude_label, 95, 1, 1, 2)
-        self.layout.addWidget(self.longitude_value_label, 95, 3, 1, 5)
+        self.layout.addWidget(self.longitude_value_label, 95, 3, 1, 10)
         self.layout.addWidget(self.latitude_label, 96, 1, 1, 2)
-        self.layout.addWidget(self.latitude_value_label, 96, 3, 1, 5)
+        self.layout.addWidget(self.latitude_value_label, 96, 3, 1, 10)
         self.layout.addWidget(self.magnet_label, 97, 1, 1, 2)
-        self.layout.addWidget(self.magnet_value_label, 97, 3, 1, 5)
+        self.layout.addWidget(self.magnet_value_label, 97, 3, 1, 10)
 
         self.three_d_plot.set_label_signal.connect(lambda lon, lat, magnet: self.set_labels(lon, lat, magnet))
         self.parent.signal_language_changed.connect(lambda: self.retranslate())

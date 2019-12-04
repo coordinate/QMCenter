@@ -33,7 +33,7 @@ class CurrentProject(QObject):
     def reset_project(self):
         self.project_path = None
         self.parent.three_d_widget.three_d_plot.reset_data()
-        self.parent.workspace_widget.workspaceview.add_view()
+        self.parent.project_widget.workspaceview.add_view()
         self.parent.three_d_widget.longitude_value_label.setText('')
         self.parent.three_d_widget.latitude_value_label.setText('')
         self.parent.three_d_widget.magnet_value_label.setText('')
@@ -486,12 +486,12 @@ class CurrentProject(QObject):
             'GeoData': self.root.find('geo_data'),
         }
 
-        self.parent.workspace_widget.workspaceview.set_project_name(os.path.basename(self.project_path))
-        self.parent.workspace_widget.workspaceview.add_view(view)
-        self.parent.workspace_widget.utm_label.setText('UTM zone: {}{}'.format(self.project_utm.attrib['zone']
-                                                                               if self.project_utm.attrib['zone'] != ''
-                                                                               else 'Local(m)',
-                                                                               self.project_utm.attrib['letter']))
+        self.parent.project_widget.workspaceview.set_project_name(os.path.basename(self.project_path))
+        self.parent.project_widget.workspaceview.add_view(view)
+        self.parent.project_widget.utm_label.setText('UTM zone: {}{}'.format(self.project_utm.attrib['zone']
+                                                                             if self.project_utm.attrib['zone'] != ''
+                                                                             else 'Local(m)',
+                                                                             self.project_utm.attrib['letter']))
 
     def remove_element(self, element):
         for el in self.root.xpath("//*[@filename='{}']".format(element)):

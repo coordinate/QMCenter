@@ -1,15 +1,54 @@
 from PyQt5.QtCore import Qt, QPoint, QMimeData, pyqtSignal, QRect
 from PyQt5.QtGui import QPixmap, QRegion, QDrag, QCursor
-from PyQt5.QtWidgets import QTabWidget, QTabBar
+from PyQt5.QtWidgets import QTabWidget, QTabBar, QMenu, QAction
 
 
 class TabBar(QTabBar):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, main=None):
         QTabBar.__init__(self, parent)
         self.parent = parent
+        self.main_window = main
         self.pressEvent = False
         self.tab_rect = None
         self.bar_rect = None
+
+    def contextMenuEvent(self, event):
+        tab = self.tabAt(event.pos())
+        menu_acton = {
+            _('Split Vertically'): lambda: self.move_tab_to_opposite(tab, True),
+            _('Move To Opposite Group'): lambda: self.move_tab_to_opposite(tab),
+            _('Close'): lambda: self.tabCloseRequested.emit(tab)
+        }
+
+        menu = QMenu()
+
+        if self.main_window.tabwidget_right.isVisible():
+            del menu_acton[_('Split Vertically')]
+        else:
+            del menu_acton[_('Move To Opposite Group')]
+
+        actions = [QAction(a) for a in menu_acton]
+        menu.addActions(actions)
+        action = menu.exec_(event.globalPos())
+        if action:
+            menu_acton[action.text()]()
+
+    def move_tab_to_opposite(self, tab, split=False):
+        if split:
+            self.main_window.split_tabs()
+        left_tab = self.main_window.tabwidget_left
+        right_tab = self.main_window.tabwidget_right
+
+        if self.parent.widget(tab) in [left_tab.widget(i) for i in range(left_tab.count())]:
+            right_tab.addTab(self.parent.widget(tab), _(self.parent.widget(tab).name))
+        else:
+            left_tab.addTab(self.parent.widget(tab), _(self.parent.widget(tab).name))
+        if right_tab.count() == 0:
+            self.main_window.one_tab()
+        elif left_tab.count() == 0:
+            while right_tab.count() != 0:
+                left_tab.addTab(right_tab.widget(0), _(right_tab.widget(0).name))
+                self.main_window.one_tab()
 
     def mousePressEvent(self, event):
         QTabBar.mousePressEvent(self, event)
@@ -52,10 +91,10 @@ class DetachableTabWidget(QTabWidget):
     drag_text = None
     signal = pyqtSignal(object)
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
         self.setAcceptDrops(True)
-        self.tabBar = TabBar(self)
+        self.tabBar = TabBar(self, parent)
         self.setTabBar(self.tabBar)
         self.tabBar.setMouseTracking(True)
         self.indexTab = None

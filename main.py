@@ -32,9 +32,9 @@ class MainWindow(QMainWindow, UIForm):
 
         self.client = Client(self)
         self.client.signal_directory_data.connect(lambda jsn: self.file_manager_widget.fill_right_file_model(jsn))
-        self.client.signal_connection.connect(lambda: self.info_widget.on_connect())
-        self.client.signal_autoconnection.connect(lambda: self.info_widget.on_autoconnection())
-        self.client.signal_disconnect.connect(lambda: self.info_widget.on_disconnect())
+        self.client.signal_connection.connect(lambda: self.geoshark_widget.on_connect())
+        self.client.signal_autoconnection.connect(lambda: self.geoshark_widget.on_autoconnection())
+        self.client.signal_disconnect.connect(lambda: self.geoshark_widget.on_disconnect())
         self.client.signal_stream_data.connect(lambda *args: self.graphs_widget.plot_graphs(*args))
 
         self.graphs_btn.clicked.connect(lambda: self.add_graphs())
@@ -48,9 +48,7 @@ class MainWindow(QMainWindow, UIForm):
         self.update_action.triggered.connect(lambda: self.add_update())
         self.file_manager_action.triggered.connect(lambda: self.add_file_manager())
         self.toolbar_action.triggered.connect(lambda: self.toolbar.show())
-        self.work_panel_action.triggered.connect(lambda: self.work_panel.show())
-        self.split_tab_btn.clicked.connect(lambda: self.split_tabs())
-        self.one_tab_btn.clicked.connect(lambda: self.one_tab())
+        self.workspace_action.triggered.connect(lambda: self.workspace.show())
 
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
         self.tabwidget_left.signal.connect(lambda ev: self.graphs_widget.change_grid(ev))

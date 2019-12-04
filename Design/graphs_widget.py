@@ -7,7 +7,7 @@ class GraphsWidget(QStackedWidget):
     def __init__(self, parent):
         QStackedWidget.__init__(self)
         self.parent = parent
-        self.name = 'Graphs'
+        self.name = 'Telemetry'
         self.magnet = MagneticField()
         self.signals_plot = SignalsPlot()
         self.signal_freq_plot = SignalsFrequency()
@@ -73,13 +73,13 @@ class GraphsWidget(QStackedWidget):
         self.dc_plot.retranslate()
 
     def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
-        self.signals_plot.update(sig1, time, sig2, checkbox=self.parent.info_widget.graphs_chbx.isChecked())
-        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.parent.info_widget.graphs_chbx.isChecked())
-        self.lamp_temp_plot.update(temp, time, checkbox=self.parent.info_widget.graphs_chbx.isChecked())
-        self.dc_plot.update(dc, time, checkbox=self.parent.info_widget.graphs_chbx.isChecked())
-        self.magnet.update(freq, time, checkbox=self.parent.info_widget.graphs_chbx.isChecked())
-        self.parent.info_widget.deg_num_label.setText(str(temp/10))
-        self.parent.info_widget.device_on_connect = True
+        self.signals_plot.update(sig1, time, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.lamp_temp_plot.update(temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.dc_plot.update(dc, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.magnet.update(freq, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.parent.geoshark_widget.deg_num_label.setText(str(temp/10))
+        self.parent.geoshark_widget.device_on_connect = True
 
     def sync_x(self, check):
         if check == 2:

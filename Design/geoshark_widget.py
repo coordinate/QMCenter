@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QCheckBox, QGridLayout, QGroupBox, QLabel, QPushButt
 # _ = lambda x: x
 
 
-class InfoWidget(QWidget):
+class GeosharkWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent

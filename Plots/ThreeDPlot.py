@@ -500,7 +500,7 @@ class ThreeDPlot(gl.GLViewWidget):
         self.update()
         self.cut_widget.shortcut_object = filename
         self.cut_widget.show()
-        self.parent.workspace_widget.workspaceview.setEnabled(False)
+        self.parent.project_widget.workspaceview.setEnabled(False)
 
     def reset_cutting_preprocessing(self):
         self.cut_widget.first_idx = None
@@ -522,7 +522,7 @@ class ThreeDPlot(gl.GLViewWidget):
         self.cut_widget.second_idx = None
         self.update()
         self.cut_widget.close()
-        self.parent.workspace_widget.workspaceview.setEnabled(True)
+        self.parent.project_widget.workspaceview.setEnabled(True)
 
     def cut_save(self, save_as):
         if not self.cut_widget.first_idx or not self.cut_widget.second_idx:

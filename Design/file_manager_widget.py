@@ -142,7 +142,7 @@ class FileManager(QWidget):
         self.right_file_model.clear()
 
     def left_file_model_clicked(self, idx):
-        if os.path.isfile(self.left_file_model.filePath(idx)) and self.parent.info_widget.device_on_connect:
+        if os.path.isfile(self.left_file_model.filePath(idx)) and self.parent.geoshark_widget.device_on_connect:
             self.upload_file_to_device_btn.setEnabled(True)
         else:
             self.upload_file_to_device_btn.setEnabled(False)
@@ -183,7 +183,7 @@ class FileManager(QWidget):
             self.lefttableview.setRootIndex(self.left_file_model.index(self.left_dir_path.text()))
 
     def right_file_model_update(self):
-        if not self.parent.info_widget.device_on_connect:
+        if not self.parent.geoshark_widget.device_on_connect:
             # show_info(_('Info'), _('Please, connect to device.'))
             return
         self.get_folder_list()
@@ -238,7 +238,7 @@ class FileManager(QWidget):
         #                 pc_path=self.left_file_model_auto_sync_label.text())
 
     def right_file_model_clicked(self, idx):
-        if not self.parent.info_widget.device_on_connect:
+        if not self.parent.geoshark_widget.device_on_connect:
             return
         self.right_file_model_filename = self.right_file_model.item(idx.row(), 0).text()
         if self.right_file_model.item(idx.row(), 0).data() == 'file':
@@ -248,7 +248,7 @@ class FileManager(QWidget):
         self.file_to_delete = ['Device', '/'.join(self.right_file_model_path + [self.right_file_model_filename])]
 
     def right_file_model_doubleclicked(self, idx):
-        if not self.parent.info_widget.device_on_connect:
+        if not self.parent.geoshark_widget.device_on_connect:
             return
         model_path = '/'.join(self.right_file_model_path)
         idx_name = self.right_file_model.item(idx.row(), 0).text()
@@ -256,7 +256,7 @@ class FileManager(QWidget):
         self.get_folder_list(dir)
 
     def right_file_model_up(self):
-        if not self.parent.info_widget.device_on_connect:
+        if not self.parent.geoshark_widget.device_on_connect:
             return
         self.download_file_from_device_btn.setEnabled(False)
         self.file_to_delete = None
@@ -264,7 +264,7 @@ class FileManager(QWidget):
         self.get_folder_list(up_dir)
 
     def download_file_from_device(self, device_path=None, pc_path=None):
-        if not self.parent.info_widget.device_on_connect or self.server is None:
+        if not self.parent.geoshark_widget.device_on_connect or self.server is None:
             return
         device_path = '/'.join(self.right_file_model_path +
                                [self.right_file_model_filename]) if not device_path else device_path
@@ -295,7 +295,7 @@ class FileManager(QWidget):
                 file.write(b)
 
     def upload_file_to_device(self):
-        if not self.parent.info_widget.device_on_connect or self.server is None:
+        if not self.parent.geoshark_widget.device_on_connect or self.server is None:
             return
         file = self.left_file_model.filePath(self.lefttableview.currentIndex())
         filename = file.split('/')[-1]
@@ -333,7 +333,7 @@ class FileManager(QWidget):
             elif os.path.isdir(self.file_to_delete[1]):
                 shutil.rmtree(self.file_to_delete[1])
         elif self.file_to_delete[0] == 'Device':
-            if not self.parent.info_widget.device_on_connect or self.server is None:
+            if not self.parent.geoshark_widget.device_on_connect or self.server is None:
                 return
             url = 'http://{}/data/{}'.format(self.server, self.file_to_delete[1])
             try:
