@@ -81,6 +81,7 @@ class UIForm:
         self.visual_btn.setText(_('3D Viewer'))
 
         self.toolbar = QToolBar(_('Toolbar'))
+        self.toolbar.setMinimumHeight(40)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
         self.toolbar.addWidget(self.graphs_btn)
         self.toolbar.addWidget(self.config_btn)
@@ -153,6 +154,18 @@ class UIForm:
         self.update_btn.setText(_('Update'))
         self.file_manager.setText(_('File manager'))
         self.visual_btn.setText(_('3D Viewer'))
+        self.view.setTitle(_('&View'))
+        self.graphs_action.setText(_('Telemetry'))
+        self.config_action.setText(_('Configuration'))
+        self.visual_action.setText(_('3D Viewer'))
+        self.update_action.setText(_('Update'))
+        self.file_manager_action.setText(_('File manager'))
+        self.toolbar_action.setText(_('Toolbar'))
+        self.workspace_action.setText(_('Workspace'))
+
+        self.helpMenu.setTitle(_('Help'))
+        self.about.setText(_('About QMCenter'))
+
         self.workspace.setWindowTitle(_('Workspace'))
         self.tab_workspace.setTabText(self.tab_workspace.indexOf(self.project_widget), _('Project'))
         self.tab_workspace.setTabText(self.tab_workspace.indexOf(self.geoshark_widget), _('GeoShark'))

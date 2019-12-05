@@ -119,7 +119,7 @@ class SettingsWidget(QWidget):
             self.paint_settings_menu_item.addWidget(value)
 
         self.settings_menu_items.itemClicked.connect(lambda item: self.show_menu_item(item.text()))
-        self.lineEdit_ip.textChanged.connect(lambda txt: self.ip_changed(txt))
+        # self.lineEdit_ip.textChanged.connect(lambda txt: self.ip_changed(txt))
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
 
     def show_menu_item(self, item):

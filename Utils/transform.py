@@ -121,7 +121,7 @@ def get_point_cloud(filename, progress, zone):
     # picture is created from top left corner
     x_space = (np.arange(0, width))*abs(pixel_w) + top_left_lon
     y_space = (np.arange(0, -height, -1))*abs(pixel_h) + top_left_lat
-    xx, yy = np.meshgrid(x_space, y_space)
+    xx, yy = np.meshgrid(x_space.astype(np.float32), y_space.astype(np.float32))
     assert xx.shape == yy.shape and xx.shape == dem.shape
     X, Y, Z = xx.flatten(), yy.flatten(), dem.flatten()
     mask = Z != no_data

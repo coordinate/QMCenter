@@ -124,6 +124,7 @@ class MainWindow(QMainWindow, UIForm):
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(server):
             self.settings_widget.lineEdit_ip.setText(server)
+            self.settings_widget.define_server()
         if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
             self.project_instance.open_project(self.app_settings.value('path'))
         if self.app_settings.value('language') and self.app_settings.value('language') == 'ru':

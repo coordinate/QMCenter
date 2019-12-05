@@ -25,8 +25,9 @@ class CurrentProject(QObject):
         self.files_path = None
         self.tree = None
         self.root = None
-        self.raw_data = None
-        self.magnet_data = None
+        self.magnetic_field_data = None
+        self.gnss_data = None
+        self.magnetic_tracks_data = None
         self.geo_data = None
         self.project_utm = None
 
@@ -34,6 +35,7 @@ class CurrentProject(QObject):
         self.project_path = None
         self.parent.three_d_widget.three_d_plot.reset_data()
         self.parent.project_widget.workspaceview.add_view()
+        self.parent.project_widget.utm_label.setText(_('No UTM'))
         self.parent.three_d_widget.longitude_value_label.setText('')
         self.parent.three_d_widget.latitude_value_label.setText('')
         self.parent.three_d_widget.magnet_value_label.setText('')
@@ -57,8 +59,9 @@ class CurrentProject(QObject):
         try:
             self.tree = ET.parse(path)
             self.root = self.tree.getroot()
-            self.raw_data = self.root.find('raw_data')
-            self.magnet_data = self.root.find('magnet_data')
+            self.magnetic_field_data = self.root.find('magnetic_field_data')
+            self.gnss_data = self.root.find('gnss_data')
+            self.magnetic_tracks_data = self.root.find('magnetic_tracks_data')
             self.geo_data = self.root.find('geo_data')
             self.project_utm = self.root.find('project_utm')
         except ET.XMLSyntaxError:
@@ -66,7 +69,7 @@ class CurrentProject(QObject):
             self.reset_project()
             return
 
-        if self.raw_data is None or self.magnet_data is None or self.geo_data is None or self.project_utm is None:
+        if self.magnetic_field_data is None or self.magnetic_tracks_data is None or self.geo_data is None or self.project_utm is None:
             show_error(_('Project error'), _('Couldn\'t open .qmcproj file.'))
             self.reset_project()
             return
@@ -80,12 +83,12 @@ class CurrentProject(QObject):
             except ValueError:
                 show_error(_('UTM error'), _('Couldn\'t define UTM zone form .qmcproj file.'))
 
-        length = len(self.magnet_data.getchildren()) + len(self.geo_data.getchildren())
+        length = len(self.magnetic_tracks_data.getchildren()) + len(self.geo_data.getchildren())
         it = 0
         self.progress.open()
         QApplication.processEvents()
-        for magnet in self.magnet_data.getchildren():
-            file = os.path.join(self.files_path, self.magnet_data.attrib['name'], magnet.attrib['filename'])
+        for magnet in self.magnetic_tracks_data.getchildren():
+            file = os.path.join(self.files_path, self.magnetic_tracks_data.attrib['name'], magnet.attrib['filename'])
             if not os.path.isfile(file):
                 show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
                 self.remove_element(os.path.basename(file))
@@ -119,9 +122,10 @@ class CurrentProject(QObject):
         self.create_project_tree(self.project_path)
         self.files_path = '{}.files'.format(os.path.splitext(self.project_path)[0])
         os.mkdir(self.files_path)
-        os.mkdir(os.path.join(self.files_path, 'GeoData'))
-        os.mkdir(os.path.join(self.files_path, 'Magnet'))
-        os.mkdir(os.path.join(self.files_path, 'RAW'))
+        os.mkdir(os.path.join(self.files_path, 'Geodata'))
+        os.mkdir(os.path.join(self.files_path, 'Magnetic Field Tracks'))
+        os.mkdir(os.path.join(self.files_path, 'Magnetic Field Measurements'))
+        os.mkdir(os.path.join(self.files_path, 'GNSS Observations'))
         self.parent.setWindowTitle('QMCenter — {}'.format(self.project_path))
         self.send_tree_to_view()
         self.parent.file_manager_widget.left_dir_path.setText(self.files_path)
@@ -131,14 +135,17 @@ class CurrentProject(QObject):
         self.root = ET.Element('document')
         self.root.set('version', '0.8')
         self.root.set('path', '{}.files'.format(os.path.splitext(self.project_path)[0]))
-        self.raw_data = ET.SubElement(self.root, 'raw_data')
-        self.raw_data.set('name', 'RAW')
-        self.raw_data.set('expanded', 'False')
-        self.magnet_data = ET.SubElement(self.root, 'magnet_data')
-        self.magnet_data.set('name', 'Magnet')
-        self.magnet_data.set('expanded', 'False')
+        self.magnetic_field_data = ET.SubElement(self.root, 'magnetic_field_data')
+        self.magnetic_field_data.set('name', 'Magnetic Field Measurements')
+        self.magnetic_field_data.set('expanded', 'False')
+        self.gnss_data = ET.SubElement(self.root, 'gnss_data')
+        self.gnss_data.set('name', 'GNSS Observations')
+        self.gnss_data.set('expanded', 'False')
+        self.magnetic_tracks_data = ET.SubElement(self.root, 'magnetic_tracks_data')
+        self.magnetic_tracks_data.set('name', 'Magnetic Field Tracks')
+        self.magnetic_tracks_data.set('expanded', 'False')
         self.geo_data = ET.SubElement(self.root, 'geo_data')
-        self.geo_data.set('name', 'GeoData')
+        self.geo_data.set('name', 'Geodata')
         self.geo_data.set('expanded', 'False')
         self.project_utm = ET.SubElement(self.root, 'project_utm')
         self.project_utm.set('zone', '')
@@ -146,16 +153,20 @@ class CurrentProject(QObject):
         self.tree = ET.ElementTree(self.root)
         self.tree.write(path, xml_declaration=True, encoding='utf-8', method="xml", pretty_print=True)
 
-    def add_raw_data(self):
+    def add_raw_data(self, extension):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.files_path, "RAW files (*.ubx *.mag)")
+                                             self.files_path, "{} files ({})".format('MAG' if extension == '*.mag'
+                                                                                     else 'UBX', extension))
 
         if not files[0]:
             return
         self.progress.open()
         QApplication.processEvents()
         for i, file in enumerate(files[0]):
-            destination = os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file))
+            if extension == '*.mag':
+                destination = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'], os.path.basename(file))
+            else:
+                destination = os.path.join(self.files_path, self.gnss_data.attrib['name'], os.path.basename(file))
             if not os.path.exists(destination):
                 copyfile(file, destination)
             else:
@@ -170,15 +181,18 @@ class CurrentProject(QObject):
                     self.progress.close()
                     return
                 elif answer == 2:
-                    destination = os.path.join(self.files_path, self.raw_data.attrib['name'], os.path.basename(file))
+                    destination = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'], os.path.basename(file))
                     try:
                         copyfile(file, destination)
                     except SameFileError:
                         pass
 
-            if not self.raw_data.xpath("//raw_data[@filename='{}']".format(os.path.basename(destination))):
-                ET.SubElement(self.raw_data, 'raw_data', {'filename': '{}'.format(os.path.basename(destination))})
-
+            if extension == '*.mag' and not self.magnetic_field_data.xpath(
+                    "//magnetic_field_data[@filename='{}']".format(os.path.basename(destination))):
+                ET.SubElement(self.magnetic_field_data, 'magnetic_field_data', {'filename': '{}'.format(os.path.basename(destination))})
+            elif extension == '*.ubx' and not self.gnss_data.xpath(
+                    "//gnss_data[@filename='{}']".format(os.path.basename(destination))):
+                ET.SubElement(self.gnss_data, 'gnss_data', {'filename': '{}'.format(os.path.basename(destination))})
             self.progress.setValue((i/len(files[0])*99))
         self.write_proj_tree()
         self.send_tree_to_view()
@@ -187,7 +201,7 @@ class CurrentProject(QObject):
     def create_magnet_files(self, files_list, widget=None):
         mag_file, second_file = files_list
 
-        files_path = os.path.join(self.files_path, self.raw_data.attrib['name'])
+        files_path = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'])
 
         filename = os.path.splitext(mag_file)[0]
         widget.second_label.setText(_('Parse {}').format(mag_file))
@@ -331,7 +345,7 @@ class CurrentProject(QObject):
 
         else:
             widget.progress.setValue(100)
-            widget.second_label.setText(_('Magnet file was created'))
+            widget.second_label.setText(_('Magnetic track file was created'))
 
             magnet_obj['time'] = np.array(time_arr)
             magnet_obj['lon_lat'] = np.column_stack((np.array(lon_arr), np.array(lat_arr)))
@@ -342,7 +356,7 @@ class CurrentProject(QObject):
 
     def add_magnet_data(self):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.files_path, "Magnet files (*.magnete)")[0]
+                                             self.files_path, "Magnetic track files (*.magnete)")[0]
 
         if not files:
             return
@@ -350,7 +364,7 @@ class CurrentProject(QObject):
         self.progress.open()
         QApplication.processEvents()
         for file in files:
-            destination = os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file))
+            destination = os.path.join(self.files_path, self.magnetic_tracks_data.attrib['name'], os.path.basename(file))
             if not os.path.exists(destination):
                 copyfile(file, destination)
             else:
@@ -365,7 +379,7 @@ class CurrentProject(QObject):
                     self.progress.close()
                     return
                 elif answer == 2:
-                    destination = os.path.join(self.files_path, self.magnet_data.attrib['name'], os.path.basename(file))
+                    destination = os.path.join(self.files_path, self.magnetic_tracks_data.attrib['name'], os.path.basename(file))
                     try:
                         copyfile(file, destination)
                     except SameFileError:
@@ -373,8 +387,8 @@ class CurrentProject(QObject):
 
             value = (it + 1) / len(files) * 99
             it += 1
-            if not self.magnet_data.xpath("//magnet_data[@filename='{}']".format(os.path.basename(destination))):
-                ET.SubElement(self.magnet_data, 'magnet_data', {'filename': '{}'.format(os.path.basename(destination)),
+            if not self.magnetic_tracks_data.xpath("//magnetic_tracks_data[@filename='{}']".format(os.path.basename(destination))):
+                ET.SubElement(self.magnetic_tracks_data, 'magnetic_tracks_data', {'filename': '{}'.format(os.path.basename(destination)),
                                                                 'indicator': 'Off'})
 
             self.parent.three_d_widget.three_d_plot.add_fly(destination, self.progress, value)
@@ -383,14 +397,14 @@ class CurrentProject(QObject):
         self.progress.setValue(100)
 
     def add_magnet_from_memory(self, filename, object, save_as=True):
-        path_to_save = os.path.join(self.files_path, self.magnet_data.attrib['name'])
+        path_to_save = os.path.join(self.files_path, self.magnetic_tracks_data.attrib['name'])
         time = object['time']
         lon_lat = object['lon_lat']
         height = object['height']
         magnet = object['magnet']
 
         if save_as:
-            filename = QFileDialog.getSaveFileName(None, _("Save File"), path_to_save, "Magnet files (*.magnete)")[0]
+            filename = QFileDialog.getSaveFileName(None, _("Save File"), path_to_save, "Magnetic track files (*.magnete)")[0]
             if not filename:
                 return
         else:
@@ -413,8 +427,8 @@ class CurrentProject(QObject):
         except FileNotFoundError:
             return
 
-        if not self.magnet_data.xpath("//magnet_data[@filename='{}']".format(os.path.basename(filename))):
-            ET.SubElement(self.magnet_data, 'magnet_data', {'filename': '{}'.format(os.path.basename(filename)),
+        if not self.magnetic_tracks_data.xpath("//magnetic_tracks_data[@filename='{}']".format(os.path.basename(filename))):
+            ET.SubElement(self.magnetic_tracks_data, 'magnetic_tracks_data', {'filename': '{}'.format(os.path.basename(filename)),
                                                             'indicator': 'Off'})
 
         self.parent.three_d_widget.three_d_plot.add_fly(filename, self.progress, value+18)
@@ -481,9 +495,10 @@ class CurrentProject(QObject):
 
     def send_tree_to_view(self):
         view = {
-            'RAW': self.root.find('raw_data'),
-            'Magnet': self.root.find('magnet_data'),
-            'GeoData': self.root.find('geo_data'),
+            'Magnetic Field Measurements': self.root.find('magnetic_field_data'),
+            'GNSS Observations': self.root.find('gnss_data'),
+            'Magnetic Field Tracks': self.root.find('magnetic_tracks_data'),
+            'Geodata': self.root.find('geo_data'),
         }
 
         self.parent.project_widget.workspaceview.set_project_name(os.path.basename(self.project_path))

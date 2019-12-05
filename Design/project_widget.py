@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon
 from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog, QWidget, QGridLayout, QStackedWidget, \
     QLabel, QRadioButton, QPushButton, QProgressBar, QMessageBox, QComboBox
@@ -99,19 +99,17 @@ class WorkspaceView(QTreeView):
                 indicator.setData(QIcon('images/gray_light_icon.png'), 1)
                 indicator.setData('Off', 3)
                 self.parent.three_d_widget.three_d_plot.show_hide_elements(object_name, 'Off')
-            for ch in self.parent.project_instance.root.getchildren():
-                try:
-                    ch.find(object_name).attrib['indicator'] = indicator.data(3)
-                except AttributeError:
-                    pass
-                except TypeError:
-                    pass
+            try:
+                self.parent.project_instance.root.xpath(
+                    "//*[@filename='{}']".format(object_name))[0].attrib['indicator'] = indicator.data(3)
+            except IndexError:
+                pass
 
     def double_click(self, idx):
         if idx.column() in [-1, 1] or not self.model.itemFromIndex(idx).parent():
             return
         parent_click_item = self.model.itemFromIndex(idx).parent()
-        if parent_click_item.text() == 'RAW':
+        if parent_click_item.text() == 'Magnetic Field Measurements':
             return
         object_name = idx.parent().child(idx.row(), 0).data()
         indicator = parent_click_item.child(idx.row(), 1)
@@ -119,13 +117,11 @@ class WorkspaceView(QTreeView):
         self.parent.add_visual()
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)
-        for ch in self.parent.project_instance.root.getchildren():
-            try:
-                ch.find(object_name).attrib['indicator'] = indicator.data(3)
-            except AttributeError:
-                pass
-            except TypeError:
-                pass
+        try:
+            self.parent.project_instance.root.xpath(
+                "//*[@filename='{}']".format(object_name))[0].attrib['indicator'] = indicator.data(3)
+        except IndexError:
+            pass
 
     def item_expanded(self, idx):
         object_name = idx.data()
@@ -158,76 +154,109 @@ class WorkspaceView(QTreeView):
 
     def add_view(self, view=None):
         if not self.parent.project_instance.project_path:
-            self.model.removeRows(0, 3)
+            self.model.removeRows(0, self.model.rowCount())
             self.project_name.setText('')
             return
-        self.model.removeRows(0, 3)
-        self.raw_data_item = QStandardItem(_('RAW'))
-        self.raw_data_item.setSelectable(False)
+        self.model.removeRows(0, self.model.rowCount())
+        self.magnetic_field_item = QStandardItem(_('Magnetic Field Measurements'))
+        self.magnetic_field_item.setData(QIcon('images/magmeasurements.png'), 1)
+        self.magnetic_field_item.setSizeHint(QSize(0, 25))
+        self.magnetic_field_item.setSelectable(False)
         r0_c1 = QStandardItem()
         r0_c1.setSelectable(False)
-        self.magnet_data_item = QStandardItem(_('Magnet'))
-        self.magnet_data_item.setSelectable(False)
+        self.gnss_item = QStandardItem(_('GNSS Observations'))
+        self.gnss_item.setData(QIcon('images/gnss.png'), 1)
+        self.gnss_item.setSizeHint(QSize(0, 25))
+        self.gnss_item.setSelectable(False)
         r1_c1 = QStandardItem()
         r1_c1.setSelectable(False)
-        self.geo_item = QStandardItem(_('GeoData'))
-        self.geo_item.setSelectable(False)
+        self.magnet_track_item = QStandardItem(_('Magnetic Field Tracks'))
+        self.magnet_track_item.setData(QIcon('images/magtrack.png'), 1)
+        self.magnet_track_item.setSizeHint(QSize(0, 25))
+        self.magnet_track_item.setSelectable(False)
         r2_c1 = QStandardItem()
         r2_c1.setSelectable(False)
-        self.model.setItem(0, self.raw_data_item)
+        self.geo_item = QStandardItem(_('Geodata'))
+        self.geo_item.setData(QIcon('images/geodata.png'), 1)
+        self.geo_item.setSizeHint(QSize(0, 25))
+        self.geo_item.setSelectable(False)
+        r3_c1 = QStandardItem()
+        r3_c1.setSelectable(False)
+        self.model.setItem(0, self.magnetic_field_item)
         self.model.setItem(0, 1, r0_c1)
-        self.model.setItem(1, self.magnet_data_item)
+        self.model.setItem(1, self.gnss_item)
         self.model.setItem(1, 1, r1_c1)
-        self.model.setItem(2, self.geo_item)
+        self.model.setItem(2, self.magnet_track_item)
         self.model.setItem(2, 1, r2_c1)
+        self.model.setItem(3, self.geo_item)
+        self.model.setItem(3, 1, r3_c1)
         self.setModel(self.model)
 
         if view:
-            self.setExpanded(self.model.indexFromItem(self.raw_data_item),
-                             True if view['RAW'].attrib['expanded'] == 'True' else False)
+            self.setExpanded(self.model.indexFromItem(self.magnetic_field_item),
+                             True if view['Magnetic Field Measurements'].attrib['expanded'] == 'True' else False)
 
-            for i, ch in enumerate(view['RAW'].getchildren()):
+            for i, ch in enumerate(view['Magnetic Field Measurements'].getchildren()):
                 try:
-                    self.raw_data_item.setChild(i, 0, QStandardItem(ch.attrib['filename']))
-                    self.raw_data_item.setChild(i, 1, QStandardItem())
+                    child = QStandardItem(ch.attrib['filename'])
+                    child.setData(QIcon('images/file.png'), 1)
+                    self.magnetic_field_item.setChild(i, 0, child)
+                    self.magnetic_field_item.setChild(i, 1, QStandardItem())
                 except KeyError:
                     pass
 
-            self.setExpanded(self.model.indexFromItem(self.magnet_data_item),
-                             True if view['Magnet'].attrib['expanded'] == 'True' else False)
-            for j, ch in enumerate(view['Magnet'].getchildren()):
+            self.setExpanded(self.model.indexFromItem(self.gnss_item),
+                             True if view['GNSS Observations'].attrib['expanded'] == 'True' else False)
+
+            for j, ch in enumerate(view['GNSS Observations'].getchildren()):
                 try:
-                    self.magnet_data_item.setChild(j, 0, QStandardItem(ch.attrib['filename']))
+                    child = QStandardItem(ch.attrib['filename'])
+                    child.setData(QIcon('images/file.png'), 1)
+                    self.gnss_item.setChild(j, 0, child)
+                    self.gnss_item.setChild(j, 1, QStandardItem())
+                except KeyError:
+                    pass
+
+            self.setExpanded(self.model.indexFromItem(self.magnet_track_item),
+                             True if view['Magnetic Field Tracks'].attrib['expanded'] == 'True' else False)
+            for k, ch in enumerate(view['Magnetic Field Tracks'].getchildren()):
+                try:
+                    child = QStandardItem(ch.attrib['filename'])
+                    child.setData(QIcon('images/file.png'), 1)
+                    self.magnet_track_item.setChild(k, 0, child)
                     item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
                                                                                  else 'green')), '')
                     item.setData(ch.attrib['indicator'], 3)
-                    self.magnet_data_item.setChild(j, 1, item)
+                    self.magnet_track_item.setChild(k, 1, item)
                     self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.attrib['filename'], ch.attrib['indicator'])
                 except KeyError:
                     pass
 
             self.setExpanded(self.model.indexFromItem(self.geo_item),
-                             True if view['GeoData'].attrib['expanded'] == 'True' else False)
-            for k, ch in enumerate(view['GeoData'].getchildren()):
+                             True if view['Geodata'].attrib['expanded'] == 'True' else False)
+            for m, ch in enumerate(view['Geodata'].getchildren()):
                 try:
-                    self.geo_item.setChild(k, 0, QStandardItem(ch.attrib['filename']))
+                    child = QStandardItem(ch.attrib['filename'])
+                    child.setData(QIcon('images/file.png'), 1)
+                    self.geo_item.setChild(m, 0, child)
                     item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
                                                                                  else 'green')), '')
                     item.setData(ch.attrib['indicator'], 3)
-                    self.geo_item.setChild(k, 1, item)
+                    self.geo_item.setChild(m, 1, item)
                     self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.attrib['filename'], ch.attrib['indicator'])
                 except KeyError:
                     pass
 
-        self.setColumnWidth(0, 200)
-        self.setColumnWidth(1, 50)
+        self.setColumnWidth(0, 210)
+        self.setColumnWidth(1, 45)
         self.header().setSectionResizeMode(QHeaderView.Fixed)
 
     def header_context_menu(self, event):
         if not self.parent.project_instance.project_path:
             return
         project_action = {
-                _('Add RAW'): self.parent.project_instance.add_raw_data,
+                _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.mag'),
+                _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.ubx'),
                 _('Add magnet'): self.parent.project_instance.add_magnet_data,
                 _('Import DEM'): lambda: self.parent.project_instance.add_geo_data('*.tif'),
                 _('Import Point Cloud'): lambda: self.parent.project_instance.add_geo_data('*.ply'),
@@ -259,12 +288,16 @@ class WorkspaceView(QTreeView):
                 item_index = self.model.item(item_index.row()).index()
 
         project_action = {
-            self.raw_data_item.text(): {
+            self.magnetic_field_item.text(): {
                 # _('Create .magnete files'): lambda: self.create_magnet_files(item_index.data()),
-                _('Add RAW'): self.parent.project_instance.add_raw_data,
+                _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.mag'),
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
-            self.magnet_data_item.text(): {
+            self.gnss_item.text(): {
+                _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.ubx'),
+                _('Remove all'): lambda: self.remove_all(item_index)
+            },
+            self.magnet_track_item.text(): {
                 _('Add Magnet data'): self.parent.project_instance.add_magnet_data,
                 _('Remove all'): lambda: self.remove_all(item_index)
             },
@@ -285,13 +318,13 @@ class WorkspaceView(QTreeView):
         }
         menu = QMenu()
 
-        if item_index.parent().data() in [self.raw_data_item.text(), self.geo_item.text()]:
+        if item_index.parent().data() in [self.magnetic_field_item.text(), self.gnss_item.text(), self.geo_item.text()]:
             actions = [QAction(a) for a in project_action['subitems']]
             menu.addActions(actions)
             action = menu.exec_(event.globalPos())
             if action:
                 project_action['subitems'][action.text()]()
-        elif item_index.parent().data() == self.magnet_data_item.text():
+        elif item_index.parent().data() == self.magnet_track_item.text():
             actions = [QAction(a) for a in project_action['magnet_sub']]
             menu.addActions(actions)
             action = menu.exec_(event.globalPos())
