@@ -14,7 +14,7 @@ class ConfigurationWidget(QWidget):
         self.parent = parent
         self.name = 'Configuration'
         self.port = '5000'
-        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        ipRegex = QRegExp('(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})')
         if ipRegex.exactMatch(self.parent.server):
             self.server = ':'.join([self.parent.server, self.port])
         else:
@@ -28,12 +28,12 @@ class ConfigurationWidget(QWidget):
         self.configuration_tree.setColumnCount(4)
         self.configuration_tree.setHeaderLabels([_('Parameter'), _('Value'), _('Min'), _('Max')])
         self.configuration_tree.editTriggers()
-        self.layout.addWidget(self.configuration_tree, 0, 0, 1, 10)
+        self.layout.addWidget(self.configuration_tree, 0, 0, 1, 6)
 
         self.read_tree_btn = QPushButton(_('Read'))
-        self.layout.addWidget(self.read_tree_btn, 1, 0, 1, 1)
+        self.layout.addWidget(self.read_tree_btn, 1, 4, 1, 1)
         self.write_tree_btn = QPushButton(_('Write'))
-        self.layout.addWidget(self.write_tree_btn, 1, 1, 1, 1)
+        self.layout.addWidget(self.write_tree_btn, 1, 5, 1, 1)
 
         self.configuration_tree.itemDoubleClicked.connect(lambda item, col: self.tree_item_double_clicked(item, col))
         self.read_tree_btn.clicked.connect(lambda: self.request_device_config())
@@ -59,7 +59,7 @@ class ConfigurationWidget(QWidget):
         try:
             res = requests.get(url, timeout=1)
         except requests.exceptions.RequestException:
-            show_error(_('Server error'), _('Server is not responding.'))
+            show_error(_('GeoShark error'), _('GeoShark is not responding.'))
             return
         if res.ok:
             res = res.json()
@@ -124,7 +124,7 @@ class ConfigurationWidget(QWidget):
         try:
             res = requests.post(url=url, json={'{}'.format(self.tree_header): json})
         except requests.exceptions.RequestException:
-            show_error(_('Server error'), _("Configuration updating not completed.\nServer is not responding."))
+            show_error(_('GeoShark error'), _('Can not complete configuration update.\nGeoShark is not responding.'))
             return
         if res.ok:
             print(res.json())
@@ -138,7 +138,7 @@ class ConfigurationWidget(QWidget):
         try:
             res = requests.get(url).json()
         except requests.exceptions.RequestException:
-            show_error(_('Server error'), _("Configuration updating not completed.\nServer is not responding."))
+            show_error(_('GeoShark error'), _('Can not complete configuration update.\nGeoShark is not responding.'))
             return
         temp_tree = QTreeWidget()
         self.fill_tree(temp_tree, res[self.tree_header])

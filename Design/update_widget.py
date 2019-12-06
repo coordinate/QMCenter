@@ -5,7 +5,7 @@ from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QLabel, QLineEdit, QFrame, \
-    QFileDialog, QProgressBar
+    QFileDialog, QProgressBar, QSizePolicy
 
 from Design.ui import show_error
 
@@ -29,41 +29,38 @@ class UpdateWidget(QWidget):
         self.update_tree = QTreeWidget()
         self.update_tree.setColumnCount(2)
         self.update_tree.setHeaderLabels([_('Parameter'), _('Version')])
-        self.gridlayout_update.addWidget(self.update_tree, 0, 0, 1, 1)
+        self.gridlayout_update.addWidget(self.update_tree, 0, 0, 1, 6)
 
         self.read_update_btn = QPushButton(_('Read update file'))
-        self.load_update_btn = QPushButton(_('Load update file'))
-        self.gridlayout_update.addWidget(self.read_update_btn, 1, 0, 1, 1, alignment=Qt.AlignRight)
-        self.gridlayout_update.addWidget(self.load_update_btn, 1, 1, 1, 1)
+        self.load_update_btn = QPushButton(_('Upload update file'))
+        self.gridlayout_update.addWidget(self.read_update_btn, 1, 4, 1, 1)
+        self.gridlayout_update.addWidget(self.load_update_btn, 1, 5, 1, 1)
 
         # create wizard
         self.wizard = QWidget()
-        self.wizard.setWindowTitle(_('Wizard'))
-        self.wizard.setFixedSize(500, 300)
+        self.wizard.setWindowTitle(_('Firmware Update Wizard'))
+        self.wizard.setFixedSize(400, 200)
         self.layout = QGridLayout(self.wizard)
-        self.label = QLabel(_('Open file to load into device'))
-        self.label.setStyleSheet("font: 14pt;")
+        self.label = QLabel(_('Select Update File  to be uploaded into GeoShark'))
+        self.label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.lineedit = QLineEdit()
+        self.lineedit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.browse_btn = QPushButton(_("Browse..."))
+        self.browse_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.progress = QProgressBar()
         self.progress.setValue(0)
         self.check_file_label = QLabel()
-        self.line = QFrame()
-        self.line.setFrameShape(QFrame.HLine)
-        self.line.setStyleSheet("color: (0, 0, 0)")
         self.upload_btn = QPushButton(_('Upload'))
         self.upload_btn.setEnabled(False)
 
         self.cancel_btn = QPushButton(_('Cancel'))
         self.finish_btn = QPushButton(_('Finish'))
-        self.layout.addWidget(self.label, 0, 0, 1, 6, alignment=Qt.AlignCenter)
-        self.layout.addWidget(self.lineedit, 1, 0, 1, 5)
-        self.layout.addWidget(self.browse_btn, 1, 5, 1, 1)
-        self.layout.addWidget(self.check_file_label, 2, 0, 1, 6, alignment=Qt.AlignCenter)
-        self.layout.addWidget(self.progress, 3, 1, 1, 4, alignment=Qt.AlignTop)
-        self.layout.addWidget(self.line, 4, 0, 1, 6)
-        self.layout.addWidget(self.upload_btn, 5, 4, 1, 1)
-        self.layout.addWidget(self.cancel_btn, 5, 5, 1, 1)
+        self.layout.addWidget(self.label, 0, 0, 1, 4)
+        self.layout.addWidget(self.lineedit, 1, 0, 1, 3)
+        self.layout.addWidget(self.browse_btn, 1, 3, 1, 1)
+        self.layout.addWidget(self.progress, 3, 0, 1, 4)
+        self.layout.addWidget(self.upload_btn, 5, 2, 1, 1)
+        self.layout.addWidget(self.cancel_btn, 5, 3, 1, 1)
 
         self.load_update_btn.clicked.connect(lambda: self.wizard.show())
         self.read_update_btn.clicked.connect(lambda: self.get_update_tree())
@@ -79,9 +76,9 @@ class UpdateWidget(QWidget):
     def retranslate(self):
         self.update_tree.setHeaderLabels([_('Parameter'), _('Version')])
         self.read_update_btn.setText(_('Read update file'))
-        self.load_update_btn.setText(_('Load update file'))
-        self.wizard.setWindowTitle(_('Wizard'))
-        self.label.setText(_('Open file to load into device'))
+        self.load_update_btn.setText(_('Upload update file'))
+        self.wizard.setWindowTitle(_('Firmware Update Wizard'))
+        self.label.setText(_('Select Update File  to be uploaded into GeoShark'))
         self.browse_btn.setText(_("Browse..."))
         self.upload_btn.setText(_('Upload'))
         self.cancel_btn.setText(_('Cancel'))
@@ -98,7 +95,7 @@ class UpdateWidget(QWidget):
         try:
             res = requests.get(url, timeout=1)
         except requests.exceptions.RequestException:
-            show_error(_('Server error'), _('Server is not responding.'))
+            show_error(_('GeoShark error'), _('GeoShark is not responding.'))
             return
         if res.ok:
             res = res.json()
@@ -111,7 +108,7 @@ class UpdateWidget(QWidget):
         self.parent.configuration_widget.fill_tree(self.update_tree, res[root])
 
     def open_filedialog(self):
-        file = QFileDialog.getOpenFileName(None, _("Open update file"),
+        file = QFileDialog.getOpenFileName(None, _("Open Device Update File"),
                                            self.parent.expanduser_dir, "Update file (*)")[0]
 
         if not file:
@@ -122,11 +119,13 @@ class UpdateWidget(QWidget):
     def update_file_selected(self):
         url = self.lineedit.text()
         if os.path.isfile(url):
-            self.check_file_label.setText('File is good')
+            self.label.setText(_('Valid update file:'))
+            self.label.setStyleSheet("color: rgb(0, 204, 0)")
             self.upload_btn.setEnabled(True)
             self.url = url
         else:
-            self.check_file_label.setText('File is not good')
+            self.label.setText(_('Invalid update file:'))
+            self.label.setStyleSheet("color: rgb(255, 0, 0)")
             self.upload_btn.setEnabled(False)
 
     def upload_update_file(self, file_url):
@@ -146,16 +145,16 @@ class UpdateWidget(QWidget):
         try:
             res = requests.post(url, data=monitor, headers={'Content-Type': monitor.content_type}, timeout=5)
         except requests.exceptions.RequestException:
-            show_error(_('Server error'), _('Server is not responding. File wasn\'t uploaded into device.'))
+            show_error(_('GeoShark error'), _('Unable to upload file. GeoShark is not responding.'))
             self.progress.setValue(0)
             return
 
         if res.ok:
             self.progress.setValue(100)
-            self.check_file_label.setText(_('File was uploaded into device'))
+            self.check_file_label.setText(_('File has not been uploaded into GeoShark.'))
             self.layout.addWidget(self.finish_btn, 5, 5, 1, 1)
         else:
-            self.check_file_label.setText(_('File wasn\'t uploaded into device'))
+            self.check_file_label.setText(_('File has not been uploaded into GeoShark.'))
 
     def finish_update(self):
         self.wizard.close()
