@@ -176,6 +176,7 @@ class FileManager(QWidget):
 
     def left_file_model_go_to_dir(self):
         if os.path.isdir(self.left_dir_path.text()):
+            self.file_to_delete = None
             self.left_file_model_path = self.left_dir_path.text()
             self.left_up_btn.setEnabled(True)
             self.upload_file_to_device_btn.setEnabled(False)
@@ -202,7 +203,10 @@ class FileManager(QWidget):
             return
         if res.ok:
             res = res.json()
-            self.right_file_model_path = folder_path.split('/')
+            if folder_path != '':
+                self.right_file_model_path = folder_path.split('/')
+            else:
+                self.right_file_model_path = []
             self.fill_right_file_model(res)
         else:
             return
@@ -252,7 +256,11 @@ class FileManager(QWidget):
             return
         model_path = '/'.join(self.right_file_model_path)
         idx_name = self.right_file_model.item(idx.row(), 0).text()
-        dir = '{}/{}'.format(model_path, idx_name)
+        if model_path != '':
+            dir = '{}/{}'.format(model_path, idx_name)
+        else:
+            dir = '{}'.format(idx_name)
+
         self.get_folder_list(dir)
 
     def right_file_model_up(self):
@@ -289,7 +297,10 @@ class FileManager(QWidget):
             save_to_file = '{}/{}'.format(self.left_file_model_path, right_file_model_filename) \
                 if not pc_path else '{}/{}'.format(pc_path, right_file_model_filename)
             if os.path.isfile(save_to_file):
-                save_to_file = '{}/(2){}'.format(self.left_file_model_path, right_file_model_filename)
+                # save_to_file = '{}/(2){}'.format(self.left_file_model_path, right_file_model_filename)
+                show_error(_('File warning'), _('<html>There is a file with the same name in PC.\n'
+                                                'Please rename imported file <b>{}</b> and try again.'.format(right_file_model_filename)))
+                return
 
             with open(save_to_file, 'wb') as file:
                 file.write(b)

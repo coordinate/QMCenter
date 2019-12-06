@@ -1,14 +1,14 @@
 import os
 import subprocess
 
-from shutil import copyfile, SameFileError
+from shutil import copyfile
 import lxml.etree as ET
 import numpy as np
 
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QFileDialog, QProgressDialog, QApplication
 
-from Design.ui import show_error, show_info, show_message_saveas_cancel_add
+from Design.ui import show_error
 from Utils.transform import parse_mag_file
 
 # _ = lambda x: x
@@ -43,13 +43,13 @@ class CurrentProject(QObject):
         self.parent.file_manager_widget.left_file_model_go_to_dir()
 
     def open_project(self, path=None):
-        self.reset_project()
         if path:
             self.project_path = path
         else:
             fileName = QFileDialog.getOpenFileName(None, "Open File", self.expanduser_dir, "QMCenter project (*.qmcproj)")
             if fileName[0] == '':
                 return
+            self.reset_project()
             self.project_path = fileName[0]
         self.files_path = '{}.files'.format(os.path.splitext(self.project_path)[0])
         self.progress.setWindowTitle(_("Load project files"))
@@ -114,10 +114,10 @@ class CurrentProject(QObject):
         self.progress.setValue(100)
 
     def create_new_project(self):
-        self.reset_project()
         dir = QFileDialog.getSaveFileName(None, "Save File", self.expanduser_dir, "QMCenter project (*.qmcproj)")
         if dir[0] == '':
             return
+        self.reset_project()
         self.project_path = dir[0]
         self.create_project_tree(self.project_path)
         self.files_path = '{}.files'.format(os.path.splitext(self.project_path)[0])
@@ -169,30 +169,26 @@ class CurrentProject(QObject):
                 destination = os.path.join(self.files_path, self.gnss_data.attrib['name'], os.path.basename(file))
             if not os.path.exists(destination):
                 copyfile(file, destination)
-            else:
-                path = os.path.splitext(destination)
-                destination = '{}_copy{}'.format(path[0], path[1])
-                answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
-                                                        'Do you want to "save as" and add to project:\n{}\n'
-                                                        'Or just add existed file to project').format(destination.replace('\\', '/')))
-                if answer == 0:
-                    copyfile(file, destination)
-                elif answer == 1:
-                    self.progress.close()
-                    return
-                elif answer == 2:
-                    destination = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'], os.path.basename(file))
-                    try:
-                        copyfile(file, destination)
-                    except SameFileError:
-                        pass
+                if extension == '*.mag':
+                    ET.SubElement(self.magnetic_field_data, 'magnetic_field_data',
+                                  {'filename': '{}'.format(os.path.basename(destination))})
+                elif extension == '*.ubx':
+                    ET.SubElement(self.gnss_data, 'gnss_data', {'filename': '{}'.format(os.path.basename(destination))})
+            elif os.path.samefile(file, destination):
+                if extension == '*.mag' and not self.magnetic_field_data.xpath(
+                        "//magnetic_field_data[@filename='{}']".format(os.path.basename(destination))):
+                    ET.SubElement(self.magnetic_field_data, 'magnetic_field_data',
+                                  {'filename': '{}'.format(os.path.basename(destination))})
+                elif extension == '*.ubx' and not self.gnss_data.xpath(
+                        "//gnss_data[@filename='{}']".format(os.path.basename(destination))):
+                    ET.SubElement(self.gnss_data, 'gnss_data', {'filename': '{}'.format(os.path.basename(destination))})
+                else:
+                    continue
+            elif os.path.exists(destination):
+                show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
+                                                'Please rename imported file <b>{}</b> and try again.</html>'.format(os.path.basename(file))))
+                continue
 
-            if extension == '*.mag' and not self.magnetic_field_data.xpath(
-                    "//magnetic_field_data[@filename='{}']".format(os.path.basename(destination))):
-                ET.SubElement(self.magnetic_field_data, 'magnetic_field_data', {'filename': '{}'.format(os.path.basename(destination))})
-            elif extension == '*.ubx' and not self.gnss_data.xpath(
-                    "//gnss_data[@filename='{}']".format(os.path.basename(destination))):
-                ET.SubElement(self.gnss_data, 'gnss_data', {'filename': '{}'.format(os.path.basename(destination))})
             self.progress.setValue((i/len(files[0])*99))
         self.write_proj_tree()
         self.send_tree_to_view()
@@ -365,31 +361,30 @@ class CurrentProject(QObject):
         QApplication.processEvents()
         for file in files:
             destination = os.path.join(self.files_path, self.magnetic_tracks_data.attrib['name'], os.path.basename(file))
+
             if not os.path.exists(destination):
                 copyfile(file, destination)
+                ET.SubElement(self.magnetic_tracks_data, 'magnetic_tracks_data',
+                              {'filename': '{}'.format(os.path.basename(destination)),
+                               'indicator': 'Off'})
+
+            elif os.path.samefile(file, destination):
+                if not self.magnetic_tracks_data.xpath(
+                        "//magnetic_tracks_data[@filename='{}']".format(os.path.basename(destination))):
+                    ET.SubElement(self.magnetic_tracks_data, 'magnetic_tracks_data',
+                                  {'filename': '{}'.format(os.path.basename(destination)),
+                                   'indicator': 'Off'})
+                else:
+                    continue
+            elif os.path.exists(destination):
+                show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
+                                                'Please rename imported file <b>{}</b> and try again.</html>'.format(os.path.basename(file))))
+                continue
             else:
-                path = os.path.splitext(destination)
-                destination = '{}_copy{}'.format(path[0], path[1])
-                answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
-                                                        'Do you want to "save as" and add to project:\n{}\n'
-                                                        'Or just add existed file to project').format(destination.replace('\\', '/')))
-                if answer == 0:
-                    copyfile(file, destination)
-                elif answer == 1:
-                    self.progress.close()
-                    return
-                elif answer == 2:
-                    destination = os.path.join(self.files_path, self.magnetic_tracks_data.attrib['name'], os.path.basename(file))
-                    try:
-                        copyfile(file, destination)
-                    except SameFileError:
-                        pass
+                continue
 
             value = (it + 1) / len(files) * 99
             it += 1
-            if not self.magnetic_tracks_data.xpath("//magnetic_tracks_data[@filename='{}']".format(os.path.basename(destination))):
-                ET.SubElement(self.magnetic_tracks_data, 'magnetic_tracks_data', {'filename': '{}'.format(os.path.basename(destination)),
-                                                                'indicator': 'Off'})
 
             self.parent.three_d_widget.three_d_plot.add_fly(destination, self.progress, value)
         self.write_proj_tree()
@@ -450,43 +445,43 @@ class CurrentProject(QObject):
             destination = os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file))
             if not os.path.exists(destination):
                 copyfile(file, destination)
-            else:
-                path = os.path.splitext(destination)
-                destination = '{}_copy{}'.format(path[0], path[1])
-                answer = show_message_saveas_cancel_add(_('File warning'), _('This filename is already in proj.files.\n'
-                                                        'Do you want to "save as" and add to project:\n{}\n'
-                                                        'Or just add existed file to project').format(destination.replace('\\', '/')))
-                if answer == 0:
-                    copyfile(file, destination)
-                elif answer == 1:
-                    self.progress.close()
-                    return
-                elif answer == 2:
-                    destination = os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file))
-                    try:
-                        copyfile(file, destination)
-                    except SameFileError:
-                        pass
-
-            if not self.geo_data.xpath("//geo_data[@filename='{}']".format(os.path.basename(file))):
                 self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
                 ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
                                                           'indicator': 'Off'})
-
-            else:
-                show_info(_('File info'), _('File {} is already in project').format(os.path.basename(file)))
+            elif os.path.samefile(file, destination):
+                if not self.geo_data.xpath("//geo_data[@filename='{}']".format(os.path.basename(file))):
+                    self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
+                    ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
+                                                              'indicator': 'Off'})
+            # elif os.path.exists(destination) and not os.path.samefile(file, destination):
+            #     show_error(_('File warning'),
+            #                _('{} is already in the project directory.\n'
+            #                  'Please, rename the Filename and try to import again.'.format(os.path.basename(file))))
+            #     self.progress.close()
+            #     return
+            elif os.path.exists(destination):
+                show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
+                                                'Please rename imported file <b>{}</b> and try again.</html>'.format(os.path.basename(file))))
+                self.progress.close()
+                return
         elif extension == '.tif':
-            try:
-                if not self.geo_data.xpath("//geo_data[@filename='{}.ply']".format(os.path.basename(filename))):
+            destination = os.path.join(self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename))
+            if not os.path.exists(destination):
+                try:
                     self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, path_to_save=os.path.join(
                         self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename)))
                     ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}.ply'.format(os.path.basename(filename)),
                                                               'indicator': 'Off'})
-                else:
-                    show_info(_('File info'), _('File {}.ply is already in project').format(filename))
-            except AssertionError:
-                pass
-
+                except AssertionError as e:
+                    show_error(_('File error'), _("File couldn't be downloaded\n{}").format(e.args[0]))
+                    self.progress.close()
+                    return
+            else:
+                show_error(_('File warning'),
+                           _('<html><b>{}.ply</b> is already in the project directory.\n'
+                             'Please, rename file you are trying to import and try again.<html>'.format(filename)))
+                self.progress.close()
+                return
         else:
             return
         self.write_proj_tree()

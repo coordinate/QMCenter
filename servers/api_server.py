@@ -66,13 +66,6 @@ def upload_file():
         return jsonify({'success': True})
 
 
-# file manager tab, left arrow btn, [get(download) file form device(server)]
-@app.route('/download_from_start_folder/<path:filename>', methods=['GET'])
-def get_file_from_start_folder(filename):
-    response = send_from_directory(directory='D:/a.bulygin/QMCenter/workdocs/', filename=filename)
-    return response
-
-
 # file manager tab, right arrow btn [post(upload) file to device(server)]
 @app.route('/upload_file_to_device/<path:path>', methods=['POST'])
 def upload_file_to_device(path):
@@ -84,12 +77,12 @@ def upload_file_to_device(path):
 
 
 # file manager tab, delete btn [delete file from device(server)]
-@app.route('/delete_file_from_device/<path:path>', methods=['DELETE'])
+@app.route('/data/<path:path>', methods=['DELETE'])
 def delete_file_from_device(path):
-    if os.path.isfile('D:/a.bulygin/QMCenter/workdocs/{}'.format(path)):
-        os.remove('D:/a.bulygin/QMCenter/workdocs/{}'.format(path))
+    if os.path.isfile('D:/a.bulygin/QMCenter/workdocs/start_folder/{}'.format(path)):
+        os.remove('D:/a.bulygin/QMCenter/workdocs/start_folder/{}'.format(path))
     else:
-        shutil.rmtree('D:/a.bulygin/QMCenter/workdocs/{}'.format(path))
+        shutil.rmtree('D:/a.bulygin/QMCenter/workdocs/start_folder/{}'.format(path))
     return jsonify({'success': True})
 
 
@@ -99,5 +92,35 @@ def index():
     return response
 
 
+@app.route('/data/', methods=['GET'])
+def main_folder():
+    directory = []
+    path = 'D:/a.bulygin/QMCenter/workdocs/start_folder/'
+    lst = os.listdir(path)
+    for l in lst:
+        directory.append({'name': l,
+                          'type': 'folder' if os.path.isdir(path + l) else 'file',
+                          'size': round(os.path.getsize('{}{}'.format(path, l))/1024, 2),
+                          'changed': os.path.getctime('{}{}'.format(path, l))})
+    return jsonify(directory)
+
+
+@app.route('/data/<path:path>', methods=['GET'])
+def files_folders(path):
+    directory = []
+    path = 'D:/a.bulygin/QMCenter/workdocs/start_folder/{}'.format(path)
+    if os.path.isfile(path):
+        response = send_from_directory(directory='D:/a.bulygin/QMCenter/workdocs/start_folder', filename=os.path.basename(path))
+        return response
+    else:
+        lst = os.listdir(path)
+        for l in lst:
+            directory.append({'name': l,
+                              'type': 'folder' if os.path.isdir(os.path.join(path, l)) else 'file',
+                              'size': round(os.path.getsize('{}'.format(os.path.join(path, l)))/1024, 2),
+                              'changed': os.path.getctime('{}'.format(os.path.join(path, l)))})
+        return jsonify(directory)
+
+
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port='5000', debug=True)
+    app.run(host='127.0.0.1', port='9080', debug=True)
