@@ -73,7 +73,7 @@ def magnet_color(magnet, min_m=None, max_m=None):
         max_m = np.amax(magnet)
     delta = max_m - min_m
     if delta:
-        colors = np.array(((magnet-min_m)/delta)*255, dtype='uint16')
+        colors = np.array(((magnet-min_m)/delta)*255)
         colors[colors > 255] = 255
         colors[colors < 0] = 0
         colors = colors.astype('uint8')

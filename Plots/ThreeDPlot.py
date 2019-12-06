@@ -4,7 +4,8 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
 from PyQt5.QtGui import QVector3D, QPixmap
-from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QFrame, QCheckBox, QMessageBox
+from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QFrame, QCheckBox, QMessageBox, \
+    QRadioButton
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from Design.ui import show_error, show_info, show_warning_yes_no
@@ -76,55 +77,57 @@ class Palette(QLabel):
         self.setPixmap(pixmap)
 
         self.settings_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
+        self.settings_widget.setFixedSize(300, 150)
         self.min = None
         self.max = None
-        self.settings_widget.setWindowTitle(_('Palette values'))
+        self.settings_widget.setWindowTitle(_('Palette settings'))
         self.layout = QGridLayout(self.settings_widget)
+        self.auto_radiobtn = QRadioButton(_('Auto palette for all visible tracks'))
+        self.auto_state = True
+        self.fixed_radiobtn = QRadioButton(_('Fixed palette for all visible tracks'))
         self.max_label = QLabel(_('Max'))
         self.min_label = QLabel(_('Min'))
         self.max_value = QLineEdit()
         self.min_value = QLineEdit()
-        self.define_border_btn = QPushButton(_('Define borders'))
+        self.update_border_btn = QPushButton(_('Update'))
         self.line = QFrame()
         self.line.setFrameShape(QFrame.HLine)
 
         self.auto_label = QLabel(_('Auto'))
-        self.chbx = QCheckBox()
-        self.chbx_state = True
+        # self.chbx = QCheckBox()
         self.all_visible_label = QLabel(_('(all visible)'))
 
         self.ok_btn = QPushButton('Ok')
         self.cancel_btn = QPushButton(_('Cancel'))
         self.apply_btn = QPushButton(_('Apply'))
 
-        self.layout.addWidget(self.max_label, 0, 0, 1, 1)
-        self.layout.addWidget(self.min_label, 1, 0, 1, 1)
-        self.layout.addWidget(self.max_value, 0, 1, 1, 2)
-        self.layout.addWidget(self.min_value, 1, 1, 1, 2)
-        self.layout.addWidget(self.define_border_btn, 0, 3, 2, 2)
-        self.layout.addWidget(self.line, 2, 0, 1, 5)
-        self.layout.addWidget(self.auto_label, 3, 0, 1, 1)
-        self.layout.addWidget(self.chbx, 3, 1, 1, 1)
-        self.layout.addWidget(self.all_visible_label, 3, 2, 1, 2)
-        self.layout.addWidget(self.ok_btn, 4, 2, 1, 1)
-        self.layout.addWidget(self.cancel_btn, 4, 3, 1, 1)
-        self.layout.addWidget(self.apply_btn, 4, 4, 1, 1)
+        self.layout.addWidget(self.auto_radiobtn, 0, 0, 1, 4)
+        self.layout.addWidget(self.fixed_radiobtn, 1, 0, 1, 4)
+        self.layout.addWidget(self.min_label, 2, 0, 1, 1)
+        self.layout.addWidget(self.min_value, 2, 1, 1, 1)
+        self.layout.addWidget(self.max_label, 2, 2, 1, 1)
+        self.layout.addWidget(self.max_value, 2, 3, 1, 1)
+        self.layout.addWidget(self.update_border_btn, 2, 4, 1, 1)
+        self.layout.addWidget(self.ok_btn, 3, 1, 1, 2, alignment=Qt.AlignRight)
+        self.layout.addWidget(self.cancel_btn, 3, 3, 1, 1)
+        self.layout.addWidget(self.apply_btn, 3, 4, 1, 1)
 
         self.min_value.textChanged.connect(lambda val: self.min_value_changed(val))
         self.max_value.textChanged.connect(lambda val: self.max_value_changed(val))
-        self.define_border_btn.clicked.connect(lambda: self.define_borders())
-        self.chbx.stateChanged.connect(lambda id: self.chbx_state_changed(id))
-        self.chbx.setChecked(True)
+        self.update_border_btn.clicked.connect(lambda: self.define_borders())
+        self.auto_radiobtn.clicked.connect(lambda: self.auto_state_changed(1))
+        self.fixed_radiobtn.clicked.connect(lambda: self.auto_state_changed(0))
+        self.auto_radiobtn.click()
         self.ok_btn.clicked.connect(lambda: self.ok_clicked())
         self.cancel_btn.clicked.connect(lambda: self.cancel_clicked())
         self.apply_btn.clicked.connect(lambda: self.apply_clicked())
         self.main.signal_language_changed.connect(lambda: self.retranslate())
 
     def retranslate(self):
-        self.settings_widget.setWindowTitle(_('Palette values'))
+        self.settings_widget.setWindowTitle(_('Palette settings'))
         self.max_label.setText(_('Max'))
         self.min_label.setText(_('Min'))
-        self.define_border_btn.setText(_('Define borders'))
+        self.update_border_btn.setText(_('Update'))
         self.auto_label.setText(_('Auto'))
         self.all_visible_label.setText(_('(all visible)'))
         self.ok_btn.setText('Ok')
@@ -198,31 +201,34 @@ class Palette(QLabel):
         self.min = np.amin(arr)
         self.max = np.amax(arr)
 
-    def chbx_state_changed(self, id):
-        if id == 2:
+    def auto_state_changed(self, id):
+        if id == 1:
             self.max_label.setEnabled(False)
             self.min_label.setEnabled(False)
             self.max_value.setEnabled(False)
             self.min_value.setEnabled(False)
-            self.define_border_btn.setEnabled(False)
+            self.update_border_btn.setEnabled(False)
         else:
             self.max_label.setEnabled(True)
             self.min_label.setEnabled(True)
             self.max_value.setEnabled(True)
             self.min_value.setEnabled(True)
-            self.define_border_btn.setEnabled(True)
+            self.update_border_btn.setEnabled(True)
 
     def ok_clicked(self):
         self.apply_clicked()
         self.settings_widget.close()
 
     def cancel_clicked(self):
-        self.chbx.setChecked(self.chbx_state)
+        if self.auto_state:
+            self.auto_radiobtn.click()
+        else:
+            self.fixed_radiobtn.click()
         self.settings_widget.close()
 
     def apply_clicked(self):
-        self.chbx_state = self.chbx.isChecked()
-        if self.chbx_state:
+        self.auto_state = True if self.auto_radiobtn.isChecked() else False
+        if self.auto_state:
             self.set_values()
             self.recolor_signal.emit(self.min, self.max)
         else:
@@ -354,12 +360,6 @@ class ThreeDPlot(gl.GLViewWidget):
             pcd = pcd[0::pcd.shape[0]//2000000, :]
 
         terrain_points = pcd[:, :3]
-        # if not self.x0 and not self.y0:
-        #     self.x0 = terrain_points[0][0]
-        #     self.y0 = terrain_points[0][1]
-
-        # terrain_points = np.column_stack((terrain_points[:, 0] - self.x0, terrain_points[:, 1] - self.y0,
-        #                                   terrain_points[:, 2]))
         terrain_points = np.column_stack((terrain_points[:, 0], terrain_points[:, 1], terrain_points[:, 2]))
         point_size = np.full((pcd.shape[0], ), 2)
         point_color = pcd[:, 3:]
@@ -579,13 +579,14 @@ class ThreeDPlot(gl.GLViewWidget):
             try:
                 self.palette.all_values[name] = self.objects[name]['magnet']
             except KeyError:
+                print('File wasn\'t added to all_values palette')
                 pass
             x, y, z = obj.pos[0]
             # self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)
 
-        if len(self.palette.all_values) != fly_len and self.palette.chbx.isChecked():
+        if len(self.palette.all_values) != fly_len and self.palette.auto_state:
             self.palette.set_values()
-            self.recolor_flying(self.palette.min, self.palette.max)
+        self.recolor_flying(self.palette.min, self.palette.max)
 
     def focus_element(self, name, visible):
         if name not in self.objects:
