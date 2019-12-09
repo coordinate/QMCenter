@@ -4,8 +4,8 @@ import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from PyQt5.QtCore import Qt, QRegExp
-from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QLabel, QLineEdit, QFrame, \
-    QFileDialog, QProgressBar, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QGridLayout, QTreeWidget, QPushButton, QLabel, QLineEdit, QFileDialog, \
+    QProgressBar, QSizePolicy
 
 from Design.ui import show_error
 
@@ -18,7 +18,7 @@ class UpdateWidget(QWidget):
         self.parent = parent
         self.name = 'Update'
         self.url = None
-        self.port = '5000'
+        self.port = '9080'
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(self.parent.server):
             self.server = ':'.join([self.parent.server, self.port])
@@ -41,7 +41,7 @@ class UpdateWidget(QWidget):
         self.wizard.setWindowTitle(_('Firmware Update Wizard'))
         self.wizard.setFixedSize(400, 200)
         self.layout = QGridLayout(self.wizard)
-        self.label = QLabel(_('Select Update File  to be uploaded into GeoShark'))
+        self.label = QLabel(_('Select Update File to be uploaded into GeoShark'))
         self.label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.lineedit = QLineEdit()
         self.lineedit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -49,12 +49,10 @@ class UpdateWidget(QWidget):
         self.browse_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.progress = QProgressBar()
         self.progress.setValue(0)
-        self.check_file_label = QLabel()
         self.upload_btn = QPushButton(_('Upload'))
         self.upload_btn.setEnabled(False)
 
         self.cancel_btn = QPushButton(_('Cancel'))
-        self.finish_btn = QPushButton(_('Finish'))
         self.layout.addWidget(self.label, 0, 0, 1, 4)
         self.layout.addWidget(self.lineedit, 1, 0, 1, 3)
         self.layout.addWidget(self.browse_btn, 1, 3, 1, 1)
@@ -68,7 +66,6 @@ class UpdateWidget(QWidget):
         self.lineedit.textChanged.connect(lambda: self.update_file_selected())
         self.upload_btn.clicked.connect(lambda: self.upload_update_file(self.url))
         self.cancel_btn.clicked.connect(lambda: self.finish_update())
-        self.finish_btn.clicked.connect(lambda: self.finish_update())
 
         self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
@@ -78,11 +75,10 @@ class UpdateWidget(QWidget):
         self.read_update_btn.setText(_('Read update file'))
         self.load_update_btn.setText(_('Upload update file'))
         self.wizard.setWindowTitle(_('Firmware Update Wizard'))
-        self.label.setText(_('Select Update File  to be uploaded into GeoShark'))
+        self.label.setText(_('Select Update File to be uploaded into GeoShark'))
         self.browse_btn.setText(_("Browse..."))
         self.upload_btn.setText(_('Upload'))
         self.cancel_btn.setText(_('Cancel'))
-        self.finish_btn.setText(_('Finish'))
 
     def change_ip(self, ip):
         self.server = ':'.join([ip, self.port])
@@ -151,18 +147,21 @@ class UpdateWidget(QWidget):
 
         if res.ok:
             self.progress.setValue(100)
-            self.check_file_label.setText(_('File has not been uploaded into GeoShark.'))
-            self.layout.addWidget(self.finish_btn, 5, 5, 1, 1)
+            self.label.setStyleSheet("color: rgb(0, 204, 0)")
+            self.label.setText(_('File has been uploaded into GeoShark.'))
+            self.cancel_btn.setText(_('Finish'))
         else:
-            self.check_file_label.setText(_('File has not been uploaded into GeoShark.'))
+            self.label.setText(_('File has not been uploaded into GeoShark.'))
+            self.label.setStyleSheet("color: rgb(255, 0, 0)")
 
     def finish_update(self):
         self.wizard.close()
         self.progress.setValue(0)
-        self.lineedit.setText(_(''))
-        self.check_file_label.setText(_(''))
+        self.lineedit.setText('')
         self.url = None
+        self.label.setText(_('Select Update File to be uploaded into GeoShark'))
+        self.label.setStyleSheet("color: rgb(0, 0, 0)")
         self.upload_btn.setEnabled(False)
-        self.layout.addWidget(self.cancel_btn, 5, 5, 1, 1)
+        self.cancel_btn.setText(_('Cancel'))
         self.update_tree.clear()
         self.get_update_tree()

@@ -24,7 +24,7 @@ class FileManager(QWidget):
         self.parent = parent
         self.name = 'File manager'
         self.port = '9080'
-        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        ipRegex = QRegExp('(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})')
         if ipRegex.exactMatch(self.parent.server):
             self.server = ':'.join([self.parent.server, self.port])
         else:
@@ -199,7 +199,7 @@ class FileManager(QWidget):
         try:
             res = requests.get(url, timeout=1)
         except requests.exceptions.RequestException:
-            show_error(_('Server error'), _('Server is not responding.'))
+            show_error(_('GeoShark error'), _('GeoShark is not responding.'))
             return
         if res.ok:
             res = res.json()
@@ -289,7 +289,7 @@ class FileManager(QWidget):
                 progress.update((len_b/total_length)*99)
         except:
             progress.close()
-            show_error(_('Server error'), _('Server is not responding.'))
+            show_error(_('GeoShark error'), _('GeoShark is not responding.'))
             return
 
         if res.ok:
@@ -315,7 +315,7 @@ class FileManager(QWidget):
         if filesize == 0:
             show_error(_('File error'), _('File size must be non zero.'))
             return
-        progress = ProgressBar(text=_('Load file into device'), window_title=_('Upload File'))
+        progress = ProgressBar(text=_('Upload File Into GeoShark'), window_title=_('Upload file to GeoShark'))
         encoder = MultipartEncoder(
             fields={'upload_file': (filename, open(file, 'rb'))}  # added mime-type here
         )
@@ -325,7 +325,7 @@ class FileManager(QWidget):
             res = requests.post(url, data=data, headers={'Content-Type': encoder.content_type}, timeout=5)
         except requests.exceptions.RequestException:
             progress.close()
-            show_error(_('Server error'), _('Server is not responding.'))
+            show_error(_('GeoShark error'), _('GeoShark is not responding.'))
             return
         if res.ok:
             progress.update(100)
@@ -334,8 +334,8 @@ class FileManager(QWidget):
     def delete_file_from_file_model(self):
         if not self.file_to_delete:
             return
-        answer = show_warning_yes_no(_('Remove file warning'),
-                                     _("Do you really want to remove:\n{}").format(self.file_to_delete[1]))
+        answer = show_warning_yes_no(_('Remove File warning'),
+                                     _('Do you really want to remove:\n{}').format(self.file_to_delete[1]))
         if answer == QMessageBox.No:
             return
         if self.file_to_delete[0] == 'PC':
@@ -350,7 +350,7 @@ class FileManager(QWidget):
             try:
                 res = requests.delete(url)
             except requests.exceptions.RequestException:
-                show_error(_('Server error'), _('Server is not responding.'))
+                show_error(_('GeoShark error'), _('GeoShark is not responding.'))
                 return
             if res.ok:
                 self.right_file_model_update()

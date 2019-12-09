@@ -4,7 +4,7 @@ import subprocess
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon
 from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog, QWidget, QGridLayout, QStackedWidget, \
-    QLabel, QRadioButton, QPushButton, QProgressBar, QMessageBox, QComboBox
+    QLabel, QPushButton, QProgressBar, QMessageBox, QComboBox, QDialog
 
 from Design.ui import show_warning_yes_no
 
@@ -17,7 +17,7 @@ class ProjectWidget(QWidget):
         self.parent = parent
         self.layout = QGridLayout(self)
         self.layout.setContentsMargins(5, 0, 0, 0)
-        self.utm_label = QLabel(_('No UTM'))
+        self.utm_label = QLabel(_('Local(m)'))
         self.change_utm_btn = QPushButton(_('Set UTM zone'))
 
         self.workspaceview = WorkspaceView(self.parent)
@@ -28,10 +28,10 @@ class ProjectWidget(QWidget):
         self.layout.addWidget(self.change_utm_btn, 10, 1, 1, 1)
 
         self.change_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
-        self.change_widget.setWindowTitle(_('Change UTM zone'))
+        self.change_widget.setWindowTitle(_('Set UTM zone'))
         self.change_widget.setMinimumSize(300, 100)
         self.change_lay = QGridLayout(self.change_widget)
-        self.select_label = QLabel(_('Select new zone'))
+        self.select_label = QLabel(_('Select UTM zone'))
         utms = [str(i) for i in range(1, 61)]
         self.combobox = QComboBox()
         self.combobox.addItems(utms)
@@ -49,10 +49,10 @@ class ProjectWidget(QWidget):
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
 
     def retranslate(self):
-        self.utm_label.setText(_('No UTM'))
+        self.utm_label.setText(_('Local(m)'))
         self.change_utm_btn.setText(_('Set UTM zone'))
-        self.change_widget.setWindowTitle(_('Change UTM zone'))
-        self.select_label.setText(_('Select new zone'))
+        self.change_widget.setWindowTitle(_('Set UTM zone'))
+        self.select_label.setText(_('Select UTM zone'))
         self.apply_btn.setText(_('Apply'))
         self.cancel_btn.setText(_('Cancel'))
         self.workspaceview.magnet_creator.retranslate()
@@ -85,7 +85,7 @@ class WorkspaceView(QTreeView):
         self.expanded.connect(lambda idx: self.item_expanded(idx))
         self.collapsed.connect(lambda idx: self.item_collapsed(idx))
 
-        self.magnet_creator = MagnetCreator(self.parent)
+        self.magnet_creator = MagnetCreator(self, self.parent)
 
     def click(self, idx):
         if idx.column() == 1:
@@ -257,7 +257,7 @@ class WorkspaceView(QTreeView):
         project_action = {
                 _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.mag'),
                 _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.ubx'),
-                _('Add magnet'): self.parent.project_instance.add_magnet_data,
+                _('Import Magnetic Field Track'): self.parent.project_instance.add_magnet_data,
                 _('Import DEM'): lambda: self.parent.project_instance.add_geo_data('*.tif'),
                 _('Import Point Cloud'): lambda: self.parent.project_instance.add_geo_data('*.ply'),
             }
@@ -289,41 +289,53 @@ class WorkspaceView(QTreeView):
 
         project_action = {
             self.magnetic_field_item.text(): {
-                # _('Create .magnete files'): lambda: self.create_magnet_files(item_index.data()),
+                # _('Create  Magnetic Field Tracks'): lambda: self.create_magnet_files(item_index.data()),
                 _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.mag'),
-                _('Remove all'): lambda: self.remove_all(item_index)
+                _('Remove All Files'): lambda: self.remove_all(item_index)
             },
             self.gnss_item.text(): {
                 _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.ubx'),
-                _('Remove all'): lambda: self.remove_all(item_index)
+                _('Remove All Files'): lambda: self.remove_all(item_index)
             },
             self.magnet_track_item.text(): {
-                _('Add Magnet data'): self.parent.project_instance.add_magnet_data,
-                _('Remove all'): lambda: self.remove_all(item_index)
+                _('Import Magnetic Field Tracks'): self.parent.project_instance.add_magnet_data,
+                _('Remove All Files'): lambda: self.remove_all(item_index)
             },
             self.geo_item.text(): {
                 _('Import DEM'): lambda: self.parent.project_instance.add_geo_data('*.tif'),
                 _('Import Point Cloud'): lambda: self.parent.project_instance.add_geo_data('*.ply'),
-                _('Remove all'): lambda: self.remove_all(item_index)
+                _('Remove All Files'): lambda: self.remove_all(item_index)
             },
             'subitems': {
-                _('Remove element'): lambda: self.remove_element(item_index),
-                _('Show in explorer'): lambda: self.open_in_explorer(item_index)
+                _('Delete file'): lambda: self.remove_element(item_index),
+                _('Show In Explorer'): lambda: self.open_in_explorer(item_index)
+            },
+            'magnetic_sub': {
+                _('Create  Magnetic Field Tracks'): lambda: self.magnet_creator.show_widget([item_index.data()]),
+                _('Delete file'): lambda: self.remove_element(item_index),
+                _('Show In Explorer'): lambda: self.open_in_explorer(item_index)
             },
             'magnet_sub': {
-                _('Cut magnet data'): lambda: self.cut_magnet_data(item_index),
-                _('Remove element'): lambda: self.remove_element(item_index),
-                _('Show in explorer'): lambda: self.open_in_explorer(item_index)
+                _('Subset Track'): lambda: self.cut_magnet_data(item_index),
+                _('Crop Magnetic Field Track'): lambda: self.cut_magnet_data(item_index, False),
+                _('Delete file'): lambda: self.remove_element(item_index),
+                _('Show In Explorer'): lambda: self.open_in_explorer(item_index)
             },
         }
         menu = QMenu()
 
-        if item_index.parent().data() in [self.magnetic_field_item.text(), self.gnss_item.text(), self.geo_item.text()]:
+        if item_index.parent().data() in [self.gnss_item.text(), self.geo_item.text()]:
             actions = [QAction(a) for a in project_action['subitems']]
             menu.addActions(actions)
             action = menu.exec_(event.globalPos())
             if action:
                 project_action['subitems'][action.text()]()
+        elif item_index.parent().data() == self.magnetic_field_item.text():
+            actions = [QAction(a) for a in project_action['magnetic_sub']]
+            menu.addActions(actions)
+            action = menu.exec_(event.globalPos())
+            if action:
+                project_action['magnetic_sub'][action.text()]()
         elif item_index.parent().data() == self.magnet_track_item.text():
             actions = [QAction(a) for a in project_action['magnet_sub']]
             menu.addActions(actions)
@@ -346,13 +358,12 @@ class WorkspaceView(QTreeView):
 
         context_menu = {}
 
-        if len(extension_set) == 2 and '.mag' in extension_set and '.ubx' in extension_set:
-            # context_menu[_('Create .magnete files')] = lambda: self.parent.project_instance.create_magnet_files(lst)
-            context_menu[_('Create .magnete files')] = lambda: self.magnet_creator.show_widget(lst)
+        if len(extension_set) == 2 and '.mag' in extension_set and ('.ubx' in extension_set or '.pos' in extension_set):
+            context_menu[_('Create  Magnetic Field Tracks')] = lambda: self.magnet_creator.show_widget(lst)
         elif len(extension_set) == 1 and '.magnete' in extension_set:
-            context_menu[_('Concatenate')] = lambda: self.parent.three_d_widget.three_d_plot.concatenate_magnet(lst)
+            context_menu[_('Merge Tracks')] = lambda: self.parent.three_d_widget.three_d_plot.concatenate_magnet(lst)
 
-        context_menu[_('Remove elements')] = lambda: self.remove_selected_group(lst)
+        context_menu[_('Remove Files')] = lambda: self.remove_selected_group(lst)
 
         menu = QMenu()
 
@@ -362,7 +373,7 @@ class WorkspaceView(QTreeView):
         if action:
             context_menu[action.text()]()
 
-    def cut_magnet_data(self, item_index):
+    def cut_magnet_data(self, item_index, save_as=True):
         if self.parent.three_d_widget.palette.settings_widget.isVisible():
             self.parent.three_d_widget.palette.settings_widget.activateWindow()
             return
@@ -370,10 +381,12 @@ class WorkspaceView(QTreeView):
         indicator = self.model.itemFromIndex(item_index.parent()).child(item_index.row(), 1)
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
         indicator.setData('On', 3)
-        self.parent.three_d_widget.three_d_plot.preprocessing_for_cutting(item_index)
+        self.parent.add_visual()
+        self.parent.three_d_widget.three_d_plot.preprocessing_for_cutting(item_index, save_as)
 
     def remove_selected_group(self, lst):
-        answer = show_warning_yes_no(_('Remove files warning'), _('Do you really want to remove selected elements?'))
+        answer = show_warning_yes_no(_('Remove Files Warning'), _('Do you really want to remove selected files? '
+                                                                  'This action cannot be undone.'))
         if answer == QMessageBox.No:
             return
         for r in range(self.model.rowCount()):
@@ -388,7 +401,8 @@ class WorkspaceView(QTreeView):
                     parent_item.removeRow(item_index.row())
 
     def remove_element(self, item_index):
-        answer = show_warning_yes_no(_('Remove file warning'), _('Do you really want to remove this element?'))
+        answer = show_warning_yes_no(_('Remove File Warning'), _('Do you really want to remove this file? '
+                                                                 'This action cannot be undone.'))
         if answer == QMessageBox.No:
             return
         self.parent.project_instance.remove_element(item_index.data())
@@ -397,7 +411,8 @@ class WorkspaceView(QTreeView):
         parent_item.removeRow(item_index.row())
 
     def remove_all(self, item_index):
-        answer = show_warning_yes_no(_('Remove files warning'), _('Do you really want to remove all elements?'))
+        answer = show_warning_yes_no(_('Remove Files Warning'), _('Do you really want to remove all files? '
+                                                                  'This action cannot be undone.'))
         if answer == QMessageBox.No:
             return
         self.parent.project_instance.remove_all(item_index.data())
@@ -410,29 +425,26 @@ class WorkspaceView(QTreeView):
         subprocess.Popen(r'explorer /select, "{}"'.format(path.replace('/', '\\')))
 
 
-class MagnetCreator(QWidget):
-    def __init__(self, parent):
-        QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
+class MagnetCreator(QDialog):
+    def __init__(self, parent, main):
+        QDialog.__init__(self, flags=(Qt.WindowTitleHint | Qt.WindowCloseButtonHint))
+        self.setFixedWidth(400)
         self.parent = parent
+        self.main = main
         self.mag_file = None
         self.second_file = None
-        self.setWindowTitle(_('Create magnet file'))
+        self.setWindowTitle(_('Create Magnetic Field Track'))
         self.layout = QGridLayout(self)
 
         self.first_page = QWidget()
-        first_lay = QGridLayout(self.first_page)
-        self.first_label = QLabel(_('Create .magnete file from:'))
-        self.ubx_radiobtn = QRadioButton(_('Use chosen .ubx file'))
-        self.ubx_radiobtn.setChecked(True)
-        self.pos_radiobtn = QRadioButton(_('Use own .pos file'))
-        self.create_btn = QPushButton(_('Create'))
+        self.first_layout = QGridLayout(self.first_page)
+        self.matching_label = QLabel()
+        self.browse_label = QLabel(_('Select *.ubx or *.pos file manually'))
         self.browse_btn = QPushButton(_('Browse'))
-        self.browse_btn.setEnabled(False)
-        first_lay.addWidget(self.first_label, 0, 0, 1, 3)
-        first_lay.addWidget(self.ubx_radiobtn, 1, 0, 1, 1)
-        first_lay.addWidget(self.pos_radiobtn, 2, 0, 1, 1)
-        first_lay.addWidget(self.browse_btn, 3, 1, 1, 1)
-        first_lay.addWidget(self.create_btn, 3, 2, 1, 1)
+        self.chosen_label = QLabel('')
+        self.create_btn = QPushButton(_('Create'))
+        self.create_btn.setEnabled(False)
+        self.cancel_btn = QPushButton(_('Cancel'))
 
         self.second_page = QWidget()
         self.second_lay = QGridLayout(self.second_page)
@@ -447,41 +459,72 @@ class MagnetCreator(QWidget):
         self.stack_widget.setCurrentWidget(self.first_page)
         self.layout.addWidget(self.stack_widget)
 
-        self.ubx_radiobtn.clicked.connect(lambda: self.browse_btn.setEnabled(False))
-        self.pos_radiobtn.clicked.connect(lambda: self.browse_btn.setEnabled(True))
         self.browse_btn.clicked.connect(lambda: self.open_filedialog())
         self.create_btn.clicked.connect(lambda: self.create_magnet())
+        self.cancel_btn.clicked.connect(lambda: self.close())
 
     def retranslate(self):
-        self.setWindowTitle(_('Create magnet file'))
-        self.first_label.setText(_('Create .magnete file from:'))
-        self.ubx_radiobtn.setText(_('Use chosen .ubx file'))
-        self.pos_radiobtn.setText(_('Use own .pos file'))
+        self.setWindowTitle(_('Create Magnetic Field Track'))
         self.create_btn.setText(_('Create'))
+        self.browse_label.setText(_('Select *.ubx or *.pos file manually'))
+        self.cancel_btn.setText(_('Cancel'))
         self.browse_btn.setText(_('Browse'))
 
     def show_widget(self, files_list):
         self.mag_file = [m for m in files_list if os.path.splitext(m)[-1] == '.mag'][0]
-        self.second_file = [u for u in files_list if os.path.splitext(u)[-1] == '.ubx'][0]
+        if len(files_list) == 2:
+            self.second_file = [u for u in files_list if os.path.splitext(u)[-1] in ['.pos', '.ubx']][0]
 
-        self.show()
+            self.matching_label.setText(_('Match <b>{}</b> with <b>{}</b>').format(self.mag_file, self.second_file))
+            self.create_btn.setEnabled(True)
+            self.setFixedSize(400, 100)
+            self.first_layout.addWidget(self.matching_label, 0, 0, 1, 3)
+            self.first_layout.addWidget(self.create_btn, 1, 1, 1, 1)
+            self.first_layout.addWidget(self.cancel_btn, 1, 2, 1, 1)
+
+        elif len(files_list) == 1:
+            for i in range(self.parent.gnss_item.rowCount()):
+                second_file = self.parent.gnss_item.child(i).text()
+                if os.path.splitext(second_file)[0] == os.path.splitext(self.mag_file)[0]:
+                    self.setFixedSize(400, 100)
+                    self.second_file = second_file
+                    self.matching_label.setText(_('Match <b>{}</b> with <b>{}</b>').format(self.mag_file, self.second_file))
+                    self.create_btn.setEnabled(True)
+                    self.first_layout.addWidget(self.matching_label, 0, 0, 1, 3)
+                    self.first_layout.addWidget(self.create_btn, 1, 1, 1, 1)
+                    self.first_layout.addWidget(self.cancel_btn, 1, 2, 1, 1)
+                    break
+            else:
+                self.setFixedSize(400, 140)
+                self.matching_label.setText(_('There is no *.ubx file in the project matching <b>{}</b>').format(self.mag_file))
+                self.create_btn.setEnabled(True)
+                self.first_layout.addWidget(self.matching_label, 0, 0, 1, 3)
+                self.first_layout.addWidget(self.browse_label, 1, 0, 1, 2)
+                self.first_layout.addWidget(self.browse_btn, 1, 2, 1, 1)
+                self.first_layout.addWidget(self.chosen_label, 2, 0, 1, 3)
+                self.first_layout.addWidget(self.create_btn, 3, 1, 1, 1)
+                self.first_layout.addWidget(self.cancel_btn, 3, 2, 1, 1)
+
+        self.exec_()
 
     def open_filedialog(self):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
-                                           self.parent.project_instance.files_path, "GPS file (*.pos)")[0]
+                                           self.main.project_instance.files_path, "GPS file (*.ubx *.pos)")[0]
 
         if not file:
             return
+        self.chosen_label.setText(_('Match <b>{}</b> with <b>{}</b>').format(self.mag_file, os.path.basename(file)))
         self.second_file = file
 
     def create_magnet(self):
         self.stack_widget.setCurrentWidget(self.second_page)
-        self.parent.project_instance.create_magnet_files((self.mag_file, self.second_file), self)
+        self.main.project_instance.create_magnet_files((self.mag_file, self.second_file), self)
 
     def closeEvent(self, QCloseEvent):
         self.mag_file = None
         self.second_file = None
-        self.stack_widget.setCurrentWidget(self.first_page)
-        self.ubx_radiobtn.setChecked(True)
-        self.browse_btn.setEnabled(False)
+        self.chosen_label.setText('')
         self.close()
+        self.stack_widget.setCurrentWidget(self.first_page)
+        for i in reversed(range(self.first_layout.count())):
+            self.first_layout.itemAt(i).widget().setParent(None)

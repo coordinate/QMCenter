@@ -23,41 +23,36 @@ class CutMagnetWidget(QWidget):
         self.first_idx = None
         self.second_idx = None
 
-        self.setWindowTitle(_('Cut magnet data'))
+        self.setFixedSize(440, 100)
         self.layout = QGridLayout(self)
-        self.label = QLabel(_('Choose points'))
-        self.first = QLabel(_('First point: '))
+        self.label = QLabel(_('Select boundary points:'))
+        self.first = QLabel(_('Start Point: '))
         self.first_point = QLabel()
-        self.second = QLabel(_('Second point: '))
+        self.second = QLabel(_('End Point: '))
         self.second_point = QLabel()
-        self.reset_btn = QPushButton(_('Reset points'))
-        self.cut_save_btn = QPushButton(_('Cut and Save'))
-        self.cut_save_as_btn = QPushButton(_('Cut and Save as'))
+        self.reset_btn = QPushButton(_('Reset boundaries'))
+        self.ok_btn = QPushButton(_('OK'))
         self.cancel = QPushButton(_('Cancel'))
-        self.layout.addWidget(self.label, 0, 1, 1, 2)
+        self.layout.addWidget(self.label, 0, 0, 1, 2)
         self.layout.addWidget(self.first, 1, 0, 1, 1)
         self.layout.addWidget(self.first_point, 1, 1, 1, 2)
         self.layout.addWidget(self.second, 2, 0, 1, 1)
         self.layout.addWidget(self.second_point, 2, 1, 1, 2)
-        self.layout.addWidget(self.reset_btn, 1, 3, 2, 1)
-        self.layout.addWidget(self.cut_save_btn, 3, 1, 1, 1)
-        self.layout.addWidget(self.cancel, 3, 2, 1, 1)
-        self.layout.addWidget(self.cut_save_as_btn, 3, 3, 1, 1)
+        self.layout.addWidget(self.reset_btn, 1, 3, 2, 2)
+        self.layout.addWidget(self.ok_btn, 3, 3, 1, 1)
+        self.layout.addWidget(self.cancel, 3, 4, 1, 1)
 
         self.reset_btn.clicked.connect(lambda: self.parent.reset_cutting_preprocessing())
         self.cancel.clicked.connect(lambda: self.parent.cancel_cutting())
-        self.cut_save_btn.clicked.connect(lambda: self.parent.cut_save(False))
-        self.cut_save_as_btn.clicked.connect(lambda: self.parent.cut_save(True))
         self.main.signal_language_changed.connect(lambda: self.retranslate())
 
     def retranslate(self):
-        self.setWindowTitle(_('Cut magnet data'))
-        self.label.setText(_('Choose points'))
-        self.first.setText(_('First point: '))
-        self.second.setText(_('Second point: '))
-        self.reset_btn.setText(_('Reset points'))
+        self.label.setText(_('Select boundary points:'))
+        self.first.setText(_('Start Point: '))
+        self.second.setText(_('End Point: '))
+        self.reset_btn.setText(_('Reset boundaries'))
         self.cut_save_btn.setText(_('Cut and Save'))
-        self.cut_save_as_btn.setText(_('Cut and Save as'))
+        self.ok_btn.setText(_('OK'))
         self.cancel.setText(_('Cancel'))
 
     def closeEvent(self, event):
@@ -94,7 +89,6 @@ class Palette(QLabel):
         self.line.setFrameShape(QFrame.HLine)
 
         self.auto_label = QLabel(_('Auto'))
-        # self.chbx = QCheckBox()
         self.all_visible_label = QLabel(_('(all visible)'))
 
         self.ok_btn = QPushButton('Ok')
@@ -143,7 +137,7 @@ class Palette(QLabel):
         if len(arr) == 0:
             for i in range(6):
                 grad_tic = QLabel('')
-                grad_tic.setStyleSheet('QLabel { background-color : rgb(0, 0, 0); color: white}')
+                grad_tic.setStyleSheet('QLabel { background-color : rgb(127, 127, 127); color: white}')
                 self.parent.layout.addWidget(grad_tic, i + 1, 1, 1, 1)
             return
 
@@ -165,7 +159,7 @@ class Palette(QLabel):
             elif i == 5:
                 grad_tic.setAlignment(Qt.AlignBottom)
 
-            grad_tic.setStyleSheet('QLabel { background-color : rgb(0, 0, 0); color: white}')
+            grad_tic.setStyleSheet('QLabel { background-color : rgb(127, 127, 127); color: white}')
             self.parent.layout.addWidget(grad_tic, i+1, 1, 1, 1)
 
     def mouseDoubleClickEvent(self, event):
@@ -450,16 +444,15 @@ class ThreeDPlot(gl.GLViewWidget):
         if self.cut_widget.isVisible() and dis[print_index] <= 0.007:
             if len(self.cut_widget.first_point.text()) == 0:
                 self.cut_widget.first_point.setText(
-                    'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 4), round(lon_lat[print_index][1]), 4))
+                    'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 6), round(lon_lat[print_index][1], 6)))
 
                 self.cut_widget.first_idx = print_index
-                self.objects[filename]['object'].color[print_index] = np.array([0, 0, 1], dtype='uint8')
                 self.objects[filename]['object'].size[print_index] = 10
                 self.update()
 
             elif len(self.cut_widget.second_point.text()) == 0:
                 self.cut_widget.second_point.setText(
-                    'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 4), round(lon_lat[print_index][1]), 4))
+                    'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 6), round(lon_lat[print_index][1], 6)))
 
                 self.cut_widget.second_idx = print_index
                 if self.cut_widget.first_idx >= self.cut_widget.second_idx:
@@ -491,14 +484,21 @@ class ThreeDPlot(gl.GLViewWidget):
             self.set_label_signal.emit('', '', '')
             self.update()
 
-    def preprocessing_for_cutting(self, item_index):
+    def preprocessing_for_cutting(self, item_index, save_as):
         filename = item_index.data()
         if filename not in self.objects:
             return
         self.show_hide_elements(filename, 'On')
+        self.focus_element(filename, 'On')
         self.objects[filename]['object'].color = self.recolor_selected(self.objects[filename]['magnet'], 100, 100)
         self.update()
         self.cut_widget.shortcut_object = filename
+        if save_as:
+            self.cut_widget.setWindowTitle(_('Subset Magnetic Field Track'))
+            self.cut_widget.ok_btn.clicked.connect(lambda: self.cut_save(True))
+        else:
+            self.cut_widget.setWindowTitle(_('Crop Magnetic Field Track'))
+            self.cut_widget.ok_btn.clicked.connect(lambda: self.cut_save(False))
         self.cut_widget.show()
         self.parent.project_widget.workspaceview.setEnabled(False)
 
@@ -508,13 +508,13 @@ class ThreeDPlot(gl.GLViewWidget):
         self.cut_widget.first_point.setText('')
         self.cut_widget.second_point.setText('')
         self.objects[self.cut_widget.shortcut_object]['object'].color[:] = (1, 1, 1)
-        self.objects[self.cut_widget.shortcut_object]['object'].size[:] = 5
+        self.objects[self.cut_widget.shortcut_object]['object'].size[:] = 3
         self.update()
 
     def cancel_cutting(self):
         self.cut_widget.first_point.setText('')
         self.cut_widget.second_point.setText('')
-        self.objects[self.cut_widget.shortcut_object]['object'].size[:] = 5
+        self.objects[self.cut_widget.shortcut_object]['object'].size[:] = 3
         self.palette.set_values()
         self.recolor_flying(self.palette.min, self.palette.max)
         self.cut_widget.shortcut_object = None
@@ -525,11 +525,13 @@ class ThreeDPlot(gl.GLViewWidget):
         self.parent.project_widget.workspaceview.setEnabled(True)
 
     def cut_save(self, save_as):
+        self.cut_widget.ok_btn.disconnect()
         if not self.cut_widget.first_idx or not self.cut_widget.second_idx:
             show_error(_('Border error'), _('You must define boundary points.'))
             return
         if not save_as:
-            answer = show_warning_yes_no(_('Cutting info'), _('Unselected data will be deleted. Resume?'))
+            answer = show_warning_yes_no(_('Warning'), _('Initial data will be deleted.\n'
+                                                         'This action cannot be undone. Resume?'))
             if answer == QMessageBox.No:
                 return
         filename = self.cut_widget.shortcut_object
@@ -579,7 +581,6 @@ class ThreeDPlot(gl.GLViewWidget):
             try:
                 self.palette.all_values[name] = self.objects[name]['magnet']
             except KeyError:
-                print('File wasn\'t added to all_values palette')
                 pass
             x, y, z = obj.pos[0]
             # self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)

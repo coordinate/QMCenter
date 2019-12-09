@@ -35,7 +35,7 @@ class CurrentProject(QObject):
         self.project_path = None
         self.parent.three_d_widget.three_d_plot.reset_data()
         self.parent.project_widget.workspaceview.add_view()
-        self.parent.project_widget.utm_label.setText(_('No UTM'))
+        self.parent.project_widget.utm_label.setText(_('Local(m)'))
         self.parent.three_d_widget.longitude_value_label.setText('')
         self.parent.three_d_widget.latitude_value_label.setText('')
         self.parent.three_d_widget.magnet_value_label.setText('')
@@ -81,7 +81,8 @@ class CurrentProject(QObject):
             try:
                 self.parent.three_d_widget.three_d_plot.utm_zone = int(self.project_utm.attrib['zone'])
             except ValueError:
-                show_error(_('UTM error'), _('Couldn\'t define UTM zone form .qmcproj file.'))
+                show_error(_('UTM Zone Error'), _("Can't read UTM zone from project files.\n"
+                                                  "Please set UTM zone manually."))
 
         length = len(self.magnetic_tracks_data.getchildren()) + len(self.geo_data.getchildren())
         it = 0
@@ -186,7 +187,7 @@ class CurrentProject(QObject):
                     continue
             elif os.path.exists(destination):
                 show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
-                                                'Please rename imported file <b>{}</b> and try again.</html>'.format(os.path.basename(file))))
+                                                'Please rename imported file <b>{}</b> and try again.</html>').format(os.path.basename(file)))
                 continue
 
             self.progress.setValue((i/len(files[0])*99))
@@ -200,25 +201,27 @@ class CurrentProject(QObject):
         files_path = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'])
 
         filename = os.path.splitext(mag_file)[0]
-        widget.second_label.setText(_('Parse {}').format(mag_file))
+        widget.second_label.setText(_('Parsing {}').format(mag_file))
         mag_values = parse_mag_file(os.path.join(files_path, mag_file), widget.progress)
         gpst = mag_values[0] / 1e6
         freq = mag_values[1] * 0.026062317
 
-        if gpst.shape != freq.shape:
-            show_error(_('Match error'), _('GPS time and frequency don\'t match'))
+        if gpst.shape != freq.shape or gpst.shape == (0, ):
+            show_error(_('Matching error'), _('GPS time and frequency don\'t match'))
+            widget.close()
             return
 
         if os.path.splitext(second_file)[-1] == '.ubx':
             # do command with RTKLIB and get .pos file bin or txt
-            widget.second_label.setText(_('Create {}').format('{}.pos').format(filename))
+            widget.second_label.setText(_('Creating {}').format('{}.pos').format(filename))
             widget.progress.setValue(0)
 
             cmd = 'rtk_lib\\convbin.exe -d {} {}'.format(self.files_path.replace('/', '\\'),
                                                          os.path.join(files_path, '{}.ubx'.format(filename)).replace('/', '\\'))
 
             if not os.path.isfile(os.path.join(files_path, '{}.ubx'.format(filename))):
-                show_error(_('Match error'), _('There is no match .ubx file for {}').format(mag_file))
+                show_error(_('Matching error'), _('There is no match .ubx file for <b>{}</b>').format(mag_file))
+                widget.close()
                 return
 
             p1 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -264,10 +267,10 @@ class CurrentProject(QObject):
             pos = second_file
 
         else:
-            show_error(_('Match error'), _('There is no match .ubx or pos file for {}').format(mag_file))
+            show_error(_('Matching error'), _('There is no match .ubx or pos file for <b>{}</b>').format(mag_file))
             return
 
-        widget.second_label.setText(_('Create {}').format('{}.magnete'.format(filename)))
+        widget.second_label.setText(_('Creating {}').format('{}.magnete'.format(filename)))
         widget.progress.setValue(0)
         magnet_obj = dict()
         with open(pos, 'r') as pos_file:
@@ -281,7 +284,7 @@ class CurrentProject(QObject):
             start = np.argsort(np.absolute(time - gpst))[0]
             if gpst[start] == gpst[-1]:
                 widget.second_label.setText(
-                    _('Didn\'t match GPST with time in {} file').format(os.path.basename(second_file)))
+                    _('Didn\'t match GPST with time in <b>{}</b> file').format(os.path.basename(second_file)))
                 return
 
             length = len(file)
@@ -337,11 +340,11 @@ class CurrentProject(QObject):
 
         if len(time_arr) == 0:
             widget.progress.setValue(100)
-            widget.second_label.setText(_('Didn\'t match GPST with time in {} file').format(os.path.basename(second_file)))
+            widget.second_label.setText(_('Didn\'t match GPST with time in <b>{}</b> file').format(os.path.basename(second_file)))
 
         else:
             widget.progress.setValue(100)
-            widget.second_label.setText(_('Magnetic track file was created'))
+            widget.second_label.setText(_('Magnetic Field Track <b>{}.magnete</b> has been created.').format(filename))
 
             magnet_obj['time'] = np.array(time_arr)
             magnet_obj['lon_lat'] = np.column_stack((np.array(lon_arr), np.array(lat_arr)))
@@ -378,7 +381,7 @@ class CurrentProject(QObject):
                     continue
             elif os.path.exists(destination):
                 show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
-                                                'Please rename imported file <b>{}</b> and try again.</html>'.format(os.path.basename(file))))
+                                                'Please rename imported file <b>{}</b> and try again.</html>').format(os.path.basename(file)))
                 continue
             else:
                 continue
@@ -461,7 +464,7 @@ class CurrentProject(QObject):
             #     return
             elif os.path.exists(destination):
                 show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
-                                                'Please rename imported file <b>{}</b> and try again.</html>'.format(os.path.basename(file))))
+                                                'Please rename imported file <b>{}</b> and try again.</html>').format(os.path.basename(file)))
                 self.progress.close()
                 return
         elif extension == '.tif':
@@ -479,7 +482,7 @@ class CurrentProject(QObject):
             else:
                 show_error(_('File warning'),
                            _('<html><b>{}.ply</b> is already in the project directory.\n'
-                             'Please, rename file you are trying to import and try again.<html>'.format(filename)))
+                             'Please, rename file you are trying to import and try again.<html>').format(filename))
                 self.progress.close()
                 return
         else:
