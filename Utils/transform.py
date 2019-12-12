@@ -238,3 +238,28 @@ def parse_mag_file(filepath, progress):
 
     return gpst_arr, freq_arr, sig1_arr, sig2_arr, sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr
 
+
+def cic_filter(previous_arr, array, cascade_idx=2, decimate_idx=1):
+    y = np.zeros(array.shape, dtype=np.uint32)
+
+    for j in range(cascade_idx):
+        for i in range(len(array)):
+            if i == 0:
+                y[i] = array[i] - previous_arr[-1]
+                continue
+            y[i] = array[i] + y[i - 1]
+        if j < cascade_idx - 1:
+            previous_arr = y
+
+    y = y[::decimate_idx]
+
+    out = np.zeros(y.shape, dtype=np.uint32)
+
+    for j in range(cascade_idx):
+        for i in range(len(y)):
+            if i - 2 < 0:
+                out[i] = y[i]
+                continue
+            out[i] = y[i] - y[i - 2]
+
+    return out, y

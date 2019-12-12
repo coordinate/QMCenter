@@ -1,9 +1,7 @@
-import gettext
-
 from PyQt5.QtCore import QRegExp, Qt, pyqtSignal
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QWidget, QGridLayout, QListWidget, QStackedWidget, QListWidgetItem, QLabel, QLineEdit, \
-    QPushButton, QFileDialog, QComboBox
+    QPushButton, QFileDialog, QComboBox, QGroupBox
 
 from Design.ui import show_error
 
@@ -12,6 +10,7 @@ from Design.ui import show_error
 
 class SettingsWidget(QWidget):
     signal_ip_changed = pyqtSignal(object)
+    signal_decimate_changed = pyqtSignal(object)
     signal_language_changed = pyqtSignal(object)
 
     def __init__(self, parent):
@@ -32,7 +31,8 @@ class SettingsWidget(QWidget):
         self.settings_menu_items.addItem(self.connection_item)
 
         # Create connection menu item
-        self.connection_widget = QWidget()
+        self.connection_widget = QGroupBox(_('Connection settings'))
+        self.connection_widget.setFixedHeight(200)
         self.connection_layout = QGridLayout(self.connection_widget)
 
         self.ip_label = QLabel('IP')
@@ -65,7 +65,7 @@ class SettingsWidget(QWidget):
         self.file_manager_item = QListWidgetItem(_('File Manager'))
         self.settings_menu_items.addItem(self.file_manager_item)
 
-        self.file_manager_menu_widget = QWidget()
+        self.file_manager_menu_widget = QGroupBox(_('File Manager settings'))
         self.file_manager_menu_layout = QGridLayout(self.file_manager_menu_widget)
 
         self.left_folder_tracked_label = QLabel(_('Left tracked folder'))
@@ -88,11 +88,33 @@ class SettingsWidget(QWidget):
         self.save_btn = QPushButton(_('Save changes'))
         self.file_manager_menu_layout.addWidget(self.save_btn, 3, 1, 1, 1)
 
+        # Create Decimate menu item
+        self.decimate_item = QListWidgetItem(_('Decimate'))
+        self.settings_menu_items.addItem(self.decimate_item)
+
+        self.decimate_group = QGroupBox(_('Decimate settings'))
+        self.decimate_group.setFixedHeight(200)
+        self.decimate_lay = QGridLayout(self.decimate_group)
+
+        self.decimate_label = QLabel(_('Interpolation coefficient: '))
+        self.decimateRegex = QRegExp('\\d+')
+        decimateValidator = QRegExpValidator(self.decimateRegex, self)
+        self.decimate_lineedit = QLineEdit()
+        self.decimate_lineedit.setValidator(decimateValidator)
+        self.decimate_apply_btn = QPushButton(_('Apply'))
+
+        self.decimate_apply_btn.clicked.connect(lambda: self.signal_decimate_changed.emit(self.decimate_lineedit.text()))
+
+        self.decimate_lay.addWidget(self.decimate_label, 0, 0, 1, 2)
+        self.decimate_lay.addWidget(self.decimate_lineedit, 0, 2, 1, 1)
+        self.decimate_lay.addWidget(self.decimate_apply_btn, 1, 2, 1, 1)
+
         # Language settings
         self.language_item = QListWidgetItem(_('Languages'))
         self.settings_menu_items.addItem(self.language_item)
 
-        self.language_widget = QWidget()
+        self.language_widget = QGroupBox(_('Language settings'))
+        self.language_widget.setFixedHeight(200)
         self.language_lay = QGridLayout(self.language_widget)
         self.language_label = QLabel(_('Select language:'))
         lang_lst = ['Russian', 'English']
@@ -111,6 +133,7 @@ class SettingsWidget(QWidget):
             'Start': QWidget(),
             _('Connection'): self.connection_widget,
             _('File Manager'): self.file_manager_menu_widget,
+            _('Decimate'): self.decimate_group,
             _('Languages'): self.language_widget,
 
         }
@@ -151,13 +174,19 @@ class SettingsWidget(QWidget):
     def retranslate(self):
         self.setWindowTitle(_('Settings'))
         self.connection_item.setText(_('Connection'))
+        self.connection_widget.setTitle(_('Connection settings'))
         self.apply_btn.setText(_('Apply'))
         self.cancel_btn.setText(_('Cancel'))
         self.ok_btn.setText(_('OK'))
         self.file_manager_item.setText(_('File Manager'))
+        self.file_manager_menu_widget.setTitle(_('File Manager settings'))
         self.left_browse_btn.setText(_('Browse...'))
         self.right_browse_btn.setText(_('Browse...'))
         self.save_btn.setText(_('Save changes'))
+        self.decimate_item.setText(_('Decimate'))
+        self.decimate_group.setTitle(_('Decimate settings'))
+        self.decimate_label.setText(_('Interpolation coefficient: '))
+        self.decimate_apply_btn.setText(_('Apply'))
         self.language_item.setText(_('Languages'))
         self.language_label.setText(_('Select language:'))
         self.language_apply_btn.setText(_('Apply'))
@@ -174,8 +203,10 @@ class SettingsWidget(QWidget):
 
         self.paint_settings_menu_item.setCurrentWidget(self.language_widget)
 
-
-
-
-
-
+    def closeEvent(self, QCloseEvent):
+        self.lineEdit_ip.setText(self.parent.app_settings.value('ip'))
+        if self.parent.app_settings.value('language') and self.parent.app_settings.value('language') == 'ru':
+            self.language_combo.setCurrentText('Russian')
+        else:
+            self.language_combo.setCurrentText('English')
+        self.decimate_lineedit.setText(self.parent.app_settings.value('decimate_idx'))

@@ -61,17 +61,26 @@ class GeosharkWidget(QWidget):
         self.deg_num_label = QLabel('0')
         self.deg_num_label.setAlignment(Qt.AlignRight)
 
+        self.freq_label = QLabel(_('Frequency:'))
+        self.tesla_label = QLabel('nT')
+        self.tesla_num_label = QLabel('0')
+        self.tesla_num_label.setAlignment(Qt.AlignRight)
+
         self.gridlayout_state.addWidget(self.temp_label, 2, 0, 1, 1)
-        self.gridlayout_state.addWidget(self.deg_num_label, 2, 1, 1, 1)
-        self.gridlayout_state.addWidget(self.deg_label, 2, 2, 1, 1)
+        self.gridlayout_state.addWidget(self.deg_num_label, 2, 1, 1, 2)
+        self.gridlayout_state.addWidget(self.deg_label, 2, 3, 1, 1)
+
+        self.gridlayout_state.addWidget(self.freq_label, 3, 0, 1, 1)
+        self.gridlayout_state.addWidget(self.tesla_num_label, 3, 1, 1, 2)
+        self.gridlayout_state.addWidget(self.tesla_label, 3, 3, 1, 1)
 
         self.test_btn = QPushButton('Test')
-        self.gridlayout_state.addWidget(self.test_btn, 3, 0, 1, 1)
+        self.gridlayout_state.addWidget(self.test_btn, 4, 0, 1, 1)
 
         self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
 
         self.connect_btn.clicked.connect(lambda: self.client_connect())
-        self.disconnect_btn.clicked.connect(lambda: self.parent.client.close())
+        self.disconnect_btn.clicked.connect(lambda: self.client_disconnect())
         self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
         self.test_btn.clicked.connect(self.test)
 
@@ -91,6 +100,14 @@ class GeosharkWidget(QWidget):
     def client_connect(self):
         self.parent.client.connect()
         QTimer.singleShot(1000, lambda: self.parent.file_manager_widget.right_file_model_update())
+
+    def client_disconnect(self):
+        self.parent.client.close()
+        self.parent.graphs_widget.magnet.signal_disconnect.emit()
+        self.parent.graphs_widget.signals_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.dc_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.lamp_temp_plot.signal_disconnect.emit()
+        self.parent.graphs_widget.sensor_temp_plot.signal_disconnect.emit()
 
     def auto_connect_chbx_change(self, state):
         if state == 2:

@@ -31,11 +31,11 @@ class MainWindow(QMainWindow, UIForm):
         self.about.triggered.connect(lambda: self.about_widget.exec_())
 
         self.client = Client(self)
-        self.client.signal_directory_data.connect(lambda jsn: self.file_manager_widget.fill_right_file_model(jsn))
         self.client.signal_connection.connect(lambda: self.geoshark_widget.on_connect())
         self.client.signal_autoconnection.connect(lambda: self.geoshark_widget.on_autoconnection())
         self.client.signal_disconnect.connect(lambda: self.geoshark_widget.on_disconnect())
-        self.client.signal_stream_data.connect(lambda *args: self.graphs_widget.plot_graphs(*args))
+        self.client.signal_stream_data.connect(lambda *args: self.graphs_widget.plot_stream_data(*args))
+        self.client.signal_status_data.connect(lambda args: self.graphs_widget.plot_status_data(*args))
 
         self.graphs_btn.clicked.connect(lambda: self.add_graphs())
         self.config_btn.clicked.connect(lambda: self.add_config())
@@ -56,6 +56,8 @@ class MainWindow(QMainWindow, UIForm):
 
         self.settings_widget.signal_language_changed.connect(lambda lang: self.language_changed(lang))
         self.signal_language_changed.connect(lambda: self.retranslate())
+        self.settings_widget.signal_ip_changed.connect(lambda ip: self.ip_changed(ip))
+        self.settings_widget.signal_decimate_changed.connect(lambda idx: self.decimate_idx_changed(idx))
 
     def language_changed(self, lang):
         trans = gettext.translation('qmcenter', 'locales', [lang])
@@ -63,6 +65,16 @@ class MainWindow(QMainWindow, UIForm):
         _ = trans.gettext
         self.signal_language_changed.emit()
         self.app_settings.setValue('language', lang)
+
+    def ip_changed(self, ip):
+        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+        if ipRegex.exactMatch(ip):
+            self.server = ip
+
+    def decimate_idx_changed(self, idx):
+        if idx != '':
+            self.graphs_widget.decimate_idx = int(idx)
+            self.app_settings.setValue('decimate_idx', idx)
 
     def split_tabs(self):
         self.split_tabwidget.addWidget(self.tabwidget_left)
@@ -123,6 +135,7 @@ class MainWindow(QMainWindow, UIForm):
         server = self.app_settings.value('ip')
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(server):
+            self.server = server
             self.settings_widget.lineEdit_ip.setText(server)
             self.settings_widget.define_server()
         if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
@@ -131,6 +144,9 @@ class MainWindow(QMainWindow, UIForm):
             self.settings_widget.language_combo.setCurrentText('Russian')
         else:
             self.settings_widget.language_combo.setCurrentText('English')
+        if self.app_settings.value('decimate_idx') and self.app_settings.value('decimate_idx') != '':
+            self.graphs_widget.decimate_idx = int(self.app_settings.value('decimate_idx'))
+            self.settings_widget.decimate_lineedit.setText(self.app_settings.value('decimate_idx'))
 
     def write_state(self):
         self.app_settings.setValue('version', '0.8')

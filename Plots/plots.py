@@ -85,9 +85,9 @@ class NonScientificX(pg.AxisItem):
 
     def tickStrings(self, values, scale, spacing):
         try:
-            data = [datetime.fromtimestamp(value / 1000).strftime('%S:%f')[:-3] for value in values]
+            data = [datetime.fromtimestamp(value).strftime('%S:%f')[:-3] for value in values]
         except OSError:
-            return [str(round(float(value*1), 3)) for value in values]
+            return ['0:000' for v in values]
         return data
 
     def resizeEvent(self, ev=None):
@@ -116,6 +116,8 @@ class MainPlot(pg.PlotWidget):
         pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self), axisItems={'left': NonScientificYLeft(orientation='left'),
                                                                          'bottom': NonScientificX(orientation='bottom'),
                                                                          'right': NonScientificYRight(orientation='right')})
+        self.s = 10
+        self.sync = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
@@ -137,9 +139,9 @@ class MainPlot(pg.PlotWidget):
         self.view.addItem(self.data)
         self.view.enableAutoRange(axis=self.view.YAxis, enable=False)
 
-        self.left_axis = np.empty(60000)
-        self.bottom_axis = np.empty(60000)
-        self.right_axis = np.empty(60000)
+        self.left_axis = np.zeros(60000)
+        self.bottom_axis = np.zeros(60000)
+        self.right_axis = np.zeros(60000)
         self.ptr = 0
 
         self.signal_disconnect.connect(lambda: self.disconnect())
@@ -176,7 +178,7 @@ class MainPlot(pg.PlotWidget):
 
 
 class MagneticField(MainPlot):
-    s = -10000
+    s = 10
     signal_sync_chbx_changed = pyqtSignal(object)
     signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
@@ -194,18 +196,33 @@ class MagneticField(MainPlot):
         self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
-        if (MagneticField.s + value*10)/60000 <= -1:
-            MagneticField.s = -60000
-        elif (MagneticField.s + value*10)/1 >= 0:
-            MagneticField.s = -1000
+        if value < 0:
+            if (self.s + abs(value*0.001))/60 >= 1:
+                self.s = 60 * 1
+            else:
+                self.s += abs(value) * 0.01
         else:
-            MagneticField.s += value * 10
+            if (self.s - value*0.001)/1 <= 1:
+                self.s = 1
+            else:
+                self.s -= value * 0.01
 
-    def update(self, left_ax: list, bottom_ax: list, right_ax=None, checkbox=True):
+    def update(self, left_ax, bottom_ax: list, right_ax=None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
             self.ptr += length
+            delta = datetime.fromtimestamp(max(bottom_ax)) - datetime.fromtimestamp(np.amax(self.bottom_axis))
+            if delta.seconds > 600:
+                self.left_axis = np.zeros(60000)
+                self.left_axis[-1] = left_ax[-1]
+                self.bottom_axis = np.zeros(60000)
+                self.bottom_axis[-1] = bottom_ax[-1]
+                self.data.setData(x=self.bottom_axis[-1:], y=self.left_axis[-1:])
+                self.ptr = 0
+                self.view.setMouseEnabled(x=False, y=True)
+                self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
+                return
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
 
@@ -215,15 +232,14 @@ class MagneticField(MainPlot):
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
-            self.view.setXRange(self.bottom_axis[MagneticField.s], self.bottom_axis[-1])
-
+            self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
 
 
 class SignalsPlot(MainPlot):
-    s = -10000
+    s = 10
     signal_sync_chbx_changed = pyqtSignal(object)
     signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
@@ -254,18 +270,35 @@ class SignalsPlot(MainPlot):
         self.item.getAxis('right').setLabel(_('Signal S2, uA'))
 
     def set_scale(self, value):
-        if (SignalsPlot.s + value*10)/60000 <= -1:
-            SignalsPlot.s = -60000
-        elif (SignalsPlot.s + value*10)/1 >= 0:
-            SignalsPlot.s = -1000
+        if value < 0:
+            if (self.s + abs(value*0.001))/60 >= 1:
+                self.s = 60 * 1
+            else:
+                self.s += abs(value) * 0.01
         else:
-            SignalsPlot.s += value * 10
+            if (self.s - value*0.001)/1 <= 1:
+                self.s = 1
+            else:
+                self.s -= value * 0.01
 
-    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
+    def update(self, left_ax, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
             self.ptr += length
+            delta = datetime.fromtimestamp(max(bottom_ax)) - datetime.fromtimestamp(np.amax(self.bottom_axis))
+            if delta.seconds > 600:
+                self.left_axis = np.zeros(60000)
+                self.left_axis[-1] = left_ax[-1]
+                self.bottom_axis = np.zeros(60000)
+                self.bottom_axis[-1] = bottom_ax[-1]
+                self.data.setData(x=self.bottom_axis[-1:], y=self.left_axis[-1:])
+                self.ptr = 0
+                self.view.setMouseEnabled(x=False, y=True)
+                if not self.sync:
+                    self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
+                return
+
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
 
@@ -281,7 +314,8 @@ class SignalsPlot(MainPlot):
             # self.viewbox.enableAutoRange(axis=self.viewbox.YAxis, enable=False)
             self.view.setMouseEnabled(x=False, y=True)
             self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
-            self.view.setXRange(self.bottom_axis[SignalsPlot.s], self.bottom_axis[-1])
+            if not self.sync:
+                self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
@@ -340,7 +374,7 @@ class SignalsFrequency(pg.PlotWidget):
         self.right_axis = np.empty(600)
         self.ptr = 0
 
-    def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
+    def update(self, left_ax: list, bottom_ax, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
@@ -383,7 +417,7 @@ class SignalsFrequency(pg.PlotWidget):
 
 
 class LampTemp(MainPlot):
-    s = -10000
+    s = 10
     signal_sync_chbx_changed = pyqtSignal(object)
     signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
@@ -400,18 +434,35 @@ class LampTemp(MainPlot):
         self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
-        if (LampTemp.s + value*10)/60000 <= -1:
-            LampTemp.s = -60000
-        elif (LampTemp.s + value*10)/1 >= 0:
-            LampTemp.s = -1000
+        if value < 0:
+            if (self.s + abs(value*0.001))/60 >= 1:
+                self.s = 60 * 1
+            else:
+                self.s += abs(value) * 0.01
         else:
-            LampTemp.s += value * 10
+            if (self.s - value*0.001)/1 <= 1:
+                self.s = 1
+            else:
+                self.s -= value * 0.01
 
     def update(self, left_ax, bottom_ax: list, right_ax=None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
             self.ptr += length
+            delta = datetime.fromtimestamp(max(bottom_ax)) - datetime.fromtimestamp(np.amax(self.bottom_axis))
+            if delta.seconds > 600:
+                self.left_axis = np.zeros(60000)
+                self.left_axis[-1] = left_ax[-1]
+                self.bottom_axis = np.zeros(60000)
+                self.bottom_axis[-1] = bottom_ax[-1]
+                self.data.setData(x=self.bottom_axis[-1:], y=self.left_axis[-1:])
+                self.ptr = 0
+                self.view.setMouseEnabled(x=False, y=True)
+                if not self.sync:
+                    self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
+                return
+
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
 
@@ -421,7 +472,8 @@ class LampTemp(MainPlot):
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
-            self.view.setXRange(self.bottom_axis[LampTemp.s], self.bottom_axis[-1])
+            if not self.sync:
+                self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
@@ -429,7 +481,7 @@ class LampTemp(MainPlot):
 
 
 class SensorTemp(MainPlot):
-    s = -10000
+    s = 10
     signal_sync_chbx_changed = pyqtSignal(object)
     signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
@@ -445,18 +497,35 @@ class SensorTemp(MainPlot):
         self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
-        if (SensorTemp.s + value*10)/60000 <= -1:
-            SensorTemp.s = -60000
-        elif (SensorTemp.s + value*10)/1 >= 0:
-            SensorTemp.s = -1000
+        if value < 0:
+            if (self.s + abs(value*0.001))/60 >= 1:
+                self.s = 60 * 1
+            else:
+                self.s += abs(value) * 0.01
         else:
-            SensorTemp.s += value * 10
+            if (self.s - value*0.001)/1 <= 1:
+                self.s = 1
+            else:
+                self.s -= value * 0.01
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
             self.ptr += length
+            delta = datetime.fromtimestamp(max(bottom_ax)) - datetime.fromtimestamp(np.amax(self.bottom_axis))
+            if delta.seconds > 600:
+                self.left_axis = np.zeros(60000)
+                self.left_axis[-1] = left_ax[-1]
+                self.bottom_axis = np.zeros(60000)
+                self.bottom_axis[-1] = bottom_ax[-1]
+                self.data.setData(x=self.bottom_axis[-1:], y=self.left_axis[-1:])
+                self.ptr = 0
+                self.view.setMouseEnabled(x=False, y=True)
+                if not self.sync:
+                    self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
+                return
+
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
 
@@ -466,7 +535,8 @@ class SensorTemp(MainPlot):
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
-            self.view.setXRange(self.bottom_axis[SensorTemp.s], self.bottom_axis[-1])
+            if not self.sync:
+                self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
@@ -474,7 +544,7 @@ class SensorTemp(MainPlot):
 
 
 class DCPlot(MainPlot):
-    s = -10000
+    s = 10
     signal_sync_chbx_changed = pyqtSignal(object)
     signal_sync_chbx_changed_to_main = pyqtSignal(object)
 
@@ -491,18 +561,35 @@ class DCPlot(MainPlot):
         self.item.getAxis('bottom').setLabel(_('Time, s'))
 
     def set_scale(self, value):
-        if (DCPlot.s + value*10)/60000 <= -1:
-            DCPlot.s = -60000
-        elif (DCPlot.s + value*10)/1 >= 0:
-            DCPlot.s = -1000
+        if value < 0:
+            if (self.s + abs(value*0.001))/60 >= 1:
+                self.s = 60 * 1
+            else:
+                self.s += abs(value) * 0.01
         else:
-            DCPlot.s += value * 10
+            if (self.s - value*0.001)/1 <= 1:
+                self.s = 1
+            else:
+                self.s -= value * 0.01
 
     def update(self, left_ax: list, bottom_ax: list, right_ax: list = None, checkbox=True):
         length = len(bottom_ax)
 
         if checkbox:
             self.ptr += length
+            delta = datetime.fromtimestamp(max(bottom_ax)) - datetime.fromtimestamp(np.amax(self.bottom_axis))
+            if delta.seconds > 600:
+                self.left_axis = np.zeros(60000)
+                self.left_axis[-1] = left_ax[-1]
+                self.bottom_axis = np.zeros(60000)
+                self.bottom_axis[-1] = bottom_ax[-1]
+                self.data.setData(x=self.bottom_axis[-1:], y=self.left_axis[-1:])
+                self.ptr = 0
+                self.view.setMouseEnabled(x=False, y=True)
+                if not self.sync:
+                    self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
+                return
+
             self.left_axis[:-length] = self.left_axis[length:]
             self.left_axis[-length:] = left_ax
 
@@ -512,7 +599,8 @@ class DCPlot(MainPlot):
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
-            self.view.setXRange(self.bottom_axis[DCPlot.s], self.bottom_axis[-1])
+            if not self.sync:
+                self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
 
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)

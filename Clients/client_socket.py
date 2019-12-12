@@ -8,9 +8,9 @@ from PyQt5.QtCore import QTimer, pyqtSignal, QRegExp
 
 
 class Client(QtCore.QObject):
-    relative_time = -1
-    signal_stream_data = pyqtSignal(object, object, object, object, object, object, object, object)
-    signal_directory_data = pyqtSignal(object)
+    relative_time = 0
+    signal_stream_data = pyqtSignal(object, object, object, object)
+    signal_status_data = pyqtSignal(object)
     signal_connection = pyqtSignal()
     signal_autoconnection = pyqtSignal()
     signal_disconnect = pyqtSignal()
@@ -24,7 +24,7 @@ class Client(QtCore.QObject):
             self.ip = self.parent.server
         else:
             self.ip = None
-        self.port = '8765'
+        self.port = '8080'
 
         self.ping_server_timer = QTimer()
         self.ping_server_timer.setInterval(800)
@@ -90,30 +90,36 @@ class Client(QtCore.QObject):
         self.client.open(QtCore.QUrl("ws://{}:{}".format(self.ip, self.port)))
 
     def decoding_json(self, jsn):
-        if 'jsons' in jsn:
-            dec = json.loads(jsn)
+        jsn = json.loads(jsn)
+        if 'data' in jsn:
             arr_time = []
             arr_freq = []
             arr_sig1 = []
             arr_sig2 = []
-            arr_ts = []
-            arr_isitemp = []
-            arr_dc = []
 
-            for time, freq, sig1, sig2, ts, isitemp, dc, temp in dec['jsons'].values():
-                Client.relative_time += 1
-                arr_time.append(Client.relative_time)
-                arr_freq.append(freq)
-                arr_sig1.append(sig1)
-                arr_sig2.append(sig2)
-                arr_ts.append(ts)
-                arr_isitemp.append(isitemp)
-                arr_dc.append(dc)
+            for dict in jsn['data']:
+                arr_time.append(round(dict['time'][0]/1e6, 3))
+                arr_freq.append(dict['freq'][0])
+                arr_sig1.append(dict['signalS1'][0])
+                arr_sig2.append(dict['signalS2'][0])
 
-            # print('time', arr_time, '\n', 'freq', arr_freq)
             if len(arr_time):
-                self.signal_stream_data.emit(arr_freq, arr_time, arr_sig1, arr_sig2,
-                                      arr_ts, arr_isitemp, arr_dc, temp)
+                self.signal_stream_data.emit(arr_freq, arr_time, arr_sig1, arr_sig2)
 
-        elif 'directory' in jsn:
-            self.signal_directory_data.emit(jsn)
+        elif 'status' in jsn:
+            args = list()
+            dict = jsn['status']
+            args.append([dict['time'][0] / 1e6])
+            args.append([dict['lamp_temp'][0]])
+            args.append(dict['lamp_voltage'][0])
+            args.append([dict['dc_current'][0]])
+            args.append(dict['chamber_temp'][0])
+            args.append(dict['chamber_voltage'][0])
+            args.append(dict['ecu_temp'][0])
+            args.append(dict['status_lock'][0])
+            args.append(dict['status_lamp_good'][0])
+            args.append(dict['status_chamber_good'][0])
+            args.append(dict['status_fan'][0])
+            args.append(dict['status_error'][0])
+
+            self.signal_status_data.emit(args)

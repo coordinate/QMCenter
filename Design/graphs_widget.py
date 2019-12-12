@@ -1,6 +1,9 @@
+import numpy as np
+
 from PyQt5.QtWidgets import QStackedWidget, QWidget, QHBoxLayout, QScrollArea, QGridLayout
 
 from Plots.plots import MagneticField, SignalsPlot, SignalsFrequency, LampTemp, SensorTemp, DCPlot
+from Utils.transform import cic_filter
 
 
 class GraphsWidget(QStackedWidget):
@@ -8,6 +11,9 @@ class GraphsWidget(QStackedWidget):
         QStackedWidget.__init__(self)
         self.parent = parent
         self.name = 'Telemetry'
+        self.decimate_idx = 1
+        self.k0 = 1
+        self.previous_pack = np.zeros(3, dtype=np.uint32)
         self.magnet = MagneticField()
         self.signals_plot = SignalsPlot()
         self.signal_freq_plot = SignalsFrequency()
@@ -72,13 +78,25 @@ class GraphsWidget(QStackedWidget):
         self.sensor_temp_plot.retranslate()
         self.dc_plot.retranslate()
 
-    def plot_graphs(self, freq, time, sig1, sig2, ts, isitemp, dc, temp):
+    def change_decimate_idx(self, idx):
+        if idx != '':
+            self.decimate_idx = int(idx)
+
+    def plot_stream_data(self, freq, time, sig1, sig2):
+        freq = np.array(freq, dtype=np.uint32)
         self.signals_plot.update(sig1, time, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
-        self.lamp_temp_plot.update(temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
-        self.dc_plot.update(dc, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.magnet.update(freq, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
-        self.parent.geoshark_widget.deg_num_label.setText(str(temp/10))
+        self.parent.geoshark_widget.device_on_connect = True
+        after_cic, self.previous_pack = cic_filter(self.previous_pack, freq)
+        self.parent.geoshark_widget.tesla_num_label.setText('{:,.2f}'.format(after_cic[50] * self.k0))
+        # self.previous_pack = after_cic
+
+    def plot_status_data(self, time, lamp_temp, lamp_voltage, dc_current, chamber_temp, chamber_voltage, ecu_temp,
+                         status_lock, status_lamp_good, status_chamber_good, status_fan, status_error):
+        self.lamp_temp_plot.update(lamp_temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.dc_plot.update(dc_current, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.parent.geoshark_widget.deg_num_label.setText(str(lamp_temp[0]/10))
         self.parent.geoshark_widget.device_on_connect = True
 
     def sync_x(self, check):
@@ -87,11 +105,19 @@ class GraphsWidget(QStackedWidget):
             self.lamp_temp_plot.setXLink(self.magnet)
             self.sensor_temp_plot.setXLink(self.magnet)
             self.dc_plot.setXLink(self.magnet)
+            self.signals_plot.sync = True
+            self.lamp_temp_plot.sync = True
+            self.sensor_temp_plot.sync = True
+            self.dc_plot.sync = True
         else:
             self.signals_plot.setXLink(self.signals_plot)
             self.lamp_temp_plot.setXLink(self.lamp_temp_plot)
             self.sensor_temp_plot.setXLink(self.sensor_temp_plot)
             self.dc_plot.setXLink(self.dc_plot)
+            self.signals_plot.sync = False
+            self.lamp_temp_plot.sync = False
+            self.sensor_temp_plot.sync = False
+            self.dc_plot.sync = False
 
     def change_grid(self, size):
         if size.size().width() < 600:

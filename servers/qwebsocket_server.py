@@ -5,7 +5,6 @@ from PyQt5 import QtCore, QtWebSockets, QtNetwork, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QAction
 from PyQt5.QtCore import QUrl, QTimer
 
-data_json = {'jsons': {}}
 with open('../workdocs/data/raw_magnet_data.txt', 'r') as file:
     a = file.readlines()
 
@@ -19,12 +18,13 @@ it = iter(read_lines())
 
 
 def read():
+    arr = []
     for i in range(100):
         n = next(it).split()
-        data_json['jsons']['json{}'.format(i)] = [int(n[1]), float(n[3]), int(n[5]), int(n[7]), int(n[9]),
-                                                  int(n[11]), int(n[13]), int(n[15])]     # (time, freq, sig1, sig2, ts, isitemp, dc, temp)
+        arr.append({'time': [int(n[1]), 's'], 'freq': [float(n[3]), 'hz'], 'signalS1': [int(n[5]), 'uA'],
+                                  'signalS2': [int(n[7]), 'uA']})     # (time, freq, sig1, sig2)
 
-    return json.dumps(data_json)
+    return json.dumps({'data': arr})
 
 
 def create_workdir(folder):
@@ -53,7 +53,7 @@ class MyServer(QtCore.QObject):
         self.clients = []
         print("server name: {}".format(parent.serverName()))
         self.server = QtWebSockets.QWebSocketServer(parent.serverName(), parent.secureMode(), parent)
-        if self.server.listen(QtNetwork.QHostAddress('127.0.0.1'), 8765):
+        if self.server.listen(QtNetwork.QHostAddress('127.0.0.1'), 8080):
             print('Listening: {}:{}:{}'.format(
                 self.server.serverName(), self.server.serverAddress().toString(),
                 str(self.server.serverPort())))
