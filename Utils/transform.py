@@ -6,6 +6,8 @@ import pyproj
 import numpy as np
 import cv2
 import re
+
+from PyQt5.QtCore import QObject, pyqtSignal
 from plyfile import PlyData, PlyElement
 
 _ = lambda x: x
@@ -239,27 +241,36 @@ def parse_mag_file(filepath, progress):
     return gpst_arr, freq_arr, sig1_arr, sig2_arr, sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr
 
 
-def cic_filter(previous_arr, array, cascade_idx=2, decimate_idx=1):
-    y = np.zeros(array.shape, dtype=np.uint32)
+class CICFilter(QObject):
+    signal_output = pyqtSignal(object)
 
-    for j in range(cascade_idx):
+    def __init__(self):
+        QObject.__init__(self)
+        self.first_integrator = np.uint64(0)
+        self.second_integrator = np.uint64(0)
+        self.d_1_1 = np.uint64(0)
+        self.d_1_2 = np.uint64(0)
+
+        self.d_2_1 = np.uint64(0)
+        self.d_2_2 = np.uint64(0)
+
+        self.first_diff = np.uint64(0)
+        self.output = np.uint64(0)
+        self.counter = 0
+        self.decimate_idx = 1
+
+    def filtering(self, array):
         for i in range(len(array)):
-            if i == 0:
-                y[i] = array[i] - previous_arr[-1]
-                continue
-            y[i] = array[i] + y[i - 1]
-        if j < cascade_idx - 1:
-            previous_arr = y
+            self.first_integrator = array[i] + self.first_integrator
+            self.second_integrator = self.first_integrator + self.second_integrator
+            self.counter += 1
+            if self.counter % self.decimate_idx == 0:
+                self.first_diff = self.second_integrator - self.d_1_1
+                self.d_1_1 = self.d_1_2
+                self.d_1_2 = self.second_integrator
 
-    y = y[::decimate_idx]
-
-    out = np.zeros(y.shape, dtype=np.uint32)
-
-    for j in range(cascade_idx):
-        for i in range(len(y)):
-            if i - 2 < 0:
-                out[i] = y[i]
-                continue
-            out[i] = y[i] - y[i - 2]
-
-    return out, y
+                self.output = self.first_diff - self.d_2_1
+                self.d_2_1 = self.d_2_2
+                self.d_2_2 = self.first_diff
+                k = (2 * self.decimate_idx) ** 2
+                self.signal_output.emit(self.output / k)

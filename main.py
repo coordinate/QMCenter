@@ -73,7 +73,7 @@ class MainWindow(QMainWindow, UIForm):
 
     def decimate_idx_changed(self, idx):
         if idx != '':
-            self.graphs_widget.decimate_idx = int(idx)
+            self.graphs_widget.cic_filter.decimate_idx = int(idx)
             self.app_settings.setValue('decimate_idx', idx)
 
     def split_tabs(self):
@@ -145,7 +145,7 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.settings_widget.language_combo.setCurrentText('English')
         if self.app_settings.value('decimate_idx') and self.app_settings.value('decimate_idx') != '':
-            self.graphs_widget.decimate_idx = int(self.app_settings.value('decimate_idx'))
+            self.graphs_widget.cic_filter.decimate_idx = int(self.app_settings.value('decimate_idx'))
             self.settings_widget.decimate_lineedit.setText(self.app_settings.value('decimate_idx'))
 
     def write_state(self):

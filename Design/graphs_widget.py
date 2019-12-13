@@ -3,7 +3,7 @@ import numpy as np
 from PyQt5.QtWidgets import QStackedWidget, QWidget, QHBoxLayout, QScrollArea, QGridLayout
 
 from Plots.plots import MagneticField, SignalsPlot, SignalsFrequency, LampTemp, SensorTemp, DCPlot
-from Utils.transform import cic_filter
+from Utils.transform import CICFilter
 
 
 class GraphsWidget(QStackedWidget):
@@ -11,9 +11,8 @@ class GraphsWidget(QStackedWidget):
         QStackedWidget.__init__(self)
         self.parent = parent
         self.name = 'Telemetry'
-        self.decimate_idx = 1
-        self.k0 = 1
-        self.previous_pack = np.zeros(3, dtype=np.uint32)
+        self.cic_filter = CICFilter()
+        self.k0 = 0.003725290298
         self.magnet = MagneticField()
         self.signals_plot = SignalsPlot()
         self.signal_freq_plot = SignalsFrequency()
@@ -69,6 +68,7 @@ class GraphsWidget(QStackedWidget):
         self.dc_plot.signal_sync_chbx_changed.connect(lambda i: self.sync_x(i))
 
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
+        self.cic_filter.signal_output.connect(lambda output: self.cic_output(output))
 
     def retranslate(self):
         self.magnet.retranslate()
@@ -84,18 +84,20 @@ class GraphsWidget(QStackedWidget):
 
     def plot_stream_data(self, freq, time, sig1, sig2):
         freq = np.array(freq, dtype=np.uint32)
+        self.cic_filter.filtering(freq)
         self.signals_plot.update(sig1, time, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.magnet.update(freq, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.parent.geoshark_widget.device_on_connect = True
-        after_cic, self.previous_pack = cic_filter(self.previous_pack, freq)
-        self.parent.geoshark_widget.tesla_num_label.setText('{:,.2f}'.format(after_cic[50] * self.k0))
-        # self.previous_pack = after_cic
+
+    def cic_output(self, output):
+        self.parent.geoshark_widget.tesla_num_label.setText('{:,.4f}'.format(output * self.k0))
 
     def plot_status_data(self, time, lamp_temp, lamp_voltage, dc_current, chamber_temp, chamber_voltage, ecu_temp,
                          status_lock, status_lamp_good, status_chamber_good, status_fan, status_error):
         self.lamp_temp_plot.update(lamp_temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.dc_plot.update(dc_current, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.sensor_temp_plot.update(chamber_temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.parent.geoshark_widget.deg_num_label.setText(str(lamp_temp[0]/10))
         self.parent.geoshark_widget.device_on_connect = True
 

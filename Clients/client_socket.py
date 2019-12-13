@@ -6,6 +6,8 @@ from threading import Thread
 from PyQt5 import QtCore, QtWebSockets
 from PyQt5.QtCore import QTimer, pyqtSignal, QRegExp
 
+from Design.ui import show_error
+
 
 class Client(QtCore.QObject):
     relative_time = 0
@@ -80,6 +82,7 @@ class Client(QtCore.QObject):
     def error(self, error_code):
         print("error code: {}".format(error_code))
         print(self.client.errorString())
+        show_error(_('GeoShark error'), _('GeoShark is not responding.'))
         if error_code != 0:
             self.signal_disconnect.emit()
 
@@ -113,7 +116,7 @@ class Client(QtCore.QObject):
             args.append([dict['lamp_temp'][0]])
             args.append(dict['lamp_voltage'][0])
             args.append([dict['dc_current'][0]])
-            args.append(dict['chamber_temp'][0])
+            args.append([dict['chamber_temp'][0]])
             args.append(dict['chamber_voltage'][0])
             args.append(dict['ecu_temp'][0])
             args.append(dict['status_lock'][0])

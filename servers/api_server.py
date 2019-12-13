@@ -26,7 +26,7 @@ device = {
     }
 
 
-@app.route('/device', methods=['GET'])
+@app.route('/config/magnet', methods=['GET'])
 def get_device():
     with open('../workdocs/config_device.json', 'r') as file:
         device = json.load(file)
@@ -34,12 +34,12 @@ def get_device():
 
 
 # config tab, write btn [post(write) new config file]
-@app.route('/api/add_message/<uuid>', methods=['POST'])
-def add_message(uuid):
+@app.route('/config/magnet', methods=['POST'])
+def add_message():
     content = request.json
-    with open('../workdocs/config_{}.json'.format(uuid), 'w') as file:
+    with open('../workdocs/config_device.json', 'w') as file:
         json.dump(content, file, indent=4, sort_keys=True)
-    return jsonify({"uuid": uuid})
+    return jsonify({"uuid": 'Ok'})
 
 
 update = {
