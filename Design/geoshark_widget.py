@@ -114,7 +114,8 @@ class GeosharkWidget(QWidget):
             self.connect_btn.click()
 
     def test(self):
-        print('test')
+        self.parent.statistic_widget.log_text.append('button')
+        print(self.parent.statistic_widget.cic_filter.decimate_idx)
 
     def on_connect(self):
         self.connection_icon.setPixmap(QPixmap('images/green_light_icon.png'))

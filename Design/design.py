@@ -9,6 +9,7 @@ from Design.file_manager_widget import FileManager
 from Design.graphs_widget import GraphsWidget
 from Design.help_widget import HelpWidget
 from Design.geoshark_widget import GeosharkWidget
+from Design.statistics_widget import StatisticProcessing
 from Design.three_D_visual_widget import ThreeDVisual
 from Design.settings_widget import SettingsWidget
 from Design.update_widget import UpdateWidget
@@ -45,6 +46,7 @@ class UIForm:
         self.visual_action = self.view.addAction(_('3D Viewer'))
         self.update_action = self.view.addAction(_('Update'))
         self.file_manager_action = self.view.addAction(_('File manager'))
+        self.statistic_action = self.view.addAction(_('Statistic Processing'))
         self.view.addSeparator()
         self.toolbar_action = self.view.addAction(_('Toolbar'))
         self.workspace_action = self.view.addAction(_('Workspace'))
@@ -74,6 +76,8 @@ class UIForm:
 
         self.file_manager = QPushButton(_('File manager'))
 
+        self.statistic_btn = QPushButton(_('Statistic Processing'))
+
         empty = QWidget()
         empty.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
@@ -88,6 +92,7 @@ class UIForm:
         self.toolbar.addWidget(self.visual_btn)
         self.toolbar.addWidget(self.update_btn)
         self.toolbar.addWidget(self.file_manager)
+        self.toolbar.addWidget(self.statistic_btn)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(empty)
 
@@ -142,6 +147,9 @@ class UIForm:
         # create tab 3D Viewer
         self.three_d_widget = ThreeDVisual(self)
 
+        # create Statistic processing tab
+        self.statistic_widget = StatisticProcessing(self)
+
     def retranslate(self):
         self.fileMenu.setTitle(_('&File'))
         self.new_project.setText(_('New project'))
@@ -153,6 +161,7 @@ class UIForm:
         self.visual_btn.setText(_('3D Viewer'))
         self.update_btn.setText(_('Update'))
         self.file_manager.setText(_('File manager'))
+        self.statistic_btn.setText(_('Statistic Processing'))
         self.visual_btn.setText(_('3D Viewer'))
         self.view.setTitle(_('&View'))
         self.graphs_action.setText(_('Telemetry'))
@@ -160,6 +169,7 @@ class UIForm:
         self.visual_action.setText(_('3D Viewer'))
         self.update_action.setText(_('Update'))
         self.file_manager_action.setText(_('File manager'))
+        self.statistic_action.setText(_('Statistic Processing'))
         self.toolbar_action.setText(_('Toolbar'))
         self.workspace_action.setText(_('Workspace'))
 

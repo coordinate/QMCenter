@@ -35,6 +35,7 @@ class MainWindow(QMainWindow, UIForm):
         self.client.signal_autoconnection.connect(lambda: self.geoshark_widget.on_autoconnection())
         self.client.signal_disconnect.connect(lambda: self.geoshark_widget.on_disconnect())
         self.client.signal_stream_data.connect(lambda *args: self.graphs_widget.plot_stream_data(*args))
+        self.client.signal_stream_data.connect(lambda *args: self.statistic_widget.update_statistic(*args))
         self.client.signal_status_data.connect(lambda args: self.graphs_widget.plot_status_data(*args))
 
         self.graphs_btn.clicked.connect(lambda: self.add_graphs())
@@ -42,11 +43,13 @@ class MainWindow(QMainWindow, UIForm):
         self.visual_btn.clicked.connect(lambda: self.add_visual())
         self.update_btn.clicked.connect(lambda: self.add_update())
         self.file_manager.clicked.connect(lambda: self.add_file_manager())
+        self.statistic_btn.clicked.connect(lambda: self.add_statistic_processing())
         self.graphs_action.triggered.connect(lambda: self.add_graphs())
         self.config_action.triggered.connect(lambda: self.add_config())
         self.visual_action.triggered.connect(lambda: self.add_visual())
         self.update_action.triggered.connect(lambda: self.add_update())
         self.file_manager_action.triggered.connect(lambda: self.add_file_manager())
+        self.statistic_action.triggered.connect(lambda: self.add_statistic_processing())
         self.toolbar_action.triggered.connect(lambda: self.toolbar.show())
         self.workspace_action.triggered.connect(lambda: self.workspace.show())
 
@@ -130,6 +133,13 @@ class MainWindow(QMainWindow, UIForm):
         else:
             self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.file_manager_widget))
             self.file_manager_widget.right_file_model_update()
+
+    def add_statistic_processing(self):
+        if self.tabwidget_left.indexOf(self.statistic_widget) == -1:
+            idx = self.tabwidget_left.addTab(self.statistic_widget, _(self.statistic_widget.name))
+            self.tabwidget_left.setCurrentIndex(idx)
+        else:
+            self.tabwidget_left.setCurrentIndex(self.tabwidget_left.indexOf(self.statistic_widget))
 
     def read_state(self):
         server = self.app_settings.value('ip')
