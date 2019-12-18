@@ -66,6 +66,9 @@ class GeosharkWidget(QWidget):
         self.tesla_num_label = QLabel('0')
         self.tesla_num_label.setAlignment(Qt.AlignRight)
 
+        self.current_filter = QLabel(_('Current Filter'))
+        self.current_filter_name = QLabel(_('No Filter'))
+
         self.gridlayout_state.addWidget(self.temp_label, 2, 0, 1, 1)
         self.gridlayout_state.addWidget(self.deg_num_label, 2, 1, 1, 2)
         self.gridlayout_state.addWidget(self.deg_label, 2, 3, 1, 1)
@@ -74,8 +77,11 @@ class GeosharkWidget(QWidget):
         self.gridlayout_state.addWidget(self.tesla_num_label, 3, 1, 1, 2)
         self.gridlayout_state.addWidget(self.tesla_label, 3, 3, 1, 1)
 
+        self.gridlayout_state.addWidget(self.current_filter, 4, 0, 1, 1)
+        self.gridlayout_state.addWidget(self.current_filter_name, 4, 1, 1, 2)
+
         self.test_btn = QPushButton('Test')
-        self.gridlayout_state.addWidget(self.test_btn, 4, 0, 1, 1)
+        self.gridlayout_state.addWidget(self.test_btn, 6, 0, 1, 1)
 
         self.layout.addWidget(self.state_groupbox, alignment=Qt.AlignTop)
 

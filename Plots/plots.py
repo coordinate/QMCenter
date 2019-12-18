@@ -18,7 +18,10 @@ class NonScientificYLeft(pg.AxisItem):
         self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
-        return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
+        if len(set([int(i) for i in values])) < len(values):
+            return ['{:.1f}'.format(float(value)) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
+        else:
+            return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
     def _updateMaxTextSize(self, x):
         """ Informs that the maximum tick size orthogonal to the axis has
@@ -113,11 +116,13 @@ class MainPlot(pg.PlotWidget):
     signal_disconnect = pyqtSignal()
 
     def __init__(self, **kwargs):
-        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self), axisItems={'left': NonScientificYLeft(orientation='left'),
-                                                                         'bottom': NonScientificX(orientation='bottom'),
-                                                                         'right': NonScientificYRight(orientation='right')})
+        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self),
+                               axisItems={'left': NonScientificYLeft(orientation='left'),
+                                          'bottom': NonScientificX(orientation='bottom'),
+                                          'right': NonScientificYRight(orientation='right')})
         self.s = 10
         self.sync = False
+        self.filtering = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
@@ -181,9 +186,12 @@ class MagneticField(MainPlot):
     s = 10
     signal_sync_chbx_changed = pyqtSignal(object)
     signal_sync_chbx_changed_to_main = pyqtSignal(object)
+    signal_filter_changed = pyqtSignal(object)
 
-    def __init__(self):
+    def __init__(self, irr_filter):
         MainPlot.__init__(self)
+        self.iir_filter = irr_filter
+        self.filtering = True
         self.item.setLabel('left', _('Magnetic Field, nT'), **{'font-size': '8pt', 'color': 'red'})
         self.item.setLabel('right', _(''))
         self.item.getAxis('right').setPen(pg.mkPen(color='w'))
@@ -323,10 +331,12 @@ class SignalsPlot(MainPlot):
 
 class SignalsFrequency(pg.PlotWidget):
     def __init__(self):
-        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self), axisItems={'left': NonScientificYLeft(orientation='left'),
-                                                                         'bottom': NonScientificX(orientation='bottom'),
-                                                                         'right': NonScientificYRight(orientation='right')})
+        pg.PlotWidget.__init__(self, viewBox=CustomViewBox(widget=self),
+                               axisItems={'left': NonScientificYLeft(orientation='left'),
+                                          'bottom': NonScientificXSignalFreq(orientation='bottom'),
+                                          'right': NonScientificYRight(orientation='right')})
 
+        self.filtering = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()

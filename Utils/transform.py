@@ -6,6 +6,7 @@ import pyproj
 import numpy as np
 import cv2
 import re
+import json
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from plyfile import PlyData, PlyElement
@@ -274,3 +275,49 @@ class CICFilter(QObject):
                 self.d_2_2 = self.first_diff
                 k = (2 * self.decimate_idx) ** 2
                 self.signal_output.emit(self.output / k)
+
+
+class IIRFilter(QObject):
+    def __init__(self):
+        QObject.__init__(self)
+
+        self.filters = {}
+        try:
+            with open('filters.json') as json_file:
+                self.filters = json.load(json_file)
+        except FileNotFoundError:
+            pass
+
+        self.x1 = 0
+        self.x2 = 0
+        self.y1 = 0
+        self.y2 = 0
+
+        self.current_filter = None
+
+    def set_current_filter(self, filter):
+        if filter in self.filters:
+            self.current_filter = filter
+            self.x1 = 0
+            self.x2 = 0
+            self.y1 = 0
+            self.y2 = 0
+
+    def filtering(self, array):
+        if self.current_filter is None:
+            return array
+        for block in self.filters[self.current_filter]:
+            array = self.step(array, block)
+        return array
+
+    def step(self, array, block):
+        a1, a2, b1, b2, b3, G = block
+        out_put = np.zeros(array.shape)
+        for i in range(len(array)):
+            step = b1 * array[i] + b2 * self.x1 + b3 * self.x2 - a1 * self.y1 - a2 * self.y2
+            self.x2 = self.x1
+            self.x1 = array[i]
+            self.y2 = self.y1
+            self.y1 = step
+            out_put[i] = step * G
+        return out_put

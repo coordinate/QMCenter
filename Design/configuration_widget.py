@@ -16,10 +16,17 @@ class Delegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         if index.column() == 1:
             item_line_edit = QLineEdit(parent)
-            regex = QRegExp('\\d+')
+            regex = QRegExp('-\\d+|\\d+')
             validator = QRegExpValidator(regex, self)
             item_line_edit.setValidator(validator)
             return item_line_edit
+        elif index.column() == 5:
+            item_line_edit = QLineEdit(parent)
+            regex = QRegExp('(-\\d+\\.{1}\\d+)|(\\d+\\.{1}\\d+)')
+            validator = QRegExpValidator(regex, self)
+            item_line_edit.setValidator(validator)
+            return item_line_edit
+
         else:
             return QStyledItemDelegate.createEditor(self, parent, option, index)
 

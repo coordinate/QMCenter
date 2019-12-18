@@ -3,7 +3,7 @@ import numpy as np
 from PyQt5.QtWidgets import QStackedWidget, QWidget, QHBoxLayout, QScrollArea, QGridLayout
 
 from Plots.plots import MagneticField, SignalsPlot, SignalsFrequency, LampTemp, SensorTemp, DCPlot
-from Utils.transform import CICFilter
+from Utils.transform import CICFilter, IIRFilter
 
 
 class GraphsWidget(QStackedWidget):
@@ -12,8 +12,10 @@ class GraphsWidget(QStackedWidget):
         self.parent = parent
         self.name = 'Telemetry'
         self.cic_filter = CICFilter()
+        self.iir_filter = IIRFilter()
         self.k0 = 0.003725290298
-        self.magnet = MagneticField()
+        self.gamma = 1 / 6.995795
+        self.magnet = MagneticField(self.iir_filter)
         self.signals_plot = SignalsPlot()
         self.signal_freq_plot = SignalsFrequency()
         self.lamp_temp_plot = LampTemp()
@@ -69,6 +71,7 @@ class GraphsWidget(QStackedWidget):
 
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
         self.cic_filter.signal_output.connect(lambda output: self.cic_output(output))
+        self.magnet.signal_filter_changed.connect(lambda action: self.change_filter(action))
 
     def retranslate(self):
         self.magnet.retranslate()
@@ -78,6 +81,14 @@ class GraphsWidget(QStackedWidget):
         self.sensor_temp_plot.retranslate()
         self.dc_plot.retranslate()
 
+    def change_filter(self, filter):
+        if filter is None:
+            self.iir_filter.current_filter = None
+            self.parent.geoshark_widget.current_filter_name.setText(_('No Filter'))
+        else:
+            self.iir_filter.set_current_filter(filter)
+            self.parent.geoshark_widget.current_filter_name.setText(filter)
+
     def change_decimate_idx(self, idx):
         if idx != '':
             self.decimate_idx = int(idx)
@@ -86,12 +97,13 @@ class GraphsWidget(QStackedWidget):
         freq = np.array(freq, dtype=np.uint32)
         self.cic_filter.filtering(freq)
         self.signals_plot.update(sig1, time, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
-        self.signal_freq_plot.update(sig1, freq, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        self.signal_freq_plot.update(sig1, freq * self.k0, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
+        freq = self.iir_filter.filtering(freq) * self.k0 * self.gamma
         self.magnet.update(freq, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.parent.geoshark_widget.device_on_connect = True
 
     def cic_output(self, output):
-        self.parent.geoshark_widget.tesla_num_label.setText('{:,.4f}'.format(output * self.k0))
+        self.parent.geoshark_widget.tesla_num_label.setText('{:,.4f}'.format(output * self.k0 * self.gamma))
 
     def plot_status_data(self, time, lamp_temp, lamp_voltage, dc_current, chamber_temp, chamber_voltage, ecu_temp,
                          status_lock, status_lamp_good, status_chamber_good, status_fan, status_error):

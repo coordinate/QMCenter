@@ -17,10 +17,12 @@ class StatisticProcessing(QWidget):
         self.write_statistic = False
         self.cic_filter = CICFilter()
         self.k0 = 0.003725290298
+        self.gamma = 1 / 6.995795
         self.layout = QGridLayout(self)
         self.freq_label = QLabel('Freq: ')
         self.freq_value_label = QLabel()
-        self.freq_value_label.setFrameStyle(2)
+        self.freq_value_label.setFrameStyle(1)
+        self.freq_value_label.setFixedHeight(20)
         self.decimate_idx_label = QLabel('R: ')
         self.decimate_idx_lineedit = QLineEdit()
         self.decimate_idx_lineedit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -56,7 +58,7 @@ class StatisticProcessing(QWidget):
         self.layout.addWidget(self.editor_label, 2, 0, 1, 1)
         self.layout.addWidget(self.editor_edit, 2, 1, 1, 1)
         self.layout.addWidget(self.start_btn, 3, 1, 1, 1)
-        self.layout.addWidget(self.log_text, 0, 3, 20, 1)
+        self.layout.addWidget(self.log_text, 0, 3, 40, 1)
         self.layout.addWidget(self.average_label, 4, 0, 1, 1)
         self.layout.addWidget(self.average_label_value, 4, 1, 1, 1)
         self.layout.addWidget(self.standard_deviation_label, 5, 0, 1, 1)
@@ -71,9 +73,9 @@ class StatisticProcessing(QWidget):
         self.cic_filter.filtering(freq)
 
     def cic_output(self, output):
-        self.freq_value_label.setText('{:,.4f}'.format(output * self.k0))
+        self.freq_value_label.setText('{:,.4f}'.format(output * self.k0 * self.gamma))
         if self.write_statistic:
-            self.start_statistic(output * self.k0)
+            self.start_statistic(output * self.k0 * self.gamma)
 
     def decimate_changed(self):
         self.cic_filter.decimate_idx = int(self.decimate_idx_lineedit.text())

@@ -11,6 +11,8 @@ build:
     - xcopy /E /Y C:\qmcenter\rtk_lib rtk_lib\
     - xcopy /Y C:\qmcenter\main.spec .
     - xcopy /Y C:\qmcenter\qmcenter.iss .
+    - RD /S /Q dist
+    - RD /S /Q build
     - C:\Python\Venvs\qmcenter_env\Scripts\pyinstaller.exe main.spec
     - C:\InnoSetup6\ISCC.exe qmcenter.iss
     - move Output\qmcenter.exe .

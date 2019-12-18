@@ -4,6 +4,7 @@ import tempfile
 import gettext
 
 from PyQt5.QtCore import QRegExp, QSettings, pyqtSignal
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from Design.design import UIForm
@@ -17,6 +18,7 @@ class MainWindow(QMainWindow, UIForm):
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.setWindowIcon(QIcon('images/logo.ico'))
         self.app_settings = QSettings('qmcenter.ini', QSettings.IniFormat)
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
@@ -73,6 +75,7 @@ class MainWindow(QMainWindow, UIForm):
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(ip):
             self.server = ip
+            self.app_settings.setValue('ip', ip)
 
     def decimate_idx_changed(self, idx):
         if idx != '':
@@ -147,7 +150,7 @@ class MainWindow(QMainWindow, UIForm):
         if ipRegex.exactMatch(server):
             self.server = server
             self.settings_widget.lineEdit_ip.setText(server)
-            self.settings_widget.define_server()
+            self.settings_widget.signal_ip_changed.emit(server)
         if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
             self.project_instance.open_project(self.app_settings.value('path'))
         if self.app_settings.value('language') and self.app_settings.value('language') == 'ru':

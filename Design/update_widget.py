@@ -1,5 +1,6 @@
 import os
 import requests
+from PyQt5.QtGui import QIcon
 
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
@@ -15,6 +16,7 @@ from Design.ui import show_error
 class UpdateWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
+        self.setWindowIcon(QIcon('images/logo.ico'))
         self.parent = parent
         self.name = 'Update'
         self.url = None

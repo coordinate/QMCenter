@@ -3,7 +3,7 @@ import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from PyQt5.QtGui import QVector3D, QPixmap
+from PyQt5.QtGui import QVector3D, QPixmap, QIcon
 from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QFrame, QCheckBox, QMessageBox, \
     QRadioButton
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -17,6 +17,7 @@ from Utils.transform import magnet_color, get_point_cloud, save_point_cloud, rea
 class CutMagnetWidget(QWidget):
     def __init__(self, parent, main):
         QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
+        self.setWindowIcon(QIcon('images/logo.ico'))
         self.parent = parent
         self.main = main
         self.shortcut_object = None
@@ -51,7 +52,6 @@ class CutMagnetWidget(QWidget):
         self.first.setText(_('Start Point: '))
         self.second.setText(_('End Point: '))
         self.reset_btn.setText(_('Reset boundaries'))
-        self.cut_save_btn.setText(_('Cut and Save'))
         self.ok_btn.setText(_('OK'))
         self.cancel.setText(_('Cancel'))
 
@@ -72,6 +72,7 @@ class Palette(QLabel):
         self.setPixmap(pixmap)
 
         self.settings_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
+        self.settings_widget.setWindowIcon(QIcon('images/logo.ico'))
         self.settings_widget.setFixedSize(300, 150)
         self.min = None
         self.max = None

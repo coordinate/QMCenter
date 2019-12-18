@@ -28,6 +28,7 @@ class ProjectWidget(QWidget):
         self.layout.addWidget(self.change_utm_btn, 10, 1, 1, 1)
 
         self.change_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
+        self.change_widget.setWindowIcon(QIcon('images/logo.ico'))
         self.change_widget.setWindowTitle(_('Set UTM zone'))
         self.change_widget.setMinimumSize(300, 100)
         self.change_lay = QGridLayout(self.change_widget)

@@ -6,13 +6,14 @@ from pyqtgraph.Point import Point
 
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QWheelEvent
-from PyQt5.QtWidgets import QMenu, QWidgetAction, QCheckBox
+from PyQt5.QtWidgets import QMenu, QWidgetAction, QCheckBox, QRadioButton
 
 # _ = lambda x: x
 
 
 class Menu(QMenu):
     sync_chbx_state = 0
+    current_filter = 0
 
     def __init__(self, widget):
         QMenu.__init__(self)
@@ -21,12 +22,33 @@ class Menu(QMenu):
         center_plot.triggered.connect(lambda: widget.view.setRange(yRange=(widget.left_axis[-1], widget.left_axis[-1])))
         vertical_autorange = self.addAction(_('Vertical Autorange'))
         vertical_autorange.triggered.connect(lambda: widget.view.autoRange())
+        if self.widget.filtering:
+            filters_menu = self.addMenu(_('Filters'))
+            filters_lst = []
+            for f in self.widget.iir_filter.filters.keys():
+                r = QRadioButton(f)
+                radio_action = QWidgetAction(filters_menu)
+                radio_action.setDefaultWidget(r)
+                filters_menu.addAction(radio_action)
+                filters_lst.append(r)
+            for i, f in enumerate(filters_lst):
+                if i == self.current_filter:
+                    f.setChecked(True)
+            self.filters = [(r, r.clicked.connect(lambda: self.filter_chosen())) for r in filters_lst]
         sync_x_chbx = QCheckBox(_('\t\t\t\t\tSynchronize time'))
         sync_x_chbx.setChecked(Menu.sync_chbx_state)
         sync_x_chbx.stateChanged.connect(lambda i: self.state_changed(i))
         sync_x = QWidgetAction(self)
         sync_x.setDefaultWidget(sync_x_chbx)
         self.addAction(sync_x)
+
+    def filter_chosen(self):
+        i = 0
+        for rb, action in self.filters:
+            if rb.isChecked():
+                Menu.current_filter = i
+                self.widget.signal_filter_changed.emit(rb.text())
+            i += 1
 
     def state_changed(self, i):
         Menu.sync_chbx_state = i
