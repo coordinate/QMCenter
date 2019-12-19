@@ -4,7 +4,7 @@ import subprocess
 from threading import Thread
 
 from PyQt5 import QtCore, QtWebSockets
-from PyQt5.QtCore import QTimer, pyqtSignal, QRegExp
+from PyQt5.QtCore import QTimer, pyqtSignal
 
 from Design.ui import show_error
 
@@ -21,11 +21,7 @@ class Client(QtCore.QObject):
         super().__init__(parent)
 
         self.parent = parent
-        ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
-        if ipRegex.exactMatch(self.parent.server):
-            self.ip = self.parent.server
-        else:
-            self.ip = None
+        self.ip = None
         self.port = '8080'
 
         self.ping_server_timer = QTimer()
@@ -82,7 +78,7 @@ class Client(QtCore.QObject):
     def error(self, error_code):
         print("error code: {}".format(error_code))
         print(self.client.errorString())
-        show_error(_('GeoShark error'), _('GeoShark is not responding.'))
+        show_error(_('GeoShark error'), _('GeoShark is not responding.\n{}.').format(self.client.errorString()))
         if error_code != 0:
             self.signal_disconnect.emit()
 

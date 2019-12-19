@@ -50,7 +50,10 @@ class NonScientificYRight(pg.AxisItem):
         self.autoSIPrefix = False
 
     def tickStrings(self, values, scale, spacing):
-        return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
+        if len(set([int(i) for i in values])) < len(values):
+            return ['{:.1f}'.format(float(value)) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
+        else:
+            return [int(value) if abs(value) <= 999999 else "{:.1e}".format(value) for value in values]
 
     def resizeEvent(self, ev=None):
         # Set correct position of label
@@ -123,6 +126,7 @@ class MainPlot(pg.PlotWidget):
         self.s = 10
         self.sync = False
         self.filtering = False
+        self.time_synchronised = True
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()
@@ -337,6 +341,7 @@ class SignalsFrequency(pg.PlotWidget):
                                           'right': NonScientificYRight(orientation='right')})
 
         self.filtering = False
+        self.time_synchronised = False
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setBackground(background=pg.mkColor('w'))
         self.item = self.getPlotItem()

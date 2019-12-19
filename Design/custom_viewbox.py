@@ -35,12 +35,13 @@ class Menu(QMenu):
                 if i == self.current_filter:
                     f.setChecked(True)
             self.filters = [(r, r.clicked.connect(lambda: self.filter_chosen())) for r in filters_lst]
-        sync_x_chbx = QCheckBox(_('\t\t\t\t\tSynchronize time'))
-        sync_x_chbx.setChecked(Menu.sync_chbx_state)
-        sync_x_chbx.stateChanged.connect(lambda i: self.state_changed(i))
-        sync_x = QWidgetAction(self)
-        sync_x.setDefaultWidget(sync_x_chbx)
-        self.addAction(sync_x)
+        if self.widget.time_synchronised:
+            sync_x_chbx = QCheckBox(_('\t\t\t\t\tSynchronize time'))
+            sync_x_chbx.setChecked(Menu.sync_chbx_state)
+            sync_x_chbx.stateChanged.connect(lambda i: self.state_changed(i))
+            sync_x = QWidgetAction(self)
+            sync_x.setDefaultWidget(sync_x_chbx)
+            self.addAction(sync_x)
 
     def filter_chosen(self):
         i = 0
@@ -48,6 +49,7 @@ class Menu(QMenu):
             if rb.isChecked():
                 Menu.current_filter = i
                 self.widget.signal_filter_changed.emit(rb.text())
+                break
             i += 1
 
     def state_changed(self, i):

@@ -456,12 +456,6 @@ class CurrentProject(QObject):
                     self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
                     ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
                                                               'indicator': 'Off'})
-            # elif os.path.exists(destination) and not os.path.samefile(file, destination):
-            #     show_error(_('File warning'),
-            #                _('{} is already in the project directory.\n'
-            #                  'Please, rename the Filename and try to import again.'.format(os.path.basename(file))))
-            #     self.progress.close()
-            #     return
             elif os.path.exists(destination):
                 show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
                                                 'Please rename imported file <b>{}</b> and try again.</html>').format(os.path.basename(file)))
@@ -524,6 +518,7 @@ class CurrentProject(QObject):
                 if child.attrib['name'] == element:
                     for ch in child.getchildren():
                         child.remove(ch)
+                        self.parent.three_d_widget.three_d_plot.remove_object(ch.attrib['filename'])
                         os.remove(os.path.join(self.files_path, element, ch.attrib['filename']))
             except KeyError:
                 pass

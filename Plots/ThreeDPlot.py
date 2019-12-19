@@ -73,7 +73,7 @@ class Palette(QLabel):
 
         self.settings_widget = QWidget(flags=Qt.WindowStaysOnTopHint)
         self.settings_widget.setWindowIcon(QIcon('images/logo.ico'))
-        self.settings_widget.setFixedSize(300, 150)
+        self.settings_widget.setFixedSize(350, 150)
         self.min = None
         self.max = None
         self.settings_widget.setWindowTitle(_('Palette settings'))
@@ -304,13 +304,14 @@ class ThreeDPlot(gl.GLViewWidget):
                 time, latitude, longitude, height, magnet = s.split()
             except ValueError:
                 continue
-            x, y, zone, letter = project((float(longitude), float(latitude)), self.utm_zone)
+            x, y, zone, self.utm_letter = project((float(longitude), float(latitude)), self.utm_zone)
             points[i] = (x, y, float(height))
             color[i] = float(magnet)
             size[i] = 3
             magnet_array[i] = float(magnet)
             time_array[i] = float(time)
             lon_lat[i] = [float(longitude), float(latitude)]
+        self.parent.project_instance.project_utm.attrib['letter'] = self.utm_letter
 
         progress.setValue(value)
         color = magnet_color(color)
@@ -336,7 +337,9 @@ class ThreeDPlot(gl.GLViewWidget):
 
         if os.path.splitext(filename)[1] == '.tif':
             try:
-                pcd, self.utm_zone, self.utm_letter = get_point_cloud(filename, progress, self.utm_zone)
+                pcd, self.utm_zone, utm_letter = get_point_cloud(filename, progress, self.utm_zone)
+                if not self.utm_letter:
+                    self.utm_letter = utm_letter
                 self.parent.project_instance.project_utm.attrib['zone'] = str(self.utm_zone)
                 self.parent.project_instance.project_utm.attrib['letter'] = self.utm_letter
                 save_point_cloud(pcd, path_to_save)

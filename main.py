@@ -23,7 +23,6 @@ class MainWindow(QMainWindow, UIForm):
         self.setMinimumSize(200, 200)
         self.tempdir = tempfile.gettempdir()
         self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
-        self.server = ''
         self.setupUI(self)
 
         self.settings.triggered.connect(lambda: self.settings_widget.show())
@@ -57,7 +56,9 @@ class MainWindow(QMainWindow, UIForm):
 
         self.tabwidget_left.tabCloseRequested.connect(lambda i: self.close_in_left_tabs(i))
         self.tabwidget_left.signal.connect(lambda ev: self.graphs_widget.change_grid(ev))
+        self.tabwidget_left.drop_signal.connect(lambda: self.widget_dropped())
         self.tabwidget_right.tabCloseRequested.connect(lambda i: self.close_in_right_tabs(i))
+        self.tabwidget_right.drop_signal.connect(lambda: self.widget_dropped())
 
         self.settings_widget.signal_language_changed.connect(lambda lang: self.language_changed(lang))
         self.signal_language_changed.connect(lambda: self.retranslate())
@@ -74,7 +75,6 @@ class MainWindow(QMainWindow, UIForm):
     def ip_changed(self, ip):
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(ip):
-            self.server = ip
             self.app_settings.setValue('ip', ip)
 
     def decimate_idx_changed(self, idx):
@@ -94,11 +94,36 @@ class MainWindow(QMainWindow, UIForm):
 
     def close_in_left_tabs(self, index):
         self.tabwidget_left.removeTab(index)
+        if self.tabwidget_left.count() == 0:
+            while self.tabwidget_right.count() != 0:
+                self.tabwidget_left.addTab(self.tabwidget_right.widget(0), _(self.tabwidget_right.widget(0).name))
+            self.one_tab()
 
     def close_in_right_tabs(self, index):
         self.tabwidget_right.removeTab(index)
         if self.tabwidget_right.count() < 1:
             self.one_tab()
+
+    def widget_dropped(self):
+        if self.tabwidget_left.count() == 0:
+            while self.tabwidget_right.count() != 0:
+                self.tabwidget_left.addTab(self.tabwidget_right.widget(0), _(self.tabwidget_right.widget(0).name))
+            self.one_tab()
+        if self.tabwidget_right.count() < 1:
+            self.one_tab()
+
+    def add_widgets(self, left, right):
+        if len(right) > 0:
+            self.split_tabs()
+            for w in right:
+                for i in self.widgets:
+                    if w == i.name:
+                        self.tabwidget_right.addTab(i, _(i.name))
+        if len(left) > 0:
+            for w in left:
+                for i in self.widgets:
+                    if w == i.name:
+                        self.tabwidget_left.addTab(i, _(i.name))
 
     def add_graphs(self):
         if self.tabwidget_left.indexOf(self.graphs_widget) == -1:
@@ -148,18 +173,21 @@ class MainWindow(QMainWindow, UIForm):
         server = self.app_settings.value('ip')
         ipRegex = QRegExp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
         if ipRegex.exactMatch(server):
-            self.server = server
             self.settings_widget.lineEdit_ip.setText(server)
             self.settings_widget.signal_ip_changed.emit(server)
-        if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
-            self.project_instance.open_project(self.app_settings.value('path'))
+        if self.app_settings.value('left_tab') is not None and self.app_settings.value('right_tab') is not None:
+            self.add_widgets(self.app_settings.value('left_tab'), self.app_settings.value('right_tab'))
+        if self.app_settings.value('workspace') and self.app_settings.value('workspace').isdigit():
+            self.tab_workspace.setCurrentIndex(int(self.app_settings.value('workspace')))
         if self.app_settings.value('language') and self.app_settings.value('language') == 'ru':
             self.settings_widget.language_combo.setCurrentText('Russian')
         else:
             self.settings_widget.language_combo.setCurrentText('English')
-        if self.app_settings.value('decimate_idx') and self.app_settings.value('decimate_idx') != '':
+        if self.app_settings.value('decimate_idx') and self.app_settings.value('decimate_idx').isdigit():
             self.graphs_widget.cic_filter.decimate_idx = int(self.app_settings.value('decimate_idx'))
             self.settings_widget.decimate_lineedit.setText(self.app_settings.value('decimate_idx'))
+        if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
+            self.project_instance.open_project(self.app_settings.value('path'))
 
     def write_state(self):
         self.app_settings.setValue('version', '0.8')
@@ -169,6 +197,12 @@ class MainWindow(QMainWindow, UIForm):
             self.app_settings.setValue('path', self.project_instance.project_path)
         else:
             self.app_settings.setValue('path', '')
+
+        left_tab = [self.tabwidget_left.widget(i).name for i in range(self.tabwidget_left.count())]
+        self.app_settings.setValue('left_tab', left_tab if len(left_tab) > 0 else '')
+        right_tab = [self.tabwidget_right.widget(i).name for i in range(self.tabwidget_right.count())]
+        self.app_settings.setValue('right_tab', right_tab if len(right_tab) > 0 else '')
+        self.app_settings.setValue('workspace', self.tab_workspace.currentIndex())
 
     def closeEvent(self, event):
         self.write_state()

@@ -132,23 +132,31 @@ class UIForm:
         self.geoshark_widget = GeosharkWidget(self)
         self.tab_workspace.addTab(self.geoshark_widget, _('GeoShark'))
 
+        self.widgets = []
+
         # Create update tab
         self.update_widget = UpdateWidget(self)
+        self.widgets.append(self.update_widget)
 
         # create file manager tab
         self.file_manager_widget = FileManager(self)
+        self.widgets.append(self.file_manager_widget)
 
         # create Telemetry tab
         self.graphs_widget = GraphsWidget(self)
+        self.widgets.append(self.graphs_widget)
 
         # Create configuration tab
         self.configuration_widget = ConfigurationWidget(self)
+        self.widgets.append(self.configuration_widget)
 
         # create tab 3D Viewer
         self.three_d_widget = ThreeDVisual(self)
+        self.widgets.append(self.three_d_widget)
 
         # create Statistic processing tab
         self.statistic_widget = StatisticProcessing(self)
+        self.widgets.append(self.statistic_widget)
 
     def retranslate(self):
         self.fileMenu.setTitle(_('&File'))

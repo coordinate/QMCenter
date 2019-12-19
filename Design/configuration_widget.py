@@ -40,11 +40,7 @@ class ConfigurationWidget(QWidget):
         self.parent = parent
         self.name = 'Configuration'
         self.port = '9080'
-        ipRegex = QRegExp('(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})')
-        if ipRegex.exactMatch(self.parent.server):
-            self.server = ':'.join([self.parent.server, self.port])
-        else:
-            self.server = None
+        self.server = None
 
         self.setWindowTitle(_(self.name))
         self.layout = QGridLayout(self)

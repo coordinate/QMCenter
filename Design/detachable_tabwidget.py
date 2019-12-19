@@ -85,11 +85,18 @@ class TabBar(QTabBar):
         else:
             QTabBar.mouseMoveEvent(self, event)
 
+    def mouseReleaseEvent(self, event):
+        if event.button() == 4:
+            self.tabCloseRequested.emit(self.tabAt(event.pos()))
+        else:
+            QTabBar.mouseReleaseEvent(self, event)
+
 
 class DetachableTabWidget(QTabWidget):
     drag_widget = None
     drag_text = None
     signal = pyqtSignal(object)
+    drop_signal = pyqtSignal()
 
     def __init__(self, parent):
         super().__init__()
@@ -125,6 +132,7 @@ class DetachableTabWidget(QTabWidget):
             self.insertTab(counter + 1, DetachableTabWidget.drag_widget, DetachableTabWidget.drag_text)
         DetachableTabWidget.drag_widget = None
         DetachableTabWidget.drag_text = None
+        self.drop_signal.emit()
 
     def resizeEvent(self, event):
         self.signal.emit(event)

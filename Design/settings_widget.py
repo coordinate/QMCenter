@@ -37,7 +37,6 @@ class SettingsWidget(QWidget):
         self.ok_btn.clicked.connect(lambda: self.apply_settings(True))
         self.cancel_btn.clicked.connect(lambda: self.cancel_settings())
 
-
         self.connection_item = QListWidgetItem(_('Connection'))
         self.settings_menu_items.addItem(self.connection_item)
 
@@ -135,11 +134,11 @@ class SettingsWidget(QWidget):
                 self.paint_settings_menu_item.setCurrentWidget(value)
 
     def apply_settings(self, close=False):
-        if len(self.lineEdit_ip.text().split('.')) < 4:
+        if len(self.lineEdit_ip.text().split('.')) == 4 and self.parent.app_settings.value('ip') != self.lineEdit_ip.text():
+            self.parent.client.close()
+            self.signal_ip_changed.emit(self.lineEdit_ip.text())
+        else:
             show_error(_('IP error'), _('IP address is not correct.'))
-            return
-        self.parent.client.close()
-        self.signal_ip_changed.emit(self.lineEdit_ip.text())
         if self.parent.app_settings.value('language') != self.language_combo.currentText()[:2].lower():
             self.signal_language_changed.emit(self.language_combo.currentText()[:2].lower())
         self.signal_decimate_changed.emit(self.decimate_lineedit.text())

@@ -2,7 +2,7 @@ import numpy as np
 
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QSizePolicy, QFileDialog
 
 from Utils.transform import CICFilter
 
@@ -19,11 +19,11 @@ class StatisticProcessing(QWidget):
         self.k0 = 0.003725290298
         self.gamma = 1 / 6.995795
         self.layout = QGridLayout(self)
-        self.freq_label = QLabel('Freq: ')
+        self.freq_label = QLabel(_('Frequency: '))
         self.freq_value_label = QLabel()
         self.freq_value_label.setFrameStyle(1)
         self.freq_value_label.setFixedHeight(20)
-        self.decimate_idx_label = QLabel('R: ')
+        self.decimate_idx_label = QLabel(_('Decimate idx: '))
         self.decimate_idx_lineedit = QLineEdit()
         self.decimate_idx_lineedit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         decimate_regex = QRegExp('\\d+')
@@ -31,7 +31,7 @@ class StatisticProcessing(QWidget):
         self.decimate_idx_lineedit.setValidator(decimate_validator)
         self.start_btn = QPushButton(_('Start'))
 
-        self.editor_label = QLabel('N: ')
+        self.editor_label = QLabel('Count: ')
         self.editor_edit = QLineEdit()
         self.editor_edit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.editor_edit.setText('1')
@@ -46,6 +46,8 @@ class StatisticProcessing(QWidget):
         self.standard_deviation_label = QLabel(_('Standard\ndeviation: '))
         self.standard_deviation_label_value = QLabel()
         self.standard_deviation_label_value.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+        self.save_statistic_btn = QPushButton(_('Save statistic'))
 
         self.log_text = QTextEdit()
         self.log_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -63,10 +65,12 @@ class StatisticProcessing(QWidget):
         self.layout.addWidget(self.average_label_value, 4, 1, 1, 1)
         self.layout.addWidget(self.standard_deviation_label, 5, 0, 1, 1)
         self.layout.addWidget(self.standard_deviation_label_value, 5, 1, 1, 1)
+        self.layout.addWidget(self.save_statistic_btn, 8, 1, 1, 1)
 
         self.cic_filter.signal_output.connect(lambda output: self.cic_output(output))
         self.decimate_idx_lineedit.returnPressed.connect(lambda: self.decimate_changed())
         self.start_btn.clicked.connect(lambda: self.start_btn_clicked())
+        self.save_statistic_btn.clicked.connect(lambda: self.save_statistic())
 
     def update_statistic(self, freq, time, sig1, sig2):
         freq = np.array(freq, dtype=np.uint32)
@@ -94,4 +98,11 @@ class StatisticProcessing(QWidget):
             self.standard_deviation_label_value.setText('{:,.4f}'.format(np.std(self.receiver)))
             self.write_statistic = False
             self.receiver.clear()
+
+    def save_statistic(self):
+        file = QFileDialog.getSaveFileName(None, "Save File", self.parent.expanduser_dir, "Text file (*.txt)")
+        if file[0] == '':
+            return
+        with open(file[0], 'w') as f:
+            f.write(self.log_text.toPlainText())
 

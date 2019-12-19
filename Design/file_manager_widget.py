@@ -6,7 +6,7 @@ import requests
 
 from win32 import win32api
 
-from PyQt5.QtCore import QDir, Qt, QRegExp
+from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QTableView, QFileSystemModel, QCheckBox, QLabel, \
     QMessageBox, QGridLayout, QFrame
@@ -24,11 +24,7 @@ class FileManager(QWidget):
         self.parent = parent
         self.name = 'File manager'
         self.port = '9080'
-        ipRegex = QRegExp('(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})')
-        if ipRegex.exactMatch(self.parent.server):
-            self.server = ':'.join([self.parent.server, self.port])
-        else:
-            self.server = None
+        self.server = None
 
         drives = win32api.GetLogicalDriveStrings().split('\\\000')[:-1]
         self.logical_drives = drives + [d+'/' for d in drives]

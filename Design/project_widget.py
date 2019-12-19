@@ -6,7 +6,8 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon
 from PyQt5.QtWidgets import QTreeView, QMenu, QAction, QHeaderView, QFileDialog, QWidget, QGridLayout, QStackedWidget, \
     QLabel, QPushButton, QProgressBar, QMessageBox, QComboBox, QDialog
 
-from Design.ui import show_warning_yes_no
+from Design.ui import show_warning_yes_no, show_error
+
 
 # _ = lambda x: x
 
@@ -59,8 +60,14 @@ class ProjectWidget(QWidget):
         self.workspaceview.magnet_creator.retranslate()
 
     def apply_new_zone(self):
+        if self.parent.project_instance.project_path is None:
+            show_error(_('Project Error'), _('Please open project.'))
+            self.combobox.setCurrentIndex(0)
+            return
         self.parent.three_d_widget.three_d_plot.utm_zone = int(self.combobox.currentText())
+        self.parent.three_d_widget.three_d_plot.utm_letter = None
         self.parent.project_instance.project_utm.attrib['zone'] = self.combobox.currentText()
+        self.parent.project_instance.project_utm.attrib['letter'] = ''
         self.parent.project_instance.write_proj_tree()
         self.parent.project_instance.parse_proj_tree(self.parent.project_instance.project_path)
 
@@ -152,6 +159,7 @@ class WorkspaceView(QTreeView):
         self.project_name.setText(name)
         self.project_name.setFont(font)
         self.project_name.setIcon(icon)
+
 
     def add_view(self, view=None):
         if not self.parent.project_instance.project_path:
