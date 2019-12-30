@@ -81,6 +81,7 @@ class WorkspaceView(QTreeView):
         self.setEditTriggers(QTreeView.NoEditTriggers)
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.project_name = QStandardItem()
+        self.view_list = None
         self.model = QStandardItemModel(self)
         self.model.setColumnCount(2)
         self.model.setHorizontalHeaderItem(0, self.project_name)
@@ -107,6 +108,8 @@ class WorkspaceView(QTreeView):
                 indicator.setData(QIcon('images/gray_light_icon.png'), 1)
                 indicator.setData('Off', 3)
                 self.parent.three_d_widget.three_d_plot.show_hide_elements(object_name, 'Off')
+            else:
+                return
             try:
                 self.parent.project_instance.root.xpath(
                     "//*[@filename='{}']".format(object_name))[0].attrib['indicator'] = indicator.data(3)
@@ -117,10 +120,12 @@ class WorkspaceView(QTreeView):
         if idx.column() in [-1, 1] or not self.model.itemFromIndex(idx).parent():
             return
         parent_click_item = self.model.itemFromIndex(idx).parent()
-        if parent_click_item.text() == 'Magnetic Field Measurements':
+        if parent_click_item.text() in [_('Magnetic Field Measurements'), _('GNSS Observations')]:
             return
         object_name = idx.parent().child(idx.row(), 0).data()
         indicator = parent_click_item.child(idx.row(), 1)
+        if indicator.data(3) in ['low_memory', 'bad_file']:
+            return
         self.parent.three_d_widget.three_d_plot.focus_element(idx.data(), indicator.data(3))
         self.parent.add_visual()
         indicator.setData(QIcon('images/green_light_icon.png'), 1)
@@ -160,12 +165,12 @@ class WorkspaceView(QTreeView):
         self.project_name.setFont(font)
         self.project_name.setIcon(icon)
 
-
     def add_view(self, view=None):
         if not self.parent.project_instance.project_path:
             self.model.removeRows(0, self.model.rowCount())
             self.project_name.setText('')
             return
+        self.view_list = view.keys()
         self.model.removeRows(0, self.model.rowCount())
         self.magnetic_field_item = QStandardItem(_('Magnetic Field Measurements'))
         self.magnetic_field_item.setData(QIcon('images/magmeasurements.png'), 1)
@@ -248,8 +253,14 @@ class WorkspaceView(QTreeView):
                     child = QStandardItem(ch.attrib['filename'])
                     child.setData(QIcon('images/file.png'), 1)
                     self.geo_item.setChild(m, 0, child)
-                    item = QStandardItem(QIcon('images/{}_light_icon.png'.format('gray' if ch.attrib['indicator'] == 'Off'
-                                                                                 else 'green')), '')
+                    if ch.attrib['indicator'] == 'Off':
+                        image = QIcon('images/gray_light_icon.png')
+                    elif ch.attrib['indicator'] == 'On':
+                        image = QIcon('images/green_light_icon.png')
+                    else:
+                        image = QIcon('images/cross.png')
+
+                    item = QStandardItem(image, '')
                     item.setData(ch.attrib['indicator'], 3)
                     self.geo_item.setChild(m, 1, item)
                     self.parent.three_d_widget.three_d_plot.show_hide_elements(ch.attrib['filename'], ch.attrib['indicator'])
@@ -281,7 +292,6 @@ class WorkspaceView(QTreeView):
     def contextMenuEvent(self, event):
         if not self.parent.project_instance.project_path:
             return
-        # print([i.data() for i in self.selectedIndexes()])
         item_list = [i.data() for i in self.selectedIndexes()]
 
         if len(item_list) > 2:
@@ -424,7 +434,8 @@ class WorkspaceView(QTreeView):
                                                                   'This action cannot be undone.'))
         if answer == QMessageBox.No:
             return
-        self.parent.project_instance.remove_all(item_index.data())
+        group = [i for i in self.view_list if _(i) == item_index.data()][0]
+        self.parent.project_instance.remove_all(group)
         item = self.model.item(item_index.row())
         item.removeRows(0, item.rowCount())
 
@@ -506,7 +517,7 @@ class MagnetCreator(QDialog):
             else:
                 self.setFixedSize(400, 140)
                 self.matching_label.setText(_('There is no *.ubx file in the project matching <b>{}</b>').format(self.mag_file))
-                self.create_btn.setEnabled(True)
+                self.create_btn.setEnabled(False)
                 self.first_layout.addWidget(self.matching_label, 0, 0, 1, 3)
                 self.first_layout.addWidget(self.browse_label, 1, 0, 1, 2)
                 self.first_layout.addWidget(self.browse_btn, 1, 2, 1, 1)
@@ -522,6 +533,8 @@ class MagnetCreator(QDialog):
 
         if not file:
             return
+
+        self.create_btn.setEnabled(True)
         self.chosen_label.setText(_('Match <b>{}</b> with <b>{}</b>').format(self.mag_file, os.path.basename(file)))
         self.second_file = file
 

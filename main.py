@@ -208,6 +208,7 @@ class MainWindow(QMainWindow, UIForm):
         self.write_state()
         self.project_instance.write_proj_tree()
         event.accept()
+        QApplication.closeAllWindows()
 
 
 if __name__ == '__main__':

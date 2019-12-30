@@ -14,7 +14,7 @@ class SettingsWidget(QWidget):
     signal_language_changed = pyqtSignal(object)
 
     def __init__(self, parent):
-        QWidget.__init__(self)
+        QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
         self.setWindowIcon(QIcon('images/logo.ico'))
         # Create settings widget
         self.parent = parent
@@ -137,7 +137,7 @@ class SettingsWidget(QWidget):
         if len(self.lineEdit_ip.text().split('.')) == 4 and self.parent.app_settings.value('ip') != self.lineEdit_ip.text():
             self.parent.client.close()
             self.signal_ip_changed.emit(self.lineEdit_ip.text())
-        elif len(self.lineEdit_ip.text().split('.')) > 1:
+        elif len(self.lineEdit_ip.text().split('.')) < 4:
             show_error(_('IP error'), _('IP address is not correct.'))
         if self.parent.app_settings.value('language') != self.language_combo.currentText()[:2].lower():
             self.signal_language_changed.emit(self.language_combo.currentText()[:2].lower())

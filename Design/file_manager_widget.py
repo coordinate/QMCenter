@@ -9,7 +9,7 @@ from win32 import win32api
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QTableView, QFileSystemModel, QCheckBox, QLabel, \
-    QMessageBox, QGridLayout, QFrame
+    QMessageBox, QGridLayout, QFrame, QApplication
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 from requests_toolbelt.downloadutils.tee import tee_to_bytearray
 
@@ -22,7 +22,7 @@ class FileManager(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent
-        self.name = 'File manager'
+        self.name = 'File Manager'
         self.port = '9080'
         self.server = None
 
@@ -283,6 +283,7 @@ class FileManager(QWidget):
             for chunk in tee_to_bytearray(res, b):
                 len_b += len(chunk)
                 progress.update((len_b/total_length)*99)
+                QApplication.processEvents()
         except:
             progress.close()
             show_error(_('GeoShark error'), _('GeoShark is not responding.'))
@@ -350,6 +351,7 @@ class FileManager(QWidget):
                 return
             if res.ok:
                 self.right_file_model_update()
+        self.file_to_delete = None
 
     def save_file_models_folder(self):
         self.left_file_model_auto_sync_label.setText(self.parent.settings_widget.left_folder_tracked.text())

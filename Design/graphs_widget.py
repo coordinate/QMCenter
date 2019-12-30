@@ -100,7 +100,7 @@ class GraphsWidget(QStackedWidget):
         self.signal_freq_plot.update(sig1, freq * self.k0, sig2, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         freq = self.iir_filter.filtering(freq) * self.k0 * self.gamma
         self.magnet.update(freq, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
-        self.parent.geoshark_widget.device_on_connect = True
+        self.parent.geoshark_widget.connected()
 
     def cic_output(self, output):
         self.parent.geoshark_widget.tesla_num_label.setText('{:,.4f}'.format(output * self.k0 * self.gamma))
@@ -111,7 +111,6 @@ class GraphsWidget(QStackedWidget):
         self.dc_plot.update(dc_current, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.sensor_temp_plot.update(chamber_temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.parent.geoshark_widget.deg_num_label.setText(str(lamp_temp[0]/10))
-        self.parent.geoshark_widget.device_on_connect = True
 
     def sync_x(self, check):
         if check == 2:

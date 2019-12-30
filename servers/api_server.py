@@ -67,7 +67,7 @@ def upload_file():
 
 
 # file manager tab, right arrow btn [post(upload) file to device(server)]
-@app.route('/upload_file_to_device/<path:path>', methods=['POST'])
+@app.route('/data/<path:path>', methods=['POST'])
 def upload_file_to_device(path):
     if request.method == 'POST':
         f = request.files['upload_file']
@@ -86,12 +86,7 @@ def delete_file_from_device(path):
     return jsonify({'success': True})
 
 
-@app.route('/download', methods=['POST'])
-def index():
-    response = send_from_directory(directory='D:\\a.bulygin\QMCenter\data', filename='mag_track.magnete')
-    return response
-
-
+# file manager tab, get current directory
 @app.route('/data/', methods=['GET'])
 def main_folder():
     directory = []

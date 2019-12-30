@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2019-11-28 13:52+0300\n"
-"PO-Revision-Date: 2019-11-28 14:01+0300\n"
+"POT-Creation-Date: 2019-12-19 18:13+0300\n"
+"PO-Revision-Date: 2019-12-23 10:17+0300\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -15,386 +15,694 @@ msgstr ""
 "X-Generator: Poedit 2.2.4\n"
 "Last-Translator: \n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
-"Language: ru\n"
+"Language: ru_RU\n"
 
-#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
-msgid "Value"
-msgstr "Значение"
+#: Clients\client_socket.py:81
+msgid ""
+"GeoShark is not responding.\n"
+"{}."
+msgstr ""
+"GeoShark не отвечает.\n"
+"{}."
 
-#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
-#: Design\update_widget.py:31 Design\update_widget.py:80
+#: Clients\client_socket.py:81 Design\configuration_widget.py:88
+#: Design\configuration_widget.py:178 Design\configuration_widget.py:184
+#: Design\file_manager_widget.py:198 Design\file_manager_widget.py:288
+#: Design\file_manager_widget.py:324 Design\file_manager_widget.py:349
+#: Design\update_widget.py:91 Design\update_widget.py:141
+msgid "GeoShark error"
+msgstr "Ошибка GeoShark"
+
+#: Design\configuration_widget.py:53 Design\configuration_widget.py:72
+msgid "Data type"
+msgstr "Тип данных"
+
+#: Design\configuration_widget.py:53 Design\configuration_widget.py:72
+msgid "Origin_data"
+msgstr "Исходное значение"
+
+#: Design\configuration_widget.py:53 Design\configuration_widget.py:72
+#: Design\update_widget.py:28 Design\update_widget.py:71
 msgid "Parameter"
 msgstr "Параметр"
 
-#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
-#: Plots\ThreeDPlot.py:83 Plots\ThreeDPlot.py:125
+#: Design\configuration_widget.py:53 Design\configuration_widget.py:72
+#: Plots\ThreeDPlot.py:84 Plots\ThreeDPlot.py:123
 msgid "Max"
-msgstr "Максимум"
+msgstr "Макс."
 
-#: Design\configuration_widget.py:29 Design\configuration_widget.py:47
-#: Plots\ThreeDPlot.py:84 Plots\ThreeDPlot.py:126
+#: Design\configuration_widget.py:53 Design\configuration_widget.py:72
+#: Plots\ThreeDPlot.py:85 Plots\ThreeDPlot.py:124
 msgid "Min"
-msgstr "Минимум"
+msgstr "Мин."
 
-#: Design\configuration_widget.py:33 Design\configuration_widget.py:48
+#: Design\configuration_widget.py:54 Design\configuration_widget.py:73
+msgid "Units"
+msgstr "Единицы"
+
+#: Design\configuration_widget.py:54 Design\configuration_widget.py:73
+msgid "Value"
+msgstr "Значение"
+
+#: Design\configuration_widget.py:58 Design\configuration_widget.py:74
 msgid "Read"
-msgstr "Прочитать"
+msgstr "Считать"
 
-#: Design\configuration_widget.py:35 Design\configuration_widget.py:49
+#: Design\configuration_widget.py:60 Design\configuration_widget.py:75
 msgid "Write"
-msgstr "Запись"
+msgstr "Записать"
 
-#: Design\configuration_widget.py:62 Design\configuration_widget.py:127
-#: Design\configuration_widget.py:141 Design\file_manager_widget.py:277
-#: Design\file_manager_widget.py:311 Design\file_manager_widget.py:336
-#: Design\update_widget.py:101 Design\update_widget.py:149
-msgid "Server error"
-msgstr "Ошибка сервера"
+#: Design\configuration_widget.py:88 Design\file_manager_widget.py:198
+#: Design\file_manager_widget.py:288 Design\file_manager_widget.py:324
+#: Design\file_manager_widget.py:349 Design\update_widget.py:91
+msgid "GeoShark is not responding."
+msgstr "GeoShark не отвечает."
 
-#: Design\configuration_widget.py:62 Design\file_manager_widget.py:277
-#: Design\file_manager_widget.py:311 Design\file_manager_widget.py:336
-#: Design\update_widget.py:101
-msgid "Server is not responding."
-msgstr "Сервер не отвечает."
-
-#: Design\configuration_widget.py:127 Design\configuration_widget.py:141
+#: Design\configuration_widget.py:178
 msgid ""
-"Configuration updating not completed.\n"
-"Server is not responding."
+"Can not complete configuration update.\n"
+"GeoShark is not responding."
 msgstr ""
-"Обновление не выполнено.\n"
+"Невозможно завершить обновление конфигурации\n"
+"GeoShark не отвечает."
+
+#: Design\configuration_widget.py:184
+msgid ""
+"Can not complete configuration update.\n"
+"Server error {}."
+msgstr ""
+"Невозможно завершить обновление конфигурации\n"
 "Сервер не отвечает."
 
-#: Design\custom_viewbox.py:20 Design\custom_viewbox.py:39
+#: Design\custom_viewbox.py:21 Design\custom_viewbox.py:63
 msgid "Center Plot"
-msgstr "Отцентрировать"
+msgstr "Центрировать график"
 
-#: Design\custom_viewbox.py:22 Design\custom_viewbox.py:41
+#: Design\custom_viewbox.py:23 Design\custom_viewbox.py:65
 msgid "Vertical Autorange"
-msgstr ""
+msgstr "Вертикальный автодиапазон"
 
-#: Design\custom_viewbox.py:24
+#: Design\custom_viewbox.py:26
+msgid "Filters"
+msgstr "Фильтры"
+
+#: Design\custom_viewbox.py:39
 msgid "\t\t\t\t\tSynchronize time"
-msgstr "\t\t\t\t\tСинхронизация времени"
+msgstr "\t\t\t\t\tСинхронизировать время"
 
-#: Design\design.py:29 Design\design.py:144
+#: Design\design.py:31 Design\design.py:162
 msgid "&File"
 msgstr "&Файл"
 
-#: Design\design.py:31 Design\design.py:145
+#: Design\design.py:33 Design\design.py:163
 msgid "New project"
 msgstr "Новый проект"
 
-#: Design\design.py:33 Design\design.py:146
+#: Design\design.py:35 Design\design.py:164
 msgid "Open project"
 msgstr "Открыть проект"
 
-#: Design\design.py:35 Design\design.py:147 Design\settings_widget.py:22
-#: Design\settings_widget.py:152
+#: Design\design.py:37 Design\design.py:165 Design\settings_widget.py:22
+#: Design\settings_widget.py:156
 msgid "Settings"
 msgstr "Настройки"
 
-#: Design\design.py:38 Design\design.py:148
+#: Design\design.py:40 Design\design.py:166
 msgid "&Quit"
-msgstr ""
+msgstr "&Выйти"
 
-#: Design\design.py:49 Design\design.py:149 Design\info_widget.py:50
-#: Design\info_widget.py:87
-msgid "Graphs"
-msgstr "Графики"
+#: Design\design.py:43 Design\design.py:174
+msgid "&View"
+msgstr "&Вид"
 
-#: Design\design.py:52 Design\design.py:150
+#: Design\design.py:44 Design\design.py:66 Design\design.py:167
+#: Design\design.py:175
+msgid "Telemetry"
+msgstr "Телеметрия"
+
+#: Design\design.py:45 Design\design.py:69 Design\design.py:168
+#: Design\design.py:176
 msgid "Configuration"
 msgstr "Конфигурация"
 
-#: Design\design.py:55 Design\design.py:77 Design\design.py:151
-#: Design\design.py:154
-msgid "3D Visualization"
-msgstr "3D Визуализация"
+#: Design\design.py:46 Design\design.py:72 Design\design.py:85
+#: Design\design.py:169 Design\design.py:173 Design\design.py:177
+msgid "3D Viewer"
+msgstr "Просмотрщик 3D"
 
-#: Design\design.py:58 Design\design.py:152
+#: Design\design.py:47 Design\design.py:75 Design\design.py:170
+#: Design\design.py:178 Plots\ThreeDPlot.py:88 Plots\ThreeDPlot.py:125
 msgid "Update"
-msgstr "Обновление"
+msgstr "Обновить"
 
-#: Design\design.py:63 Design\design.py:153
-msgid "File manager"
-msgstr "Файловый менеджер"
+#: Design\design.py:48 Design\design.py:77 Design\design.py:171
+#: Design\design.py:179 Design\settings_widget.py:60
+#: Design\settings_widget.py:119 Design\settings_widget.py:162
+#: Design\settings_widget.py:174
+msgid "File Manager"
+msgstr "Диспетчер файлов"
 
-#: Design\design.py:79
+#: Design\design.py:49 Design\design.py:79 Design\design.py:172
+#: Design\design.py:180
+msgid "Statistic Processing"
+msgstr "Обработка статистики"
+
+#: Design\design.py:51 Design\design.py:87 Design\design.py:181
 msgid "Toolbar"
 msgstr "Панель инструментов"
 
-#: Design\design.py:113 Design\design.py:155
-msgid "Work panel"
-msgstr "Рабочая панель"
-
-#: Design\design.py:122 Design\design.py:156
+#: Design\design.py:52 Design\design.py:120 Design\design.py:182
+#: Design\design.py:187
 msgid "Workspace"
 msgstr "Рабочее пространство"
 
-#: Design\design.py:126 Design\design.py:157
-msgid "Info"
-msgstr "Инфо"
+#: Design\design.py:54 Design\design.py:184
+msgid "Help"
+msgstr "Помощь"
 
-#: Design\file_manager_widget.py:111 Design\file_manager_widget.py:137
+#: Design\design.py:55 Design\design.py:185 Design\help_widget.py:9
+msgid "About QMCenter"
+msgstr "О программе"
+
+#: Design\design.py:129 Design\design.py:188
+msgid "Project"
+msgstr "Проект"
+
+#: Design\design.py:133 Design\design.py:189
+msgid "GeoShark"
+msgstr "GeoShark"
+
+#: Design\detachable_tabwidget.py:18 Design\detachable_tabwidget.py:26
+msgid "Split Vertically"
+msgstr "Разделить по вертикали"
+
+#: Design\detachable_tabwidget.py:19 Design\detachable_tabwidget.py:28
+msgid "Move To Opposite Group"
+msgstr "Переместить в противоположную группу"
+
+#: Design\detachable_tabwidget.py:20
+msgid "Close"
+msgstr "Закрыть"
+
+#: Design\file_manager_widget.py:106 Design\file_manager_widget.py:132
 msgid "Auto sync"
-msgstr "Авто синхронизация"
+msgstr "Auto sync"
 
-#: Design\file_manager_widget.py:138 Design\file_manager_widget.py:207
+#: Design\file_manager_widget.py:133 Design\file_manager_widget.py:218
 msgid "Changed date"
-msgstr "Дата изменения"
+msgstr "Измененная дата"
 
-#: Design\file_manager_widget.py:138 Design\file_manager_widget.py:207
+#: Design\file_manager_widget.py:133 Design\file_manager_widget.py:218
 msgid "Name"
 msgstr "Имя"
 
-#: Design\file_manager_widget.py:138 Design\file_manager_widget.py:207
+#: Design\file_manager_widget.py:133 Design\file_manager_widget.py:218
 msgid "Size"
 msgstr "Размер"
 
-#: Design\file_manager_widget.py:266
+#: Design\file_manager_widget.py:277
 msgid "Download File"
-msgstr "Загрузить файл"
+msgstr "Скачать файл"
 
-#: Design\file_manager_widget.py:266
+#: Design\file_manager_widget.py:277
 msgid "Download file"
-msgstr "Загрузить файл"
+msgstr "Скачать файл"
 
-#: Design\file_manager_widget.py:299 Design\project_instance.py:79
-#: Design\project_instance.py:91 Design\update_widget.py:138
-#: Plots\ThreeDPlot.py:345
+#: Design\file_manager_widget.py:297 Design\project_instance.py:189
+#: Design\project_instance.py:383 Design\project_instance.py:460
+#: Design\project_instance.py:477
+msgid "File warning"
+msgstr "Предупреждение"
+
+#: Design\file_manager_widget.py:312 Design\project_instance.py:94
+#: Design\project_instance.py:106 Design\project_instance.py:473
+#: Design\update_widget.py:130 Plots\ThreeDPlot.py:349
 msgid "File error"
 msgstr "Ошибка файла"
 
-#: Design\file_manager_widget.py:299 Design\update_widget.py:138
+#: Design\file_manager_widget.py:312 Design\update_widget.py:130
 msgid "File size must be non zero."
-msgstr "Размер файла должен быть не нулевым."
+msgstr "Размер файла не может быть нулевым."
 
-#: Design\file_manager_widget.py:301
-msgid "Load file into device"
-msgstr "Файловый менеджер"
+#: Design\file_manager_widget.py:314
+msgid "Upload File Into GeoShark"
+msgstr "Загрузить файл на GeoShark"
 
-#: Design\file_manager_widget.py:301
-msgid "Upload File"
-msgstr "Загрузить файл"
+#: Design\file_manager_widget.py:314
+msgid "Upload file to GeoShark"
+msgstr "Загрузить файл на GeoShark"
 
-#: Design\file_manager_widget.py:320 Design\workspace_widget.py:345
-msgid "Remove file warning"
+#: Design\file_manager_widget.py:333
+msgid "Remove File warning"
 msgstr "Предупреждение"
 
-#: Design\file_manager_widget.py:321
+#: Design\file_manager_widget.py:334
 msgid ""
 "Do you really want to remove:\n"
 "{}"
 msgstr ""
-"Удалить элементы:\n"
+"Вы действительно хотите удалить:\n"
 "{}"
 
-#: Design\info_widget.py:16 Design\info_widget.py:81
-#: Design\settings_widget.py:31 Design\settings_widget.py:112
-#: Design\settings_widget.py:153 Design\settings_widget.py:166
+#: Design\geoshark_widget.py:16 Design\geoshark_widget.py:96
+#: Design\settings_widget.py:40 Design\settings_widget.py:118
+#: Design\settings_widget.py:157 Design\settings_widget.py:173
 msgid "Connection"
-msgstr "Соединение"
+msgstr "Подключение"
 
-#: Design\info_widget.py:23 Design\info_widget.py:82
+#: Design\geoshark_widget.py:23 Design\geoshark_widget.py:97
 msgid "Connect"
-msgstr "Подключить"
+msgstr "Подключиться"
 
-#: Design\info_widget.py:27 Design\info_widget.py:83
+#: Design\geoshark_widget.py:27 Design\geoshark_widget.py:98
 msgid "Disconnect"
-msgstr "Отключить"
+msgstr "Отключиться"
 
-#: Design\info_widget.py:30 Design\info_widget.py:84
+#: Design\geoshark_widget.py:30 Design\geoshark_widget.py:99
 msgid "Auto connect"
-msgstr "Автоматическое подключение"
+msgstr "Авто-подключение"
 
-#: Design\info_widget.py:39 Design\info_widget.py:85
+#: Design\geoshark_widget.py:39 Design\geoshark_widget.py:100
 msgid "State"
 msgstr "Состояние"
 
-#: Design\info_widget.py:42 Design\info_widget.py:86
+#: Design\geoshark_widget.py:42 Design\geoshark_widget.py:101
 msgid "Scaled"
-msgstr "Масштаб"
+msgstr "Масштабировать"
 
-#: Design\info_widget.py:56 Design\info_widget.py:88
+#: Design\geoshark_widget.py:50 Design\geoshark_widget.py:102
+msgid "Graphs"
+msgstr "Графики"
+
+#: Design\geoshark_widget.py:56 Design\geoshark_widget.py:103
 msgid "Enlarge"
-msgstr ""
+msgstr "Увеличить"
 
-#: Design\info_widget.py:59 Design\info_widget.py:89
+#: Design\geoshark_widget.py:59 Design\geoshark_widget.py:104
 msgid "Temperature:"
 msgstr "Температура:"
 
-#: Design\project_instance.py:53
+#: Design\geoshark_widget.py:64 Design\statistics_widget.py:22
+msgid "Frequency:"
+msgstr "Частота:"
+
+#: Design\geoshark_widget.py:69
+msgid "Current Filter"
+msgstr "Текущий фильтр"
+
+#: Design\geoshark_widget.py:70 Design\graphs_widget.py:87
+msgid "No Filter"
+msgstr "Нет фильтра"
+
+#: Design\help_widget.py:14
+msgid ""
+"QMCenter v0.8\n"
+"Geoscan, LTD\n"
+"Some information"
+msgstr ""
+"QMCenter v0.8\n"
+"Geoscan, LTD\n"
+"Информация"
+
+#: Design\help_widget.py:16
+msgid ""
+"This program use GDAL, OpenGL, PyQt,\n"
+"InnoSetup: Copyright (C) 1997-2019 Jordan Russell. All rights reserved.\n"
+"Portions Copyright (C) 2000-2019 Martijn Laan. All rights reserved.\n"
+"Icons used in this software are made by Freepik, from www.flaticon.com."
+msgstr ""
+"This program use GDAL, OpenGL, PyQt,\n"
+"InnoSetup: Copyright (C) 1997-2019 Jordan Russell. All rights reserved.\n"
+"Portions Copyright (C) 2000-2019 Martijn Laan. All rights reserved.\n"
+"Icons used in this software are made by Freepik, from www.flaticon.com."
+
+#: Design\help_widget.py:23
+msgid "Support"
+msgstr "Поддержка"
+
+#: Design\project_instance.py:38 Design\project_widget.py:21
+#: Design\project_widget.py:54
+msgid "Local(m)"
+msgstr "Локальная(м)"
+
+#: Design\project_instance.py:55
 msgid "Load project files"
-msgstr "Открыть проект"
+msgstr "Загрузка проекта"
 
-#: Design\project_instance.py:70
-msgid "Couldn't define UTM zone form .proj file."
-msgstr "Невозможно определить UTM зону."
+#: Design\project_instance.py:68 Design\project_instance.py:73
+msgid "Couldn't open .qmcproj file."
+msgstr "Не удается открыть файл проекта."
 
-#: Design\project_instance.py:70
-msgid "UTM error"
-msgstr "Ошибка UTM"
+#: Design\project_instance.py:68 Design\project_instance.py:73
+msgid "Project error"
+msgstr "Ошибка проекта"
 
-#: Design\project_instance.py:79 Design\project_instance.py:91
+#: Design\project_instance.py:84
+msgid ""
+"Can't read UTM zone from project files.\n"
+"Please set UTM zone manually."
+msgstr ""
+"Не удается считать UTM зону из файлов проекта.\n"
+"Пожалуйста установите UTM зону вручную."
+
+#: Design\project_instance.py:84
+msgid "UTM Zone Error"
+msgstr "Ошибка UTM зоны"
+
+#: Design\project_instance.py:94 Design\project_instance.py:106
 msgid ""
 "File not found\n"
 "{}"
-msgstr "Файловый менеджер"
-
-#: Design\project_instance.py:139 Design\project_instance.py:335
-msgid "Select one or more files to open"
-msgstr "Выберете один или несколько файлов"
-
-#: Design\project_instance.py:153 Design\project_instance.py:350
-#: Design\project_instance.py:431
-msgid "File warning"
-msgstr "Предупреждение"
-
-#: Design\project_instance.py:153 Design\project_instance.py:350
-#: Design\project_instance.py:431
-msgid ""
-"This filename is already in proj.files.\n"
-"Do you want to \"save as\" and add to project:\n"
-"{}\n"
-"Or just add existed file to project"
 msgstr ""
-"Файл с таким именем существует.\n"
-"Сохранить как или добавить в проект:\n"
-"{}\n"
-"Или добавить в существующий файл"
+"Файл не найден\n"
+"{}"
 
-#: Design\project_instance.py:182
-msgid "Parse {}"
-msgstr "Парсить {}"
+#: Design\project_instance.py:158 Design\project_instance.py:357
+msgid "Select one or more files to open"
+msgstr "Выберите файлы для импорта"
 
-#: Design\project_instance.py:188
+#: Design\project_instance.py:189 Design\project_instance.py:383
+#: Design\project_instance.py:460
+msgid ""
+"<html>There is a file with the same name in the project directory.\n"
+"Please rename imported file <b>{}</b> and try again.</html>"
+msgstr ""
+"<html>В каталоге с проектом есть файл с таким же именем.\n"
+"Пожалуйста переименуйте импортируемый файл <b>{}</b> и попробуйте снова.</html>"
+
+#: Design\project_instance.py:204
+msgid "Parsing {}"
+msgstr "Обработка файла {}"
+
+#: Design\project_instance.py:210
 msgid "GPS time and frequency don't match"
-msgstr "GPS время и частота не совпадают"
+msgstr "Временные метки ГНСС наблюдений не совпадают с частотой"
 
-#: Design\project_instance.py:188 Design\project_instance.py:200
-#: Design\project_instance.py:246
-msgid "Match error"
-msgstr "Ошибка соответсвия"
+#: Design\project_instance.py:210 Design\project_instance.py:223
+#: Design\project_instance.py:270
+msgid "Matching error"
+msgstr "Ошибка обработки"
 
-#: Design\project_instance.py:193 Design\project_instance.py:249
-msgid "Create {}"
-msgstr "Создать {}"
+#: Design\project_instance.py:216 Design\project_instance.py:273
+msgid "Creating {}"
+msgstr "Создание {}"
 
-#: Design\project_instance.py:200
-msgid "There is no match .ubx file for {}"
-msgstr "Файловый менеджер"
+#: Design\project_instance.py:223
+msgid "There is no match .ubx file for <b>{}</b>"
+msgstr "Нет совпадающих .ubx файлов для <b>{}</b>"
 
-#: Design\project_instance.py:216
+#: Design\project_instance.py:240
 msgid ""
 "RTK Lib didn't create {}.obs and {}.nav files.\n"
 "Please report us about this problem"
 msgstr ""
-"RTK Lib не создала {}.obs и {}.nav  файлы.\n"
-"Пожалуйста сообщите нам о проблеме"
+"RTK Lib. Ну далось создать {}.obs и {}.nav файлы.\n"
+"Пожалуйста сообщите об этой проблеме в службу поддержки"
 
-#: Design\project_instance.py:216 Design\project_instance.py:232
+#: Design\project_instance.py:240 Design\project_instance.py:256
 msgid "RTK LIB error"
 msgstr "Ошибка RTK LIB"
 
-#: Design\project_instance.py:232
+#: Design\project_instance.py:256
 msgid ""
 "RTK Lib didn't create {}.pos file.\n"
 "Please report us about this problem"
 msgstr ""
-"RTK Lib не создала {}.pos файл.\n"
-"Пожалуйста сообщите нам о проблеме"
+"RTK Lib. Не удалось создать {}.pos файл.\n"
+"Пожалуйста сообщите об этой проблеме в службу поддержки"
 
-#: Design\project_instance.py:246
-msgid "There is no match .ubx or pos file for {}"
-msgstr "Нет совпадений .ubx или pos файла для {}"
+#: Design\project_instance.py:270
+msgid "There is no match .ubx or pos file for <b>{}</b>"
+msgstr "Нет совпадающих .ubx или pos файлов для <b>{}</b>"
 
-#: Design\project_instance.py:265 Design\project_instance.py:321
-msgid "Didn't match GPST with time in {} file"
-msgstr "Нет совпадений GPST с временем в {}"
+#: Design\project_instance.py:287 Design\project_instance.py:343
+msgid "Didn't match GPST with time in <b>{}</b> file"
+msgstr "Временные метки GPS не совпадают с метками в <b>{}</b> файле"
 
-#: Design\project_instance.py:325
-msgid "Magnet file was created"
-msgstr "Файловый менеджер"
+#: Design\project_instance.py:347
+msgid "Magnetic Field Track <b>{}.magnete</b> has been created."
+msgstr "Трек магнитного поля <b>{}.magnete</b> был создан."
 
-#: Design\project_instance.py:383
+#: Design\project_instance.py:405
 msgid "Save File"
 msgstr "Сохранить файл"
 
-#: Design\project_instance.py:415 Design\workspace_widget.py:416
+#: Design\project_instance.py:438 Design\project_widget.py:520
 msgid "Open file"
-msgstr "Открыть проект"
+msgstr "Открыть файл"
 
-#: Design\project_instance.py:451
-msgid "File {} is already in project"
-msgstr "Файловый менеджер"
+#: Design\project_instance.py:473 Plots\ThreeDPlot.py:349
+msgid ""
+"File couldn't be downloaded\n"
+"{}"
+msgstr ""
+"Файл не может быть загружен\n"
+"{}"
 
-#: Design\project_instance.py:451 Design\project_instance.py:460
-msgid "File info"
-msgstr "Информация"
+#: Design\project_instance.py:478
+msgid ""
+"<html><b>{}.ply</b> is already in the project directory.\n"
+"Please, rename file you are trying to import and try again.<html>"
+msgstr ""
+"<html><b>{}.ply</b> уже в каталоге с проектом.\n"
+"Пожалуйста переименуйте файл и попробуйте импортировать файл снова.<html>"
 
-#: Design\project_instance.py:460
-msgid "File {}.ply is already in project"
-msgstr "Файл {}.ply уже в проекте"
+#: Design\project_widget.py:22 Design\project_widget.py:33
+#: Design\project_widget.py:55 Design\project_widget.py:56
+msgid "Set UTM zone"
+msgstr "Установить UTM зону"
 
-#: Design\settings_widget.py:54 Design\settings_widget.py:101
-#: Design\settings_widget.py:154 Design\settings_widget.py:163
-#: Design\workspace_widget.py:38 Design\workspace_widget.py:56
-#: Plots\ThreeDPlot.py:98 Plots\ThreeDPlot.py:132
+#: Design\project_widget.py:36 Design\project_widget.py:57
+msgid "Select UTM zone"
+msgstr "Установить UTM зону"
+
+#: Design\project_widget.py:40 Design\project_widget.py:58
+#: Design\settings_widget.py:30 Design\settings_widget.py:159
+#: Plots\ThreeDPlot.py:97 Plots\ThreeDPlot.py:130
 msgid "Apply"
 msgstr "Применить"
 
-#: Design\settings_widget.py:55 Design\settings_widget.py:155
-#: Design\update_widget.py:57 Design\update_widget.py:87
-#: Design\workspace_widget.py:39 Design\workspace_widget.py:57
-#: Plots\ThreeDPlot.py:35 Plots\ThreeDPlot.py:60 Plots\ThreeDPlot.py:97
-#: Plots\ThreeDPlot.py:131
+#: Design\project_widget.py:41 Design\project_widget.py:59
+#: Design\project_widget.py:456 Design\project_widget.py:479
+#: Design\settings_widget.py:31 Design\settings_widget.py:160
+#: Design\update_widget.py:52 Design\update_widget.py:78
+#: Design\update_widget.py:162 Plots\ThreeDPlot.py:36 Plots\ThreeDPlot.py:56
+#: Plots\ThreeDPlot.py:96 Plots\ThreeDPlot.py:129
 msgid "Cancel"
-msgstr "Отмена"
+msgstr "Отменить"
 
-#: Design\settings_widget.py:56 Design\settings_widget.py:156
+#: Design\project_widget.py:64
+msgid "Please open project."
+msgstr "Пожалуйста откройте проект."
+
+#: Design\project_widget.py:64
+msgid "Project Error"
+msgstr "Ошибка проекта"
+
+#: Design\project_widget.py:170
+msgid "Magnetic Field Measurements"
+msgstr "Измерения магнитного поля"
+
+#: Design\project_widget.py:176
+msgid "GNSS Observations"
+msgstr "ГНСС наблюдения"
+
+#: Design\project_widget.py:182
+msgid "Magnetic Field Tracks"
+msgstr "Треки магнитного поля"
+
+#: Design\project_widget.py:188
+msgid "Geodata"
+msgstr "Геоданные"
+
+#: Design\project_widget.py:267 Design\project_widget.py:302
+msgid "Import Magnetic Field Measurements"
+msgstr "Импортировать измерения магнитного поля"
+
+#: Design\project_widget.py:268 Design\project_widget.py:306
+msgid "Import GNSS Observations"
+msgstr "Импортировать ГНСС наблюдения"
+
+#: Design\project_widget.py:269
+msgid "Import Magnetic Field Track"
+msgstr "Импортировать трек магнитного поля"
+
+#: Design\project_widget.py:270 Design\project_widget.py:314
+msgid "Import DEM"
+msgstr "Импортировать ЦМР"
+
+#: Design\project_widget.py:271 Design\project_widget.py:315
+msgid "Import Point Cloud"
+msgstr "Импортировать облако точек"
+
+#: Design\project_widget.py:303 Design\project_widget.py:307
+#: Design\project_widget.py:311 Design\project_widget.py:316
+msgid "Remove All Files"
+msgstr "Удалить все файлы"
+
+#: Design\project_widget.py:310
+msgid "Import Magnetic Field Tracks"
+msgstr "Импортировать треки магнитного поля"
+
+#: Design\project_widget.py:319 Design\project_widget.py:324
+#: Design\project_widget.py:330
+msgid "Delete file"
+msgstr "Удалить файл"
+
+#: Design\project_widget.py:320 Design\project_widget.py:325
+#: Design\project_widget.py:331
+msgid "Show In Explorer"
+msgstr "Расположение файла"
+
+#: Design\project_widget.py:323 Design\project_widget.py:371
+msgid "Create  Magnetic Field Tracks"
+msgstr "Создать трек магнитного поля"
+
+#: Design\project_widget.py:328
+msgid "Subset Track"
+msgstr "Вырезать сегмент трека"
+
+#: Design\project_widget.py:329 Plots\ThreeDPlot.py:504
+msgid "Crop Magnetic Field Track"
+msgstr "Обрезать трек"
+
+#: Design\project_widget.py:373
+msgid "Merge Tracks"
+msgstr "Объединить треки"
+
+#: Design\project_widget.py:375
+msgid "Remove Files"
+msgstr "Удалить файлы"
+
+#: Design\project_widget.py:397
+msgid "Do you really want to remove selected files? This action cannot be undone."
+msgstr "Вы действительно хотите удалить выбранные файлы? Это действие не может быть отменено."
+
+#: Design\project_widget.py:397 Design\project_widget.py:423
+msgid "Remove Files Warning"
+msgstr "Предупреждение"
+
+#: Design\project_widget.py:413
+msgid "Do you really want to remove this file? This action cannot be undone."
+msgstr "Вы действительно хотите удалить выбранный файл? Это действие не может быть отменено."
+
+#: Design\project_widget.py:413
+msgid "Remove File Warning"
+msgstr "Предупреждение"
+
+#: Design\project_widget.py:423
+msgid "Do you really want to remove all files? This action cannot be undone."
+msgstr "Вы действительно хотите удалить все файлы? Это действие не может быть отменено."
+
+#: Design\project_widget.py:445 Design\project_widget.py:476
+msgid "Create Magnetic Field Track"
+msgstr "Создать трек магнитного поля"
+
+#: Design\project_widget.py:451 Design\project_widget.py:478
+msgid "Select *.ubx or *.pos file manually"
+msgstr "Выберите *.ubx или *.pos файл вручную"
+
+#: Design\project_widget.py:452 Design\project_widget.py:480
+msgid "Browse"
+msgstr "Выбрать"
+
+#: Design\project_widget.py:454 Design\project_widget.py:477
+msgid "Create"
+msgstr "Создать"
+
+#: Design\project_widget.py:487 Design\project_widget.py:500
+#: Design\project_widget.py:525
+msgid "Match <b>{}</b> with <b>{}</b>"
+msgstr "Сопоставить <b>{}</b> с <b>{}</b>"
+
+#: Design\project_widget.py:508
+msgid "There is no *.ubx file in the project matching <b>{}</b>"
+msgstr "В проекте нет совпадающих *.ubx файлов <b>{}</b>"
+
+#: Design\settings_widget.py:32 Design\settings_widget.py:161
+#: Plots\ThreeDPlot.py:35 Plots\ThreeDPlot.py:55
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
-#: Design\settings_widget.py:65 Design\settings_widget.py:113
-#: Design\settings_widget.py:157 Design\settings_widget.py:167
-msgid "File Manager"
-msgstr "Файловый менеджер"
+#: Design\settings_widget.py:44 Design\settings_widget.py:158
+msgid "Connection settings"
+msgstr "Настройки подключения"
 
-#: Design\settings_widget.py:71
+#: Design\settings_widget.py:63 Design\settings_widget.py:163
+msgid "File Manager settings"
+msgstr "Настройки диспетчера файлов"
+
+#: Design\settings_widget.py:66
 msgid "Left tracked folder"
-msgstr ""
+msgstr "Левый каталог"
 
-#: Design\settings_widget.py:73 Design\settings_widget.py:84
-#: Design\settings_widget.py:158 Design\settings_widget.py:159
-#: Design\update_widget.py:47 Design\update_widget.py:85
+#: Design\settings_widget.py:68 Design\settings_widget.py:79
+#: Design\settings_widget.py:164 Design\settings_widget.py:165
+#: Design\update_widget.py:45 Design\update_widget.py:76
 msgid "Browse..."
-msgstr "Обзор..."
+msgstr "Выбрать..."
 
-#: Design\settings_widget.py:82
+#: Design\settings_widget.py:77
 msgid "Right tracked folder"
-msgstr ""
+msgstr "Правый каталог"
 
-#: Design\settings_widget.py:88 Design\settings_widget.py:160
-msgid "Save changes"
-msgstr "Сохранить изменения"
+#: Design\settings_widget.py:84 Design\settings_widget.py:120
+#: Design\settings_widget.py:166 Design\settings_widget.py:175
+msgid "Decimate"
+msgstr "Проредить"
 
-#: Design\settings_widget.py:92 Design\settings_widget.py:114
-#: Design\settings_widget.py:161 Design\settings_widget.py:168
+#: Design\settings_widget.py:87 Design\settings_widget.py:167
+msgid "Decimate settings"
+msgstr "Настройки прорежения"
+
+#: Design\settings_widget.py:91 Design\settings_widget.py:168
+msgid "Interpolation coefficient: "
+msgstr "Коэффициент интерполяции: "
+
+#: Design\settings_widget.py:101 Design\settings_widget.py:121
+#: Design\settings_widget.py:169 Design\settings_widget.py:176
 msgid "Languages"
 msgstr "Языки"
 
-#: Design\settings_widget.py:97 Design\settings_widget.py:162
+#: Design\settings_widget.py:104
+msgid "Language settings"
+msgstr "Языки"
+
+#: Design\settings_widget.py:107 Design\settings_widget.py:170
 msgid "Select language:"
-msgstr "Выбор языка:"
+msgstr "Выбрать язык:"
 
-#: Design\settings_widget.py:132
+#: Design\settings_widget.py:141
 msgid "IP address is not correct."
-msgstr "IP не корректен."
+msgstr "IP адрес не верен."
 
-#: Design\settings_widget.py:132
+#: Design\settings_widget.py:141
 msgid "IP error"
-msgstr "Ошибка по IP"
+msgstr "Ошибка IP адреса"
+
+#: Design\statistics_widget.py:26
+msgid "Decimate idx:"
+msgstr "Индекс прорежения:"
+
+#: Design\statistics_widget.py:32
+msgid "Start"
+msgstr "Начать"
+
+#: Design\statistics_widget.py:42
+msgid "Average: "
+msgstr "Среднее: "
+
+#: Design\statistics_widget.py:46
+msgid ""
+"Standard\n"
+"deviation: "
+msgstr ""
+"Стандартное\n"
+"отклонение: "
+
+#: Design\statistics_widget.py:50
+msgid "Save statistic"
+msgstr "Сохранить статистику"
 
 #: Design\three_D_visual_widget.py:22 Design\three_D_visual_widget.py:46
 msgid "Longitude:"
@@ -406,286 +714,172 @@ msgstr "Широта:"
 
 #: Design\three_D_visual_widget.py:30 Design\three_D_visual_widget.py:48
 msgid "Magnet:"
-msgstr "Магнитка:"
+msgstr "Магнитное поле:"
 
-#: Design\update_widget.py:31 Design\update_widget.py:80
+#: Design\update_widget.py:28 Design\update_widget.py:71
 msgid "Version"
 msgstr "Версия"
 
-#: Design\update_widget.py:34 Design\update_widget.py:81
+#: Design\update_widget.py:31 Design\update_widget.py:72
 msgid "Read update file"
-msgstr "Прочитать файл обновлений"
+msgstr "Считать файл обновления"
 
-#: Design\update_widget.py:35 Design\update_widget.py:82
-msgid "Load update file"
-msgstr "Файловый менеджер"
+#: Design\update_widget.py:32 Design\update_widget.py:73
+msgid "Upload update file"
+msgstr "Загрузить файл обновления"
 
-#: Design\update_widget.py:41 Design\update_widget.py:83
-msgid "Wizard"
-msgstr "Мастер загрузки"
+#: Design\update_widget.py:38 Design\update_widget.py:74
+msgid "Firmware Update Wizard"
+msgstr "Мастер обновления прошивки"
 
-#: Design\update_widget.py:44 Design\update_widget.py:84
-msgid "Open file to load into device"
-msgstr "Открыть файл для загрузки"
+#: Design\update_widget.py:41 Design\update_widget.py:75
+#: Design\update_widget.py:159
+msgid "Select Update File to be uploaded into GeoShark"
+msgstr "Выберите файл обновления для загрузки на GeoShark"
 
-#: Design\update_widget.py:54 Design\update_widget.py:86
+#: Design\update_widget.py:49 Design\update_widget.py:77
 msgid "Upload"
 msgstr "Загрузить"
 
-#: Design\update_widget.py:58 Design\update_widget.py:88
-msgid "Finish"
-msgstr "Завершить"
+#: Design\update_widget.py:104
+msgid "Open Device Update File"
+msgstr "Открыть файл обновления устройства"
 
-#: Design\update_widget.py:114
-msgid "Open update file"
-msgstr "Открыть файл обновлений"
+#: Design\update_widget.py:115
+msgid "Valid update file:"
+msgstr "Действительный файл обновления:"
+
+#: Design\update_widget.py:120
+msgid "Invalid update file:"
+msgstr "Недействительный файл обновления:"
+
+#: Design\update_widget.py:141
+msgid "Unable to upload file. GeoShark is not responding."
+msgstr "Невозможно загрузить файл обновления. GeoShark не отвечает."
+
+#: Design\update_widget.py:148
+msgid "File has been uploaded into GeoShark."
+msgstr "Файл был загружен на GeoShark."
 
 #: Design\update_widget.py:149
-msgid "Server is not responding. File wasn't uploaded into device."
-msgstr "Сервер не отвечает. Файл не был загружен."
+msgid "Finish"
+msgstr "Закончить"
 
-#: Design\update_widget.py:155
-msgid "File was uploaded into device"
-msgstr "Файловый менеджер"
+#: Design\update_widget.py:151
+msgid "File has not been uploaded into GeoShark."
+msgstr "Не удалось загрузить файл на GeoShark."
 
-#: Design\update_widget.py:158
-msgid "File wasn't uploaded into device"
-msgstr "Сервер не отвечает. Файл не был загружен"
+#: Plots\ThreeDPlot.py:29 Plots\ThreeDPlot.py:51
+msgid "Select boundary points:"
+msgstr "Выберите точки границ:"
 
-#: Design\workspace_widget.py:20 Design\workspace_widget.py:52
-msgid "No UTM"
-msgstr "Нет UTM"
+#: Plots\ThreeDPlot.py:30 Plots\ThreeDPlot.py:52
+msgid "Start Point: "
+msgstr "Начальная точка: "
 
-#: Design\workspace_widget.py:21 Design\workspace_widget.py:53
-msgid "Set UTM zone"
-msgstr "Выбрать UTM зону"
+#: Plots\ThreeDPlot.py:32 Plots\ThreeDPlot.py:53
+msgid "End Point: "
+msgstr "Конечная точка: "
 
-#: Design\workspace_widget.py:31 Design\workspace_widget.py:54
-msgid "Change UTM zone"
-msgstr "Сменить UTM зону"
+#: Plots\ThreeDPlot.py:34 Plots\ThreeDPlot.py:54
+msgid "Reset boundaries"
+msgstr "Сбросить границы"
 
-#: Design\workspace_widget.py:34 Design\workspace_widget.py:55
-msgid "Select new zone"
-msgstr "Выберете новую зону"
+#: Plots\ThreeDPlot.py:79 Plots\ThreeDPlot.py:122
+msgid "Palette settings"
+msgstr "Настройки палитры"
 
-#: Design\workspace_widget.py:163
-msgid "RAW"
-msgstr "Файлы магнитометра"
+#: Plots\ThreeDPlot.py:81
+msgid "Auto palette for all visible tracks"
+msgstr "Автоматически для всех активных треков"
 
-#: Design\workspace_widget.py:167
-msgid "Magnet"
-msgstr "Магнитка"
+#: Plots\ThreeDPlot.py:83
+msgid "Fixed palette for all visible tracks"
+msgstr "Зафиксировать для всех активных треков"
 
-#: Design\workspace_widget.py:171
-msgid "GeoData"
-msgstr "Гео данные"
-
-#: Design\workspace_widget.py:219 Design\workspace_widget.py:252
-msgid "Add RAW"
-msgstr "Добавить RAW"
-
-#: Design\workspace_widget.py:220
-msgid "Add magnet"
-msgstr "Добавить .magnet файл"
-
-#: Design\workspace_widget.py:221
-msgid "Add geo"
-msgstr "Добавить гео"
-
-#: Design\workspace_widget.py:253 Design\workspace_widget.py:257
-#: Design\workspace_widget.py:261
-msgid "Remove all"
-msgstr "Удалить все"
-
-#: Design\workspace_widget.py:256
-msgid "Add Magnet data"
-msgstr "Добавление магнитных данных"
-
-#: Design\workspace_widget.py:260
-msgid "Add GeoData"
-msgstr "Добавление GeoData"
-
-#: Design\workspace_widget.py:264 Design\workspace_widget.py:269
-msgid "Remove element"
-msgstr "Удалить элемент"
-
-#: Design\workspace_widget.py:265 Design\workspace_widget.py:270
-msgid "Show in explorer"
-msgstr "Показать расположение"
-
-#: Design\workspace_widget.py:268 Plots\ThreeDPlot.py:25 Plots\ThreeDPlot.py:53
-msgid "Cut magnet data"
-msgstr "Обрезать .magnet"
-
-#: Design\workspace_widget.py:305
-msgid "Create .magnete files"
-msgstr "Создать файл .magnete"
-
-#: Design\workspace_widget.py:307
-msgid "Concatenate"
-msgstr "Склеить"
-
-#: Design\workspace_widget.py:309
-msgid "Remove elements"
-msgstr "Удалить элементы"
-
-#: Design\workspace_widget.py:330
-msgid "Do you really want to remove selected elements?"
-msgstr "Удалить выбранные элементы?"
-
-#: Design\workspace_widget.py:330 Design\workspace_widget.py:354
-msgid "Remove files warning"
-msgstr "Предупреждение"
-
-#: Design\workspace_widget.py:345
-msgid "Do you really want to remove this element?"
-msgstr "Удалить элементы?"
-
-#: Design\workspace_widget.py:354
-msgid "Do you really want to remove all elements?"
-msgstr "Удалить элементы?"
-
-#: Design\workspace_widget.py:373
-msgid "Create magnet file"
-msgstr "Создать файл .magnete"
-
-#: Design\workspace_widget.py:378
-msgid "Create .magnete file from:"
-msgstr "Создать файл .magnete из:"
-
-#: Design\workspace_widget.py:379
-msgid "Use chosen .ubx file"
-msgstr "Использовать .ubx файл"
-
-#: Design\workspace_widget.py:381
-msgid "Use own .pos file"
-msgstr "Использовать .pos файл"
-
-#: Design\workspace_widget.py:382
-msgid "Create"
-msgstr "Создать"
-
-#: Design\workspace_widget.py:383
-msgid "Browse"
-msgstr "Обзор"
-
-#: Plots\ThreeDPlot.py:27 Plots\ThreeDPlot.py:54
-msgid "Choose points"
-msgstr "Выбор точек"
-
-#: Plots\ThreeDPlot.py:28 Plots\ThreeDPlot.py:55
-msgid "First point: "
-msgstr "Первая точка: "
-
-#: Plots\ThreeDPlot.py:30 Plots\ThreeDPlot.py:56
-msgid "Second point: "
-msgstr "Вторая точка: "
-
-#: Plots\ThreeDPlot.py:32 Plots\ThreeDPlot.py:57
-msgid "Reset points"
-msgstr "Сбросить точки"
-
-#: Plots\ThreeDPlot.py:33 Plots\ThreeDPlot.py:58
-msgid "Cut and Save"
-msgstr "Обрезать и сохранить"
-
-#: Plots\ThreeDPlot.py:34 Plots\ThreeDPlot.py:59
-msgid "Cut and Save as"
-msgstr "Обрезать и сохранить как"
-
-#: Plots\ThreeDPlot.py:81 Plots\ThreeDPlot.py:124
-msgid "Palette values"
-msgstr "Настройка палитры"
-
-#: Plots\ThreeDPlot.py:87 Plots\ThreeDPlot.py:127
-msgid "Define borders"
-msgstr "Определить границы"
-
-#: Plots\ThreeDPlot.py:91 Plots\ThreeDPlot.py:128
+#: Plots\ThreeDPlot.py:92 Plots\ThreeDPlot.py:126
 msgid "Auto"
 msgstr "Авто"
 
-#: Plots\ThreeDPlot.py:94 Plots\ThreeDPlot.py:129
+#: Plots\ThreeDPlot.py:93 Plots\ThreeDPlot.py:127
 msgid "(all visible)"
-msgstr "(все видно)"
+msgstr "(все видимые)"
 
-#: Plots\ThreeDPlot.py:194
+#: Plots\ThreeDPlot.py:192
 msgid "Border info"
-msgstr "Инфо"
+msgstr "Границы"
 
-#: Plots\ThreeDPlot.py:194
+#: Plots\ThreeDPlot.py:192
 msgid "No borders"
 msgstr "Нет границ"
 
-#: Plots\ThreeDPlot.py:230
+#: Plots\ThreeDPlot.py:231
 msgid ""
 "Please fill Max, Min values or\n"
 "choose Auto."
-msgstr "Заполните Min, Max или выберите Auto."
+msgstr ""
+"Пожалуйста задайте значения минимум и максимума,\n"
+"или выберите Авто режим."
 
-#: Plots\ThreeDPlot.py:230 Plots\ThreeDPlot.py:233 Plots\ThreeDPlot.py:515
+#: Plots\ThreeDPlot.py:231 Plots\ThreeDPlot.py:234 Plots\ThreeDPlot.py:534
 msgid "Border error"
-msgstr "Ошибка границы"
+msgstr "Ошибка границ"
 
-#: Plots\ThreeDPlot.py:233
+#: Plots\ThreeDPlot.py:234
 msgid "Max must be more than Min"
-msgstr "Максимум должен быть больше минимума"
+msgstr ""
+"Значение максимум не может быть меньше\n"
+"значения минимума"
 
-#: Plots\ThreeDPlot.py:345
-msgid ""
-"File couldn't be downloaded\n"
-"{}"
-msgstr "Файловый менеджер"
+#: Plots\ThreeDPlot.py:501
+msgid "Subset Magnetic Field Track"
+msgstr "Вырезать сегмент трека"
 
-#: Plots\ThreeDPlot.py:515
+#: Plots\ThreeDPlot.py:534
 msgid "You must define boundary points."
-msgstr "Определите границы."
+msgstr "Выберите точки границ."
 
-#: Plots\ThreeDPlot.py:518
-msgid "Cutting info"
-msgstr "Инфо по обрезке"
+#: Plots\ThreeDPlot.py:537
+msgid ""
+"Initial data will be deleted.\n"
+"This action cannot be undone. Resume?"
+msgstr ""
+"Исходные данные будут удалены.\n"
+"Это действие нельзя отменить. Продолжить?"
 
-#: Plots\ThreeDPlot.py:518
-msgid "Unselected data will be deleted. Resume?"
-msgstr "Невыбранные точки будут удалены. Продолжить?"
+#: Plots\ThreeDPlot.py:537
+msgid "Warning"
+msgstr "Предупреждение"
 
-#: Plots\plots.py:83 Plots\plots.py:194 Plots\plots.py:253 Plots\plots.py:400
-#: Plots\plots.py:445 Plots\plots.py:491
+#: Plots\plots.py:89 Plots\plots.py:208 Plots\plots.py:281 Plots\plots.py:449
+#: Plots\plots.py:512 Plots\plots.py:576
 msgid "Time, s"
 msgstr "Время, с"
 
-#: Plots\plots.py:185 Plots\plots.py:193
+#: Plots\plots.py:199 Plots\plots.py:207
 msgid "Magnetic Field, nT"
 msgstr "Магнитное поле, nT"
 
-#: Plots\plots.py:234 Plots\plots.py:252 Plots\plots.py:309
+#: Plots\plots.py:262 Plots\plots.py:280 Plots\plots.py:358
 msgid "Signal S1, uA"
-msgstr "Сигнал S1, uA"
+msgstr "Сигналl S1, uA"
 
-#: Plots\plots.py:237 Plots\plots.py:254 Plots\plots.py:310
+#: Plots\plots.py:265 Plots\plots.py:282 Plots\plots.py:359
 msgid "Signal S2, uA"
 msgstr "Сигнал S2, uA"
 
-#: Plots\plots.py:311
+#: Plots\plots.py:360
 msgid "Frequency, Hz"
 msgstr "Частота, Hz"
 
-#: Plots\plots.py:392 Plots\plots.py:399
+#: Plots\plots.py:441 Plots\plots.py:448
 msgid "Lamp Temperature, C"
 msgstr "Температура лампы, °C"
 
-#: Plots\plots.py:438 Plots\plots.py:444
+#: Plots\plots.py:505 Plots\plots.py:511
 msgid "Sensor Temperature, C"
 msgstr "Температура сенсора, °С"
 
-#: Plots\plots.py:483 Plots\plots.py:490
+#: Plots\plots.py:568 Plots\plots.py:575
 msgid "Photodiode current, A"
-msgstr "Ток фотодиода, µА"
-
-#: Utils\transform.py:109
-msgid "Wrong tif type. Too many channels."
-msgstr "Неверный тип файла  tif."
-
-#: Utils\transform.py:111
-msgid "Couldn't define metadata (top left corner)!"
-msgstr "Невозможно определить meta данные!"
+msgstr "Ток фотодиода, А"

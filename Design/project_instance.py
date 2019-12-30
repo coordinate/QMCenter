@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 
 from shutil import copyfile
@@ -20,6 +21,7 @@ class CurrentProject(QObject):
         self.parent = parent
         self.expanduser_dir = os.path.expanduser('~')
         self.progress = QProgressDialog("Load files", None, 0, 100)
+        self.progress.setFixedSize(250, 80)
         self.progress.close()
         self.project_path = None
         self.files_path = None
@@ -41,6 +43,7 @@ class CurrentProject(QObject):
         self.parent.three_d_widget.magnet_value_label.setText('')
         self.parent.file_manager_widget.left_dir_path.setText(self.expanduser_dir)
         self.parent.file_manager_widget.left_file_model_go_to_dir()
+        self.parent.setWindowTitle('QMCenter')
 
     def open_project(self, path=None):
         if path:
@@ -93,7 +96,6 @@ class CurrentProject(QObject):
             if not os.path.isfile(file):
                 show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
                 self.remove_element(os.path.basename(file))
-                self.send_tree_to_view()
                 continue
             value = (it + 1)/length * 99
             it += 1
@@ -102,16 +104,25 @@ class CurrentProject(QObject):
 
         for geo in self.geo_data.getchildren():
             file = os.path.join(self.files_path, self.geo_data.attrib['name'], geo.attrib['filename'])
-            if not os.path.isfile(file):
-                show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
-                self.remove_element(os.path.basename(file))
-                self.send_tree_to_view()
-                continue
             value = (it + 1)/length * 99
             it += 1
-
-            self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, value)
+            try:
+                self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, value)
+            except FileNotFoundError:
+                show_error(_('File error'), _('File not found\n{}').format(file.replace('/', '\\')))
+                self.remove_element(os.path.basename(file))
+                continue
+            except MemoryError:
+                show_error(_('Memory error'), _("You don't have enough memory for downloading\n{}").format(file))
+                geo.attrib['indicator'] = 'low_memory'
+                continue
+            except Exception as e:
+                show_error(_('File error'), _("File couldn't be downloaded\n{}\n{}").format(file, e.args[0]))
+                geo.attrib['indicator'] = 'bad_file'
+                continue
+            geo.attrib['indicator'] = 'Off'
         self.send_tree_to_view()
+        self.write_proj_tree()
         self.progress.setValue(100)
 
     def create_new_project(self):
@@ -161,6 +172,7 @@ class CurrentProject(QObject):
 
         if not files[0]:
             return
+        self.progress.setWindowTitle(_("Load files"))
         self.progress.open()
         QApplication.processEvents()
         for i, file in enumerate(files[0]):
@@ -325,6 +337,7 @@ class CurrentProject(QObject):
                     magnet_arr.append(magnet_field)
 
                     widget.progress.setValue((i/length)*99)
+                    QApplication.processEvents()
                     start = new_offset
                     # magnet_len += 1
                 elif diff > 1:
@@ -360,6 +373,7 @@ class CurrentProject(QObject):
         if not files:
             return
         it = 0
+        self.progress.setWindowTitle(_("Load files"))
         self.progress.open()
         QApplication.processEvents()
         for file in files:
@@ -388,6 +402,7 @@ class CurrentProject(QObject):
 
             value = (it + 1) / len(files) * 99
             it += 1
+            QApplication.processEvents()
 
             self.parent.three_d_widget.three_d_plot.add_fly(destination, self.progress, value)
         self.write_proj_tree()
@@ -400,6 +415,11 @@ class CurrentProject(QObject):
         lon_lat = object['lon_lat']
         height = object['height']
         magnet = object['magnet']
+
+        if os.path.isfile(os.path.join(path_to_save, filename)):
+            show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
+                                            'Please rename imported file <b>{}</b> and try again.</html>').format(filename))
+            save_as = True
 
         if save_as:
             filename = QFileDialog.getSaveFileName(None, _("Save File"), path_to_save, "Magnetic track files (*.magnete)")[0]
@@ -440,27 +460,38 @@ class CurrentProject(QObject):
 
         if file == '':
             return
+        self.progress.setWindowTitle(_("Load files"))
         self.progress.open()
         QApplication.processEvents()
 
         filename, extension = os.path.splitext(os.path.basename(file))
         if extension == '.ply':
             destination = os.path.join(self.files_path, self.geo_data.attrib['name'], os.path.basename(file))
-            if not os.path.exists(destination):
-                copyfile(file, destination)
-                self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
-                ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
-                                                          'indicator': 'Off'})
-            elif os.path.samefile(file, destination):
-                if not self.geo_data.xpath("//geo_data[@filename='{}']".format(os.path.basename(file))):
+            try:
+                if not os.path.exists(destination):
                     self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
+                    copyfile(file, destination)
                     ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
                                                               'indicator': 'Off'})
-            elif os.path.exists(destination):
-                show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
-                                                'Please rename imported file <b>{}</b> and try again.</html>').format(os.path.basename(file)))
+                elif os.path.samefile(file, destination):
+                    if not self.geo_data.xpath("//geo_data[@filename='{}']".format(os.path.basename(file))):
+                        self.parent.three_d_widget.three_d_plot.add_terrain(file, self.progress, 55)
+                        ET.SubElement(self.geo_data, 'geo_data', {'filename': '{}'.format(os.path.basename(file)),
+                                                                  'indicator': 'Off'})
+                elif os.path.exists(destination):
+                    show_error(_('File warning'), _('<html>There is a file with the same name in the project directory.\n'
+                                                    'Please rename imported file <b>{}</b> and try again.</html>').format(os.path.basename(file)))
+                    self.progress.close()
+                    return
+            except MemoryError:
+                show_error(_('Memory error'), _("You don't have enough memory for downloading\n{}").format(file))
                 self.progress.close()
                 return
+            except Exception as e:
+                show_error(_('File error'), _("File couldn't be downloaded\n{}\n{}").format(file, e.args[0]))
+                self.progress.close()
+                return
+
         elif extension == '.tif':
             destination = os.path.join(self.files_path, self.geo_data.attrib['name'], '{}.ply'.format(filename))
             if not os.path.exists(destination):
@@ -473,6 +504,11 @@ class CurrentProject(QObject):
                     show_error(_('File error'), _("File couldn't be downloaded\n{}").format(e.args[0]))
                     self.progress.close()
                     return
+                except MemoryError:
+                    show_error(_('Memory error'), _("You don't have enough memory for downloading\n{}").format(file))
+                    self.progress.close()
+                    return
+
             else:
                 show_error(_('File warning'),
                            _('<html><b>{}.ply</b> is already in the project directory.\n'

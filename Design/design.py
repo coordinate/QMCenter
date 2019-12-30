@@ -45,7 +45,7 @@ class UIForm:
         self.config_action = self.view.addAction(_('Configuration'))
         self.visual_action = self.view.addAction(_('3D Viewer'))
         self.update_action = self.view.addAction(_('Update'))
-        self.file_manager_action = self.view.addAction(_('File manager'))
+        self.file_manager_action = self.view.addAction(_('File Manager'))
         self.statistic_action = self.view.addAction(_('Statistic Processing'))
         self.view.addSeparator()
         self.toolbar_action = self.view.addAction(_('Toolbar'))
@@ -74,7 +74,7 @@ class UIForm:
         self.update_btn = QPushButton()
         self.update_btn.setText(_('Update'))
 
-        self.file_manager = QPushButton(_('File manager'))
+        self.file_manager = QPushButton(_('File Manager'))
 
         self.statistic_btn = QPushButton(_('Statistic Processing'))
 
@@ -168,7 +168,7 @@ class UIForm:
         self.config_btn.setText(_('Configuration'))
         self.visual_btn.setText(_('3D Viewer'))
         self.update_btn.setText(_('Update'))
-        self.file_manager.setText(_('File manager'))
+        self.file_manager.setText(_('File Manager'))
         self.statistic_btn.setText(_('Statistic Processing'))
         self.visual_btn.setText(_('3D Viewer'))
         self.view.setTitle(_('&View'))
@@ -176,7 +176,7 @@ class UIForm:
         self.config_action.setText(_('Configuration'))
         self.visual_action.setText(_('3D Viewer'))
         self.update_action.setText(_('Update'))
-        self.file_manager_action.setText(_('File manager'))
+        self.file_manager_action.setText(_('File Manager'))
         self.statistic_action.setText(_('Statistic Processing'))
         self.toolbar_action.setText(_('Toolbar'))
         self.workspace_action.setText(_('Workspace'))

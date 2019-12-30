@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import psutil
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
@@ -287,12 +288,15 @@ class ThreeDPlot(gl.GLViewWidget):
             if len(lst[-1]) < 3:
                 lst.pop()
         length = len(lst)
-        magnet_array = np.empty((length, ))
-        time_array = np.empty((length, ))
-        lon_lat = np.empty((length, 2))
-        points = np.empty((length, 3))
-        size = np.empty((length, ))
-        color = np.empty((length, ))
+        size = 6 * 4 * length
+        if size >= psutil.virtual_memory().available * 0.8:
+            raise MemoryError
+        magnet_array = np.empty((length, ), dtype=np.float32)
+        time_array = np.empty((length, ), dtype=np.float32)
+        lon_lat = np.empty((length, 2), dtype=np.float32)
+        points = np.empty((length, 3), dtype=np.float32)
+        size = np.empty((length, ), dtype=np.uint8)
+        color = np.empty((length, ), dtype=np.float32)
         time, latitude, longitude, height0, magnet = lst[0].split()
         if not self.utm_zone:
             x, y, self.utm_zone, self.utm_letter = project((float(longitude), float(latitude)))
@@ -336,18 +340,13 @@ class ThreeDPlot(gl.GLViewWidget):
             self.remove_object(os.path.basename(filename))
 
         if os.path.splitext(filename)[1] == '.tif':
-            try:
-                pcd, self.utm_zone, utm_letter = get_point_cloud(filename, progress, self.utm_zone)
-                if not self.utm_letter:
-                    self.utm_letter = utm_letter
-                self.parent.project_instance.project_utm.attrib['zone'] = str(self.utm_zone)
-                self.parent.project_instance.project_utm.attrib['letter'] = self.utm_letter
-                save_point_cloud(pcd, path_to_save)
-                filename = os.path.basename(path_to_save)
-            except AssertionError as e:
-                progress.close()
-                show_error(_('File error'), _("File couldn't be downloaded\n{}").format(e.args[0]))
-                raise AssertionError
+            pcd, self.utm_zone, utm_letter = get_point_cloud(filename, progress, self.utm_zone)
+            if not self.utm_letter:
+                self.utm_letter = utm_letter
+            self.parent.project_instance.project_utm.attrib['zone'] = str(self.utm_zone)
+            self.parent.project_instance.project_utm.attrib['letter'] = self.utm_letter
+            save_point_cloud(pcd, path_to_save)
+            filename = os.path.basename(path_to_save)
         elif os.path.splitext(filename)[1] == '.ply':
             pcd = read_point_cloud(filename)
             progress.setValue(value)
@@ -459,9 +458,12 @@ class ThreeDPlot(gl.GLViewWidget):
                     'Lon: {}  Lat: {}'.format(round(lon_lat[print_index][0], 6), round(lon_lat[print_index][1], 6)))
 
                 self.cut_widget.second_idx = print_index
-                if self.cut_widget.first_idx >= self.cut_widget.second_idx:
+                if self.cut_widget.first_idx > self.cut_widget.second_idx:
                     self.cut_widget.second_idx, self.cut_widget.first_idx = self.cut_widget.first_idx, self.cut_widget.second_idx
-                color_arr = self.recolor_selected(self.objects[filename]['magnet'][self.cut_widget.first_idx:self.cut_widget.second_idx])
+                if self.cut_widget.first_idx == self.cut_widget.second_idx:
+                    color_arr = self.recolor_selected(self.objects[filename]['magnet'][self.cut_widget.first_idx:self.cut_widget.second_idx+1])
+                else:
+                    color_arr = self.recolor_selected(self.objects[filename]['magnet'][self.cut_widget.first_idx:self.cut_widget.second_idx])
                 self.objects[filename]['object'].color[self.cut_widget.first_idx:self.cut_widget.second_idx] = color_arr
                 # self.objects[filename]['object'].size[self.cut_widget.first_idx:self.cut_widget.second_idx] = 10
                 self.palette.set_values(self.objects[filename]['magnet'][self.cut_widget.first_idx:self.cut_widget.second_idx])
@@ -526,11 +528,11 @@ class ThreeDPlot(gl.GLViewWidget):
         self.cut_widget.second_idx = None
         self.update()
         self.cut_widget.close()
+        self.cut_widget.ok_btn.disconnect()
         self.parent.project_widget.workspaceview.setEnabled(True)
 
     def cut_save(self, save_as):
-        self.cut_widget.ok_btn.disconnect()
-        if not self.cut_widget.first_idx or not self.cut_widget.second_idx:
+        if self.cut_widget.first_idx is None or self.cut_widget.second_idx is None:
             show_error(_('Border error'), _('You must define boundary points.'))
             return
         if not save_as:
@@ -538,6 +540,8 @@ class ThreeDPlot(gl.GLViewWidget):
                                                          'This action cannot be undone. Resume?'))
             if answer == QMessageBox.No:
                 return
+        if self.cut_widget.first_idx == self.cut_widget.second_idx:
+            self.cut_widget.second_idx += 1
         filename = self.cut_widget.shortcut_object
         start = self.cut_widget.first_idx
         finish = self.cut_widget.second_idx
@@ -599,8 +603,14 @@ class ThreeDPlot(gl.GLViewWidget):
         if visible == 'Off':
             self.show_hide_elements(name, 'On')
         obj = self.objects[name]['object']
-        x, y, z = obj.pos[0]
-        self.setCameraPosition(QVector3D(x, y, z), 300, 30, 45)
+        x_max = np.amax(obj.pos[:, 0])
+        y_max = np.amax(obj.pos[:, 1])
+        x_min = np.amin(obj.pos[:, 0])
+        y_min = np.amin(obj.pos[:, 1])
+        center = ((x_min + x_max) / 2, (y_min + y_max) / 2)
+        z = obj.pos[0, 2]
+        x, y = center
+        self.setCameraPosition(QVector3D(x, y, z), 1.5*np.hypot(x_max - x_min, y_max - y_min) * np.tan(np.deg2rad(30)), 30, 45)
         self.gridx.translate(x - self.grid_start[0], y - self.grid_start[1], 0, local=True)
         self.grid_start = [x, y]
 

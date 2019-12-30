@@ -1,4 +1,4 @@
-import os
+import psutil
 import struct
 import crcmod
 import gdal
@@ -9,6 +9,7 @@ import re
 import json
 
 from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtWidgets import QApplication
 from plyfile import PlyData, PlyElement
 
 _ = lambda x: x
@@ -107,16 +108,26 @@ def magnet_color(magnet, min_m=None, max_m=None):
 
 def get_point_cloud(filename, progress, zone):
     gdal_dem_data = gdal.Open(filename)
+    assert gdal_dem_data is not None, _('Wrong tif type.')
     assert gdal_dem_data.RasterCount == 1, _('Wrong tif type. Too many channels.')
     no_data = gdal_dem_data.GetRasterBand(1).GetNoDataValue()
-    step = os.path.getsize(filename) // (512*1024*1024)
-    step = step if step > 1 else 1
+    size = 4 * gdal_dem_data.RasterYSize * gdal_dem_data.RasterYSize
+    step = int(np.ceil(np.sqrt(size // (512 * 1024 * 1024))))
+    step = max(1, step)
+    if psutil.virtual_memory().available <= 6 * (size/step**2):
+        raise MemoryError
+    gdal.SetCacheMax(round((psutil.virtual_memory().available - 2 * (size/step**2)) / 2))
     arr = []
     for i in range(0, gdal_dem_data.RasterYSize, step):
-        arr.append(gdal_dem_data.ReadAsArray(0, i, gdal_dem_data.RasterXSize, 1)[:, ::step])
+        arr.append(np.copy(gdal_dem_data.ReadAsArray(0, i, gdal_dem_data.RasterXSize, 1)[:, ::step]))
         progress.setValue((i / gdal_dem_data.RasterYSize) * 25)
+        QApplication.processEvents()
     dem = np.vstack(tuple(arr))
+
     top_left_lon, pixel_w, turn, top_left_lat, turn_, pixel_h = gdal_dem_data.GetGeoTransform()
+    pixel_h *= step
+    pixel_w *= step
+    del gdal_dem_data, arr
     assert top_left_lon != 0 and top_left_lat != 0, _("Couldn't define metadata (top left corner)!")
 
     progress.setValue(25)
@@ -125,10 +136,14 @@ def get_point_cloud(filename, progress, zone):
     x_space = (np.arange(0, width))*abs(pixel_w) + top_left_lon
     y_space = (np.arange(0, -height, -1))*abs(pixel_h) + top_left_lat
     xx, yy = np.meshgrid(x_space.astype(np.float32), y_space.astype(np.float32))
+
     assert xx.shape == yy.shape and xx.shape == dem.shape
     X, Y, Z = xx.flatten(), yy.flatten(), dem.flatten()
+    del xx, yy, dem
+
     mask = Z != no_data
     progress.setValue(38)
+    QApplication.processEvents()
     X = X[mask]
     Y = Y[mask]
     Z = Z[mask]
@@ -167,8 +182,10 @@ def get_point_cloud(filename, progress, zone):
         im_color[:, i] = cv2.LUT(colors, lut[:, i]).reshape(-1)
 
     progress.setValue(84)
+    QApplication.processEvents()
     X, Y, zone, letter = project_array(X, Y, zone=zone)
     progress.setValue(98)
+    QApplication.processEvents()
     pcd = np.column_stack((X, Y, Z, im_color))
     #print(pcd.shape, len(X))
     #print(pcd[:, 0], pcd.T[0])
@@ -192,6 +209,8 @@ def save_point_cloud(point_cloud, path):
 def read_point_cloud(path):
     pcd = PlyData.read(path)
     data = pcd.elements[0].data
+    if 4 * 6 * 2 * data.shape[0] >= psutil.virtual_memory().available * 0.8:
+        raise MemoryError
     x = np.array(data['x'])
     y = np.array(data['y'])
     z = np.array(data['z'])
@@ -238,6 +257,7 @@ def parse_mag_file(filepath, progress):
         dc_current_arr[i] = dc_current
         board_temp_arr[i] = board_temp
         progress.setValue((i/length) * 99)
+        QApplication.processEvents()
 
     return gpst_arr, freq_arr, sig1_arr, sig2_arr, sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr
 

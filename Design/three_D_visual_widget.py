@@ -32,12 +32,12 @@ class ThreeDVisual(QWidget):
         self.magnet_value_label = QLabel()
         self.magnet_value_label.setStyleSheet('QLabel { background-color : rgb(127, 127, 127); color: white}')
 
-        self.layout.addWidget(self.longitude_label, 95, 1, 1, 2)
-        self.layout.addWidget(self.longitude_value_label, 95, 3, 1, 10)
-        self.layout.addWidget(self.latitude_label, 96, 1, 1, 2)
-        self.layout.addWidget(self.latitude_value_label, 96, 3, 1, 10)
-        self.layout.addWidget(self.magnet_label, 97, 1, 1, 2)
-        self.layout.addWidget(self.magnet_value_label, 97, 3, 1, 10)
+        self.layout.addWidget(self.longitude_label, 95, 1, 1, 8)
+        self.layout.addWidget(self.longitude_value_label, 95, 9, 1, 10)
+        self.layout.addWidget(self.latitude_label, 96, 1, 1, 8)
+        self.layout.addWidget(self.latitude_value_label, 96, 9, 1, 10)
+        self.layout.addWidget(self.magnet_label, 97, 1, 1, 8)
+        self.layout.addWidget(self.magnet_value_label, 97, 9, 1, 10)
 
         self.three_d_plot.set_label_signal.connect(lambda lon, lat, magnet: self.set_labels(lon, lat, magnet))
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
