@@ -25,7 +25,7 @@ class MainWindow(QMainWindow, UIForm):
         self.expanduser_dir = os.path.expanduser('~').replace('\\', '/')
         self.setupUI(self)
 
-        self.settings.triggered.connect(lambda: self.settings_widget.show())
+        self.settings.triggered.connect(lambda: self.settings_widget.exec_())
         self.new_project.triggered.connect(lambda: self.project_instance.create_new_project())
         self.open_project.triggered.connect(lambda: self.project_instance.open_project())
         self.exit_action.triggered.connect(lambda: sys.exit())
@@ -37,6 +37,7 @@ class MainWindow(QMainWindow, UIForm):
         self.client.signal_disconnect.connect(lambda: self.geoshark_widget.on_disconnect())
         self.client.signal_stream_data.connect(lambda *args: self.graphs_widget.plot_stream_data(*args))
         self.client.signal_stream_data.connect(lambda *args: self.statistic_widget.update_statistic(*args))
+        self.client.signal_stream_data.connect(lambda *args: self.statistic_widget.fill_mat_data(*args))
         self.client.signal_status_data.connect(lambda args: self.graphs_widget.plot_status_data(*args))
 
         self.graphs_btn.clicked.connect(lambda: self.add_graphs())

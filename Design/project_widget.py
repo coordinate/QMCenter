@@ -137,22 +137,26 @@ class WorkspaceView(QTreeView):
             pass
 
     def item_expanded(self, idx):
-        object_name = idx.data()
         try:
+            object_name = [i for i in self.view_list if _(i) == idx.data()][0]
             for ch in self.parent.project_instance.root.getchildren():
                 if ch.attrib['name'] == object_name:
                     ch.attrib['expanded'] = 'True'
+        except IndexError:
+            pass
         except TypeError:
             pass
         except KeyError:
             pass
 
     def item_collapsed(self, idx):
-        object_name = idx.data()
         try:
+            object_name = [i for i in self.view_list if _(i) == idx.data()][0]
             for ch in self.parent.project_instance.root.getchildren():
                 if ch.attrib['name'] == object_name:
                     ch.attrib['expanded'] = 'False'
+        except IndexError:
+            pass
         except TypeError:
             pass
         except KeyError:
@@ -430,11 +434,14 @@ class WorkspaceView(QTreeView):
         parent_item.removeRow(item_index.row())
 
     def remove_all(self, item_index):
+        try:
+            group = [i for i in self.view_list if _(i) == item_index.data()][0]
+        except IndexError:
+            return
         answer = show_warning_yes_no(_('Remove Files Warning'), _('Do you really want to remove all files? '
                                                                   'This action cannot be undone.'))
         if answer == QMessageBox.No:
             return
-        group = [i for i in self.view_list if _(i) == item_index.data()][0]
         self.parent.project_instance.remove_all(group)
         item = self.model.item(item_index.row())
         item.removeRows(0, item.rowCount())
@@ -449,6 +456,7 @@ class MagnetCreator(QDialog):
     def __init__(self, parent, main):
         QDialog.__init__(self, flags=(Qt.WindowTitleHint | Qt.WindowCloseButtonHint))
         self.setFixedWidth(400)
+        self.setWindowIcon(QIcon('images/logo.ico'))
         self.parent = parent
         self.main = main
         self.mag_file = None

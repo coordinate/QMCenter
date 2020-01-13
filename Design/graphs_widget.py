@@ -82,12 +82,12 @@ class GraphsWidget(QStackedWidget):
         self.dc_plot.retranslate()
 
     def change_filter(self, filter):
-        if filter is None:
+        if filter is None or filter == 'No Filter':
             self.iir_filter.current_filter = None
             self.parent.geoshark_widget.current_filter_name.setText(_('No Filter'))
         else:
             self.iir_filter.set_current_filter(filter)
-            self.parent.geoshark_widget.current_filter_name.setText(filter)
+            self.parent.geoshark_widget.current_filter_name.setText(_(filter))
 
     def change_decimate_idx(self, idx):
         if idx != '':

@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, QPoint, QMimeData, pyqtSignal, QRect
-from PyQt5.QtGui import QPixmap, QRegion, QDrag, QCursor
+from PyQt5.QtGui import QPixmap, QRegion, QDrag
 from PyQt5.QtWidgets import QTabWidget, QTabBar, QMenu, QAction
 
 
@@ -72,16 +72,21 @@ class TabBar(QTabBar):
             self.tab_rect.moveTopLeft(event.pos())
 
         if event.buttons() == Qt.LeftButton and self.pressEvent and not self.bar_rect.contains(self.tab_rect):
-
             event.accept()
+            index = self.currentIndex()
             mimeData = QMimeData()
             drag = QDrag(self)
             drag.setMimeData(mimeData)
             drag.setPixmap(self.pixmap)
-            cursor = QCursor(Qt.OpenHandCursor)
             drag.setHotSpot(self.tab_rect.topLeft() - event.pos())
-            drag.setDragCursor(cursor.pixmap(), Qt.MoveAction)
-            dropAction = drag.exec_(Qt.MoveAction)
+            DetachableTabWidget.drag_widget = self.parent.widget(index)
+            DetachableTabWidget.drag_text = self.tabText(index)
+            self.parent.removeTab(index)
+            dropAction = drag.exec_(Qt.MoveAction | Qt.TargetMoveAction | Qt.IgnoreAction)
+            self.parent.dragLeaveEvent(event)
+            if dropAction == 0:
+                self.parent.insertTab(index, DetachableTabWidget.drag_widget, DetachableTabWidget.drag_text)
+                self.parent.setCurrentIndex(index)
         else:
             QTabBar.mouseMoveEvent(self, event)
 
@@ -110,13 +115,6 @@ class DetachableTabWidget(QTabWidget):
 
     def dragEnterEvent(self, event):
         event.accept()
-        if event.source().parentWidget() != self:
-            return
-
-        if DetachableTabWidget.drag_widget is None:
-            DetachableTabWidget.drag_widget = self.widget(self.tabBar.currentIndex())
-            DetachableTabWidget.drag_text = self.tabText(self.tabBar.currentIndex())
-            self.removeTab(self.tabBar.currentIndex())
 
     def dragLeaveEvent(self, event):
         event.accept()
@@ -124,12 +122,9 @@ class DetachableTabWidget(QTabWidget):
     def dropEvent(self, event):
         event.setDropAction(Qt.MoveAction)
         event.accept()
-        counter = self.count()
 
-        if counter == 0:
-            self.addTab(DetachableTabWidget.drag_widget, DetachableTabWidget.drag_text)
-        else:
-            self.insertTab(counter + 1, DetachableTabWidget.drag_widget, DetachableTabWidget.drag_text)
+        self.addTab(DetachableTabWidget.drag_widget, DetachableTabWidget.drag_text)
+        self.setCurrentWidget(DetachableTabWidget.drag_widget)
         DetachableTabWidget.drag_widget = None
         DetachableTabWidget.drag_text = None
         self.drop_signal.emit()

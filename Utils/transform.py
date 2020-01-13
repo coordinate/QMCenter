@@ -224,42 +224,43 @@ def read_point_cloud(path):
 def parse_mag_file(filepath, progress):
     crc8 = crcmod.predefined.mkCrcFun('crc-8-maxim')
     file = open(filepath, 'rb').read()
-    pattern = bytes([0xFF, 0x7E, 0x1A]) + b'.{27}'
+    pattern = bytes([0xFE, 0x0C, 0x00, 0x27]) + b'.{13}'
     packets = re.findall(pattern, file, flags=re.DOTALL)
     length = len(packets)
-    gpst_arr = np.empty(length, dtype=np.uint64)
+    gpst_arr = np.empty(length, dtype=np.uint16)
     freq_arr = np.empty(length, dtype=np.uint32)
-    sig1_arr = np.empty(length, dtype=np.int16)
+    sig1_arr = np.empty(length, dtype=np.int32)
     sig2_arr = np.empty(length, dtype=np.int16)
-    sens_temp_arr = np.empty(length, dtype=np.uint16)
-    lamp_temp_arr = np.empty(length, dtype=np.uint16)
-    status_arr = np.empty(length, dtype=np.uint8)
-    dc_current_arr = np.empty(length, dtype=np.uint16)
-    board_temp_arr = np.empty(length, dtype=np.int8)
+    # sens_temp_arr = np.empty(length, dtype=np.uint16)
+    # lamp_temp_arr = np.empty(length, dtype=np.uint16)
+    # status_arr = np.empty(length, dtype=np.uint8)
+    # dc_current_arr = np.empty(length, dtype=np.uint16)
+    # board_temp_arr = np.empty(length, dtype=np.int8)
 
     for i in range(length):
         magic = packets[i][:2]
-        assert magic == bytes((0xFF, 0x7E))
-        packet_size = struct.unpack('<B', packets[i][2:3])[0]
-        if packets[i][-1] != crc8(packets[i][3:-1]) or packet_size != 26:
+        assert magic == bytes([0xFF])
+        packet_size = struct.unpack('<B', packets[i][1:2])[0]
+        if packets[i][-1] != crc8(packets[i][4:-1]) or packet_size != 12:
             print("error")
 
-        data_layout = '<cQLhhHHBHh'
+        data_layout = '<HHIi'
 
-        data, gpst, frequency, sig1, sig2, sens_temp, lamp_temp, status, dc_current, board_temp = struct.unpack(data_layout, packets[i][3:-1])
+        gpst, sig2, frequency, sig1 = struct.unpack(data_layout, packets[i][4:-1])
         gpst_arr[i] = gpst
         freq_arr[i] = frequency
         sig1_arr[i] = sig1
         sig2_arr[i] = sig2
-        sens_temp_arr[i] = sens_temp
-        lamp_temp_arr[i] = lamp_temp
-        status_arr[i] = status
-        dc_current_arr[i] = dc_current
-        board_temp_arr[i] = board_temp
+        # sens_temp_arr[i] = sens_temp
+        # lamp_temp_arr[i] = lamp_temp
+        # status_arr[i] = status
+        # dc_current_arr[i] = dc_current
+        # board_temp_arr[i] = board_temp
         progress.setValue((i/length) * 99)
         QApplication.processEvents()
 
-    return gpst_arr, freq_arr, sig1_arr, sig2_arr, sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr
+    return gpst_arr, freq_arr, sig1_arr, sig2_arr
+        # , sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr
 
 
 class CICFilter(QObject):
@@ -308,36 +309,41 @@ class IIRFilter(QObject):
         except FileNotFoundError:
             pass
 
-        self.x1 = 0
-        self.x2 = 0
-        self.y1 = 0
-        self.y2 = 0
+        self.clear_data = [0] * 10
+        self.filtered_data = [0] * 10
 
         self.current_filter = None
 
     def set_current_filter(self, filter):
         if filter in self.filters:
             self.current_filter = filter
-            self.x1 = 0
-            self.x2 = 0
-            self.y1 = 0
-            self.y2 = 0
+            self.clear_data = [0] * 10
+            self.filtered_data = [0] * 10
 
     def filtering(self, array):
         if self.current_filter is None:
             return array
-        for block in self.filters[self.current_filter]:
-            array = self.step(array, block)
-        return array
-
-    def step(self, array, block):
-        a1, a2, b1, b2, b3, G = block
         out_put = np.zeros(array.shape)
+
         for i in range(len(array)):
-            step = b1 * array[i] + b2 * self.x1 + b3 * self.x2 - a1 * self.y1 - a2 * self.y2
-            self.x2 = self.x1
-            self.x1 = array[i]
-            self.y2 = self.y1
-            self.y1 = step
-            out_put[i] = step * G
+            data = array[i]
+            for block in self.filters[self.current_filter]:
+                numerators = block[0:3]
+                denumerators = block[3:5]
+                G = block[-1]
+                data = self.filter_data(data, numerators, denumerators, G)
+            out_put[i] = data
         return out_put
+
+    def filter_data(self, data, numerators, denumenators, G):
+        self.clear_data.insert(0, data)
+        self.clear_data.pop()
+        filtered = 0
+        for i in range(len(numerators)):
+            filtered += numerators[i] * self.clear_data[i]
+        for j in range(len(denumenators)):
+            filtered -= denumenators[j] * self.filtered_data[j]
+        self.filtered_data.insert(0, filtered)
+        self.filtered_data.pop()
+        return filtered * G
+

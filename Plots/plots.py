@@ -242,7 +242,6 @@ class MagneticField(MainPlot):
             self.bottom_axis[-length:] = bottom_ax
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
-            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
             self.view.setMouseEnabled(x=False, y=True)
             self.view.setXRange(self.bottom_axis[-1] - self.s, self.bottom_axis[-1])
         else:
@@ -322,8 +321,6 @@ class SignalsPlot(MainPlot):
 
             self.data.setData(x=self.bottom_axis[-self.ptr:], y=self.left_axis[-self.ptr:])
             self.data2.setData(x=self.bottom_axis[-self.ptr:], y=self.right_axis[-self.ptr:])
-            # self.view.enableAutoRange(axis=self.view.XAxis, enable=True)
-            # self.viewbox.enableAutoRange(axis=self.viewbox.YAxis, enable=False)
             self.view.setMouseEnabled(x=False, y=True)
             self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
             if not self.sync:
@@ -331,6 +328,7 @@ class SignalsPlot(MainPlot):
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
+            self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
 
 
 class SignalsFrequency(pg.PlotWidget):
@@ -412,6 +410,7 @@ class SignalsFrequency(pg.PlotWidget):
         else:
             self.view.disableAutoRange(axis=self.view.XAxis)
             self.view.setMouseEnabled(x=True, y=True)
+            self.viewbox.setGeometry(self.item.vb.sceneBoundingRect())
 
     def wheelEvent(self, event):
         modifiers = QGuiApplication.keyboardModifiers()

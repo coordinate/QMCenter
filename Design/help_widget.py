@@ -17,6 +17,7 @@ class HelpWidget(QDialog):
         self.third_party_text.setText(_('Used frameworks: GDAL, OpenGL, PyQt.\n'
                                         'InnoSetup: Copyright (C) 1997-2019 Jordan Russell. All rights reserved.\n'
                                         'Portions Copyright (C) 2000-2019 Martijn Laan. All rights reserved.\n'
+                                        'mat4py: The MIT License (MIT) Copyright (c) 2011-2018 Nephics AB.\n'
                                         'Icons used in this software are made by Freepik, from www.flaticon.com.'))
         self.third_party_text.setReadOnly(True)
         self.wiki = QLabel()

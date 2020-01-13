@@ -1,20 +1,21 @@
 from PyQt5.QtCore import QRegExp, Qt, pyqtSignal
 from PyQt5.QtGui import QRegExpValidator, QIcon
 from PyQt5.QtWidgets import QWidget, QGridLayout, QListWidget, QStackedWidget, QListWidgetItem, QLabel, QLineEdit, \
-    QPushButton, QFileDialog, QComboBox, QGroupBox
+    QPushButton, QFileDialog, QComboBox, QGroupBox, QDialog
 
 from Design.ui import show_error
 
 # _ = lambda x: x
 
 
-class SettingsWidget(QWidget):
+class SettingsWidget(QDialog):
     signal_ip_changed = pyqtSignal(object)
     signal_decimate_changed = pyqtSignal(object)
     signal_language_changed = pyqtSignal(object)
 
     def __init__(self, parent):
-        QWidget.__init__(self, flags=Qt.WindowStaysOnTopHint)
+        QDialog.__init__(self)
+        self.setWindowFlag(Qt.WindowMaximizeButtonHint)
         self.setWindowIcon(QIcon('images/logo.ico'))
         # Create settings widget
         self.parent = parent
@@ -66,10 +67,7 @@ class SettingsWidget(QWidget):
         self.left_folder_tracked_label = QLabel(_('Left tracked folder'))
         self.left_folder_tracked = QLineEdit()
         self.left_browse_btn = QPushButton(_('Browse...'))
-        self.left_file_dialog = QFileDialog()
-        self.left_file_dialog.setFileMode(QFileDialog.Directory)
-        self.left_browse_btn.clicked.connect(self.left_file_dialog.show)
-        self.left_file_dialog.fileSelected.connect(lambda url: self.left_folder_tracked.setText(url))
+        self.left_browse_btn.clicked.connect(lambda: self.left_file_dialog_show())
         self.file_manager_menu_layout.addWidget(self.left_folder_tracked_label, 0, 0, 1, 1, alignment=Qt.AlignCenter)
         self.file_manager_menu_layout.addWidget(self.left_folder_tracked, 1, 0, 1, 1)
         self.file_manager_menu_layout.addWidget(self.left_browse_btn, 2, 0, 1, 1, alignment=Qt.AlignCenter)
@@ -183,6 +181,13 @@ class SettingsWidget(QWidget):
             self.paint_settings_menu_item.addWidget(value)
 
         self.paint_settings_menu_item.setCurrentWidget(widget)
+
+    def left_file_dialog_show(self):
+        dir = QFileDialog.getExistingDirectory(None, "Open Directory", self.parent.expanduser_dir,
+                                               QFileDialog.ShowDirsOnly)
+        if dir == '':
+            return
+        self.left_folder_tracked.setText(dir)
 
     def closeEvent(self, QCloseEvent):
         self.lineEdit_ip.setText(self.parent.app_settings.value('ip'))

@@ -5,9 +5,12 @@ import crcmod
 import re
 import struct
 
+from mat4py import savemat
+
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QSizePolicy, QFileDialog
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QSizePolicy, QFileDialog, \
+    QGroupBox, QProgressDialog, QApplication
 
 from Utils.transform import CICFilter
 
@@ -36,7 +39,7 @@ class StatisticProcessing(QWidget):
         self.decimate_idx_lineedit.setValidator(decimate_validator)
         self.start_btn = QPushButton(_('Start'))
 
-        self.editor_label = QLabel('Count: ')
+        self.editor_label = QLabel(_('Count: '))
         self.editor_edit = QLineEdit()
         self.editor_edit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.editor_edit.setText('1')
@@ -54,7 +57,29 @@ class StatisticProcessing(QWidget):
 
         self.save_statistic_btn = QPushButton(_('Save statistic'))
 
-        self.parse_magnet_btn = QPushButton('Parse .mag file')
+        self.parse_magnet_btn = QPushButton(_('Parse .mag file'))
+
+        self.save_mat_file = QGroupBox(_('Save .mat file'))
+        self.progress = QProgressDialog(_('Create .mat file.'), None, 0, 100)
+        self.progress.setWindowTitle(_('Create .mat file.'))
+        self.progress.setAutoClose(False)
+        self.progress.close()
+        self.counter_freq_sig_label = QLabel(_('Count: '))
+        self.counter_freq_sig = QLineEdit()
+        self.file_path = QLineEdit()
+        self.save_mat_btn = QPushButton(_('Save'))
+        self.fill_mat = False
+        self.mat_counter = 0
+        self.freq_arr = []
+        self.sig1_arr = []
+        self.sig2_arr = []
+        self.data = {}
+
+        self.save_mat_file_lay = QGridLayout(self.save_mat_file)
+        self.save_mat_file_lay.addWidget(self.counter_freq_sig_label, 0, 0, 1, 1)
+        self.save_mat_file_lay.addWidget(self.counter_freq_sig, 0, 1, 1, 1)
+        self.save_mat_file_lay.addWidget(self.save_mat_btn, 0, 2, 1, 1)
+        self.save_mat_file_lay.addWidget(self.file_path, 1, 0, 1, 3)
 
         self.log_text = QTextEdit()
         self.log_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -74,6 +99,7 @@ class StatisticProcessing(QWidget):
         self.layout.addWidget(self.standard_deviation_label_value, 5, 1, 1, 1)
         self.layout.addWidget(self.save_statistic_btn, 8, 1, 1, 1)
         self.layout.addWidget(self.parse_magnet_btn, 11, 1, 1, 1)
+        self.layout.addWidget(self.save_mat_file, 12, 0, 1, 2)
 
         self.cic_filter.signal_output.connect(lambda output: self.cic_output(output))
         self.decimate_idx_lineedit.returnPressed.connect(lambda: self.decimate_changed())
@@ -81,15 +107,20 @@ class StatisticProcessing(QWidget):
         self.save_statistic_btn.clicked.connect(lambda: self.save_statistic())
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
         self.parse_magnet_btn.clicked.connect(lambda: self.parse_magnet())
+        self.save_mat_btn.clicked.connect(lambda: self.save_mat_btn_clicked())
 
     def retranslate(self):
         self.freq_label.setText(_('Frequency:'))
         self.decimate_idx_label.setText(_('Decimate idx:'))
         self.start_btn.setText(_('Start'))
-        self.editor_label.setText('Count: ')
+        self.editor_label.setText(_('Count: '))
         self.average_label.setText(_('Average: '))
         self.standard_deviation_label.setText(_('Standard\ndeviation: '))
         self.save_statistic_btn.setText(_('Save statistic'))
+        self.parse_magnet_btn.setText(_('Parse .mag file'))
+        self.save_mat_file.setTitle(_('Save .mat file'))
+        self.counter_freq_sig_label.setText(_('Count: '))
+        self.save_mat_btn.setText(_('Save'))
 
     def update_statistic(self, freq, time, sig1, sig2):
         freq = np.array(freq, dtype=np.uint32)
@@ -166,5 +197,45 @@ class StatisticProcessing(QWidget):
             for i in range(length):
                 f.write('{} {} {} {}\n'.format(gpst_arr[i], freq_arr[i], sig1_arr[i], sig2_arr[i]))
 
+    def save_mat_btn_clicked(self):
+        try:
+            self.mat_counter = int(self.counter_freq_sig.text())
+        except ValueError:
+            return
+        self.progress.setLabelText(_('Create .mat file.'))
+        self.freq_arr.clear()
+        self.sig1_arr.clear()
+        self.sig2_arr.clear()
+        self.data.clear()
+        self.fill_mat = True
+        self.progress.show()
+        QApplication.processEvents()
 
+    def fill_mat_data(self, freq, time, sig1, sig2):
+        if self.fill_mat:
+            self.freq_arr.extend(freq)
+            self.sig1_arr.extend(sig1)
+            self.sig2_arr.extend(sig2)
+            value = min(99.0, (len(self.freq_arr)/self.mat_counter) * 99)
+            self.progress.setValue(value)
+            QApplication.processEvents()
 
+            if len(self.freq_arr) >= self.mat_counter:
+                self.fill_mat = False
+                self.data['freq'] = self.freq_arr[:self.mat_counter]
+                self.data['sig1'] = self.sig1_arr[:self.mat_counter]
+                self.data['sig2'] = self.sig2_arr[:self.mat_counter]
+                self.write_mat_file(self.data)
+
+    def write_mat_file(self, data):
+        path = os.path.dirname(self.file_path.text()) \
+            if os.path.isdir(os.path.dirname(self.file_path.text())) else self.parent.expanduser_dir
+        filename = QFileDialog.getSaveFileName(None, "Save File", path, "MatLab file (*.mat)")[0]
+        if filename == '':
+            self.progress.close()
+            return
+
+        savemat(filename, data)
+        self.file_path.setText(filename)
+        self.progress.setLabelText(_('File has been created.'))
+        self.progress.setValue(100)

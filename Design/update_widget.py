@@ -15,7 +15,6 @@ from Design.ui import show_error
 class UpdateWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
-        self.setWindowIcon(QIcon('images/logo.ico'))
         self.parent = parent
         self.name = 'Update'
         self.url = None
@@ -35,6 +34,7 @@ class UpdateWidget(QWidget):
 
         # create wizard
         self.wizard = QWidget()
+        self.wizard.setWindowIcon(QIcon('images/logo.ico'))
         self.wizard.setWindowTitle(_('Firmware Update Wizard'))
         self.wizard.setFixedSize(400, 200)
         self.layout = QGridLayout(self.wizard)

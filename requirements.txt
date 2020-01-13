@@ -9,4 +9,5 @@ requests==2.22.0
 requests-toolbelt==0.9.1
 plyfile==0.7.1
 lxml==4.4.1
+mat4py==0.4.2
 GDAL==3.0.1

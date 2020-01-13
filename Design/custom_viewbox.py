@@ -25,6 +25,11 @@ class Menu(QMenu):
         if self.widget.filtering:
             filters_menu = self.addMenu(_('Filters'))
             filters_lst = []
+            r = QRadioButton('No Filter')
+            radio_action = QWidgetAction(filters_menu)
+            radio_action.setDefaultWidget(r)
+            filters_menu.addAction(radio_action)
+            filters_lst.append(r)
             for f in self.widget.iir_filter.filters.keys():
                 r = QRadioButton(f)
                 radio_action = QWidgetAction(filters_menu)
