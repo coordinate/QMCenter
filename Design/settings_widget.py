@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QtCore import QRegExp, Qt, pyqtSignal
 from PyQt5.QtGui import QRegExpValidator, QIcon
 from PyQt5.QtWidgets import QWidget, QGridLayout, QListWidget, QStackedWidget, QListWidgetItem, QLabel, QLineEdit, \
@@ -62,18 +64,21 @@ class SettingsWidget(QDialog):
         self.settings_menu_items.addItem(self.file_manager_item)
 
         self.file_manager_menu_widget = QGroupBox(_('File Manager settings'))
+        self.file_manager_menu_widget.setFixedHeight(200)
         self.file_manager_menu_layout = QGridLayout(self.file_manager_menu_widget)
 
-        self.left_folder_tracked_label = QLabel(_('Left tracked folder'))
+        self.left_folder_tracked_label = QLabel(_('PC tracked directory'))
         self.left_folder_tracked = QLineEdit()
+        self.left_folder_tracked.setReadOnly(True)
         self.left_browse_btn = QPushButton(_('Browse...'))
         self.left_browse_btn.clicked.connect(lambda: self.left_file_dialog_show())
         self.file_manager_menu_layout.addWidget(self.left_folder_tracked_label, 0, 0, 1, 1, alignment=Qt.AlignCenter)
         self.file_manager_menu_layout.addWidget(self.left_folder_tracked, 1, 0, 1, 1)
         self.file_manager_menu_layout.addWidget(self.left_browse_btn, 2, 0, 1, 1, alignment=Qt.AlignCenter)
 
-        self.right_folder_tracked_label = QLabel(_('Right tracked folder'))
+        self.right_folder_tracked_label = QLabel(_('Device active directory'))
         self.right_folder_tracked = QLineEdit()
+        self.right_folder_tracked.setReadOnly(True)
         self.right_browse_btn = QPushButton(_('Browse...'))
         self.file_manager_menu_layout.addWidget(self.right_folder_tracked_label, 0, 1, 1, 1, alignment=Qt.AlignCenter)
         self.file_manager_menu_layout.addWidget(self.right_folder_tracked, 1, 1, 1, 1)
@@ -86,7 +91,7 @@ class SettingsWidget(QDialog):
         self.decimate_group.setFixedHeight(200)
         self.decimate_lay = QGridLayout(self.decimate_group)
 
-        self.decimate_label = QLabel(_('Interpolation coefficient: '))
+        self.decimate_label = QLabel(_('Decimate coefficient: '))
         self.decimateRegex = QRegExp('\\d+')
         decimateValidator = QRegExpValidator(self.decimateRegex, self)
         self.decimate_lineedit = QLineEdit()
@@ -141,6 +146,8 @@ class SettingsWidget(QDialog):
             self.signal_language_changed.emit(self.language_combo.currentText()[:2].lower())
         self.signal_decimate_changed.emit(self.decimate_lineedit.text())
 
+        self.parent.file_manager_widget.left_file_model_auto_sync_label.setText(self.left_folder_tracked.text())
+
         if close:
             self.close()
 
@@ -183,7 +190,8 @@ class SettingsWidget(QDialog):
         self.paint_settings_menu_item.setCurrentWidget(widget)
 
     def left_file_dialog_show(self):
-        dir = QFileDialog.getExistingDirectory(None, "Open Directory", self.parent.expanduser_dir,
+        text = os.path.dirname(self.left_folder_tracked.text())
+        dir = QFileDialog.getExistingDirectory(None, "Open Directory", self.parent.expanduser_dir if text == '' else text,
                                                QFileDialog.ShowDirsOnly)
         if dir == '':
             return
@@ -196,3 +204,4 @@ class SettingsWidget(QDialog):
         else:
             self.language_combo.setCurrentText('English')
         self.decimate_lineedit.setText(self.parent.app_settings.value('decimate_idx'))
+        self.left_folder_tracked.setText((self.parent.app_settings.value('pc_tracked_dir')))

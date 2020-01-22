@@ -82,6 +82,8 @@ class WorkspaceView(QTreeView):
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.project_name = QStandardItem()
         self.view_list = None
+        self.magnetic_field_ext = 'mgt'
+        self.gnss_ext = 'ubx'
         self.model = QStandardItemModel(self)
         self.model.setColumnCount(2)
         self.model.setHorizontalHeaderItem(0, self.project_name)
@@ -279,8 +281,8 @@ class WorkspaceView(QTreeView):
         if not self.parent.project_instance.project_path:
             return
         project_action = {
-                _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.mag'),
-                _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.ubx'),
+                _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.' + self.magnetic_field_ext),
+                _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.'+self.gnss_ext),
                 _('Import Magnetic Field Track'): self.parent.project_instance.add_magnet_data,
                 _('Import DEM'): lambda: self.parent.project_instance.add_geo_data('*.tif'),
                 _('Import Point Cloud'): lambda: self.parent.project_instance.add_geo_data('*.ply'),
@@ -313,11 +315,11 @@ class WorkspaceView(QTreeView):
         project_action = {
             self.magnetic_field_item.text(): {
                 # _('Create  Magnetic Field Tracks'): lambda: self.create_magnet_files(item_index.data()),
-                _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.mag'),
+                _('Import Magnetic Field Measurements'): lambda: self.parent.project_instance.add_raw_data('*.' + self.magnetic_field_ext),
                 _('Remove All Files'): lambda: self.remove_all(item_index)
             },
             self.gnss_item.text(): {
-                _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.ubx'),
+                _('Import GNSS Observations'): lambda: self.parent.project_instance.add_raw_data('*.' + self.gnss_ext),
                 _('Remove All Files'): lambda: self.remove_all(item_index)
             },
             self.magnet_track_item.text(): {
@@ -381,7 +383,7 @@ class WorkspaceView(QTreeView):
 
         context_menu = {}
 
-        if len(extension_set) == 2 and '.mag' in extension_set and ('.ubx' in extension_set or '.pos' in extension_set):
+        if len(extension_set) == 2 and '.' + self.magnetic_field_ext in extension_set and ('.' + self.gnss_ext in extension_set or '.pos' in extension_set):
             context_menu[_('Create  Magnetic Field Tracks')] = lambda: self.magnet_creator.show_widget(lst)
         elif len(extension_set) == 1 and '.magnete' in extension_set:
             context_menu[_('Merge Tracks')] = lambda: self.parent.three_d_widget.three_d_plot.concatenate_magnet(lst)
@@ -463,6 +465,8 @@ class MagnetCreator(QDialog):
         self.second_file = None
         self.setWindowTitle(_('Create Magnetic Field Track'))
         self.layout = QGridLayout(self)
+        self.magnet_field_ext = 'mgt'
+        self.gnss_ext = 'mgt'
 
         self.first_page = QWidget()
         self.first_layout = QGridLayout(self.first_page)
@@ -499,9 +503,9 @@ class MagnetCreator(QDialog):
         self.browse_btn.setText(_('Browse'))
 
     def show_widget(self, files_list):
-        self.mag_file = [m for m in files_list if os.path.splitext(m)[-1] == '.mag'][0]
+        self.mag_file = [m for m in files_list if os.path.splitext(m)[-1] == '.' + self.magnet_field_ext][0]
         if len(files_list) == 2:
-            self.second_file = [u for u in files_list if os.path.splitext(u)[-1] in ['.pos', '.ubx']][0]
+            self.second_file = [u for u in files_list if os.path.splitext(u)[-1] in ['.pos', '.'+self.gnss_ext]][0]
 
             self.matching_label.setText(_('Match <b>{}</b> with <b>{}</b>').format(self.mag_file, self.second_file))
             self.create_btn.setEnabled(True)
@@ -537,7 +541,7 @@ class MagnetCreator(QDialog):
 
     def open_filedialog(self):
         file = QFileDialog.getOpenFileName(None, _("Open file"),
-                                           self.main.project_instance.files_path, "GPS file (*.ubx *.pos)")[0]
+                                           self.main.project_instance.files_path, "GPS file (*.{} *.pos)".format(self.gnss_ext))[0]
 
         if not file:
             return

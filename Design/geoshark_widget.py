@@ -1,14 +1,19 @@
+import requests
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QCheckBox, QGridLayout, QGroupBox, QLabel, QPushButton, QVBoxLayout, QWidget
 
 # _ = lambda x: x
+from Design.toggle_button import SwitchButton
+from Design.ui import show_error
 
 
 class GeosharkWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self)
         self.parent = parent
+        self.port = '9080'
+        self.server = None
 
         self.layout = QVBoxLayout(self)
         self.layout.setAlignment(Qt.AlignTop)
@@ -77,12 +82,21 @@ class GeosharkWidget(QWidget):
 
         self.layout.addWidget(self.state_groupbox)
 
+        self.start_stop_group = QGroupBox(_('Start or stop session'))
+        self.start_stop_lay = QGridLayout(self.start_stop_group)
+        self.toggle = SwitchButton()
+        self.toggle.setEnabled(False)
+        self.start_stop_lay.addWidget(self.toggle, 0, 0, 1, 1, alignment=Qt.AlignLeft)
+        self.layout.addWidget(self.start_stop_group)
+
         self.connect_btn.clicked.connect(lambda: self.client_connect())
         self.disconnect_btn.clicked.connect(lambda: self.client_disconnect())
         self.auto_connect_chbx.stateChanged.connect(lambda state: self.auto_connect_chbx_change(state))
+        self.toggle.signal_on.connect(lambda var: self.start_stop_session(var))
         self.test_btn.clicked.connect(self.test)
 
         self.parent.signal_language_changed.connect(lambda: self.retranslate())
+        self.parent.settings_widget.signal_ip_changed.connect(lambda ip: self.change_ip(ip))
 
     def retranslate(self):
         self.connection_groupbox.setTitle(_(self.connection_state))
@@ -93,13 +107,23 @@ class GeosharkWidget(QWidget):
         self.graphs_chbx.setText(_('Live telemetry'))
         self.temp_label.setText(_('Temperature:'))
 
+    def change_ip(self, ip):
+        self.server = ':'.join([ip, self.port])
+
     def client_connect(self):
         self.parent.client.connect()
         QTimer.singleShot(1000, lambda: self.parent.file_manager_widget.right_file_model_update())
+        QTimer.singleShot(1000, lambda: self.check_session())
+        QTimer.singleShot(1000, lambda: self.check_active_directory())
+        QTimer.singleShot(1000, lambda: self.parent.file_manager_widget.timer.start())
 
     def client_disconnect(self):
         self.device_on_connect = False
         self.disconnect_btn.setEnabled(False)
+        if self.toggle.switch_on:
+            self.toggle.change_state()
+        self.toggle.setEnabled(False)
+        self.toggle.setEnabled(False)
         self.connection_icon.setPixmap(QPixmap('images/Available.png'))
         self.connection_state = 'Connection is available'
         self.connection_groupbox.setTitle(_(self.connection_state))
@@ -136,9 +160,33 @@ class GeosharkWidget(QWidget):
         self.device_on_connect = True
         self.connect_btn.setEnabled(False)
         self.disconnect_btn.setEnabled(True)
+        self.toggle.setEnabled(True)
         self.connection_icon.setPixmap(QPixmap('images/Connected.png'))
         self.connection_state = 'Connected'
         self.connection_groupbox.setTitle(_(self.parent.geoshark_widget.connection_state))
+
+    def check_session(self):
+        url = 'http://{}/command'.format(self.server)
+        try:
+            res = requests.get(url)
+        except requests.exceptions.RequestException:
+            show_error(_('GeoShark error'), _('Can not check active directory.\nGeoShark is not responding.'))
+            return
+        if res.ok:
+            if res.text == 'Session active.\n' and not self.toggle.switch_on:
+                self.toggle.change_state()
+            elif res.text == 'Session stopped.\n' and self.toggle.switch_on:
+                self.toggle.change_state()
+
+    def check_active_directory(self):
+        url = 'http://{}/active_dir'.format(self.server)
+        try:
+            res = requests.get(url)
+        except requests.exceptions.RequestException:
+            show_error(_('GeoShark error'), _('Can not check session.\nGeoShark is not responding.'))
+            return
+        if res.ok:
+            self.parent.file_manager_widget.set_active_path(res.text)
 
     def on_disconnect(self):
         self.device_on_connect = False
@@ -154,3 +202,14 @@ class GeosharkWidget(QWidget):
         self.parent.graphs_widget.lamp_temp_plot.signal_disconnect.emit()
         self.parent.graphs_widget.sensor_temp_plot.signal_disconnect.emit()
 
+    def start_stop_session(self, var):
+        var = 'start' if var else 'stop'
+        url = 'http://{}/command'.format(self.server)
+        try:
+            res = requests.post(url, data=var, timeout=1)
+        except requests.exceptions.RequestException:
+            show_error(_('GeoShark error'), _('Can not {} session.\nGeoShark is not responding.').format(var))
+            self.toggle.change_state()
+            return
+        if res.ok:
+            print(res.text)

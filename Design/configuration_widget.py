@@ -22,16 +22,18 @@ class Delegate(QStyledItemDelegate):
             return item_line_edit
         elif index.column() == 5:
             item_line_edit = QLineEdit(parent)
-            regex = QRegExp('(-\\d+\\.{1}\\d+)|(\\d+\\.{1}\\d+)')
+            regex = QRegExp('(-\\d+\\.{1}\\d+)|(\\d+\\.{1}\\d+)|\\d+')
             validator = QRegExpValidator(regex, self)
             item_line_edit.setValidator(validator)
             return item_line_edit
-
         else:
             return QStyledItemDelegate.createEditor(self, parent, option, index)
 
     def setEditorData(self, editor, index):
         editor.setText(index.data())
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, '{:.1f}'.format(float(editor.text())))
 
 
 class ConfigurationWidget(QWidget):
@@ -122,12 +124,12 @@ class ConfigurationWidget(QWidget):
     def recount_tree(self, tree):
         it = QTreeWidgetItemIterator(tree)
         while it.value():
-            it.value().setText(7, it.value().text(5))
-            it.value().setText(5, str(float(it.value().text(1)) * float(it.value().text(7))))
+            it.value().setText(8, it.value().text(5))
+            it.value().setText(5, str(float(it.value().text(1)) * float(it.value().text(8))))
             it += 1
 
     def tree_item_double_clicked(self, it, column):
-        if column in [0, 2, 6]:
+        if column in [0, 2, 6] or int(it.text(7)) == 1:
             it.setFlags(Qt.ItemIsSelectable | Qt.ItemIsUserCheckable |
                         Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled)
         else:

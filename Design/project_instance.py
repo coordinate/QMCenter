@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from datetime import datetime, timedelta
 
 from shutil import copyfile
 import lxml.etree as ET
@@ -20,6 +21,8 @@ class CurrentProject(QObject):
         QObject.__init__(self)
         self.parent = parent
         self.expanduser_dir = os.path.expanduser('~')
+        self.magnet_field_ext = 'mgt'
+        self.gnss_ext = 'ubx'
         self.progress = QProgressDialog("Load files", None, 0, 100)
         self.progress.setFixedSize(250, 80)
         self.progress.close()
@@ -167,8 +170,9 @@ class CurrentProject(QObject):
 
     def add_raw_data(self, extension):
         files = QFileDialog.getOpenFileNames(None, _("Select one or more files to open"),
-                                             self.files_path, "{} files ({})".format('MAG' if extension == '*.mag'
-                                                                                     else 'UBX', extension))
+                                             self.files_path, "{} files ({})".format(self.magnet_field_ext.upper()
+                                                                                     if extension == '*.'+self.magnet_field_ext
+                                                                                     else self.gnss_ext.upper(), extension))
 
         if not files[0]:
             return
@@ -176,23 +180,23 @@ class CurrentProject(QObject):
         self.progress.open()
         QApplication.processEvents()
         for i, file in enumerate(files[0]):
-            if extension == '*.mag':
+            if extension == '*.'+self.magnet_field_ext:
                 destination = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'], os.path.basename(file))
             else:
                 destination = os.path.join(self.files_path, self.gnss_data.attrib['name'], os.path.basename(file))
             if not os.path.exists(destination):
                 copyfile(file, destination)
-                if extension == '*.mag':
+                if extension == '*.'+self.magnet_field_ext:
                     ET.SubElement(self.magnetic_field_data, 'magnetic_field_data',
                                   {'filename': '{}'.format(os.path.basename(destination))})
-                elif extension == '*.ubx':
+                elif extension == '*.'+self.gnss_ext:
                     ET.SubElement(self.gnss_data, 'gnss_data', {'filename': '{}'.format(os.path.basename(destination))})
             elif os.path.samefile(file, destination):
-                if extension == '*.mag' and not self.magnetic_field_data.xpath(
+                if extension == '*.'+self.magnet_field_ext and not self.magnetic_field_data.xpath(
                         "//magnetic_field_data[@filename='{}']".format(os.path.basename(destination))):
                     ET.SubElement(self.magnetic_field_data, 'magnetic_field_data',
                                   {'filename': '{}'.format(os.path.basename(destination))})
-                elif extension == '*.ubx' and not self.gnss_data.xpath(
+                elif extension == '*.'+self.gnss_ext and not self.gnss_data.xpath(
                         "//gnss_data[@filename='{}']".format(os.path.basename(destination))):
                     ET.SubElement(self.gnss_data, 'gnss_data', {'filename': '{}'.format(os.path.basename(destination))})
                 else:
@@ -210,11 +214,12 @@ class CurrentProject(QObject):
     def create_magnet_files(self, files_list, widget=None):
         mag_file, second_file = files_list
 
-        files_path = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'])
+        magnetic_path = os.path.join(self.files_path, self.magnetic_field_data.attrib['name'])
+        gnss_path = os.path.join(self.files_path, self.gnss_data.attrib['name'])
 
         filename = os.path.splitext(mag_file)[0]
         widget.second_label.setText(_('Parsing {}').format(mag_file))
-        mag_values = parse_mag_file(os.path.join(files_path, mag_file), widget.progress)
+        mag_values = parse_mag_file(os.path.join(magnetic_path, mag_file), widget.progress)
         gpst = mag_values[0] / 1e6
         freq = mag_values[1] * 0.026062317
 
@@ -223,20 +228,20 @@ class CurrentProject(QObject):
             widget.close()
             return
 
-        if os.path.splitext(second_file)[-1] == '.ubx':
+        if os.path.splitext(second_file)[-1] == '.'+self.gnss_ext:
             # do command with RTKLIB and get .pos file bin or txt
             widget.second_label.setText(_('Creating {}').format('{}.pos').format(filename))
             widget.progress.setValue(0)
 
-            cmd = 'rtk_lib\\convbin.exe -d {} {}'.format(self.files_path.replace('/', '\\'),
-                                                         os.path.join(files_path, '{}.ubx'.format(filename)).replace('/', '\\'))
+            cmd = 'rtk_lib\\convbin.exe -d "{}" "{}"'.format(self.files_path.replace('/', '\\'),
+                                                         os.path.join(gnss_path, '{}.{}'.format(filename, self.gnss_ext)).replace('/', '\\'))
 
-            if not os.path.isfile(os.path.join(files_path, '{}.ubx'.format(filename))):
+            if not os.path.isfile(os.path.join(gnss_path, '{}.{}'.format(filename, self.gnss_ext))):
                 show_error(_('Matching error'), _('There is no match .ubx file for <b>{}</b>').format(mag_file))
                 widget.close()
                 return
 
-            p1 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p1 = subprocess.Popen(cmd, shell=True)
 
             out, err = p1.communicate()
             # if err:
@@ -255,7 +260,7 @@ class CurrentProject(QObject):
                 widget.close()
                 return
 
-            cmd = 'rtk_lib\\rnx2rtkp.exe -p 0 -o {} {} {}'.format(
+            cmd = 'rtk_lib\\rnx2rtkp.exe -p 0 -o "{}" "{}" "{}"'.format(
                             pos,
                             os.path.join(self.files_path, '{}.obs'.format(filename)).replace('/', '\\'),
                             os.path.join(self.files_path, '{}.nav'.format(filename)).replace('/', '\\'))
@@ -285,16 +290,26 @@ class CurrentProject(QObject):
         widget.second_label.setText(_('Creating {}').format('{}.magnete'.format(filename)))
         widget.progress.setValue(0)
         magnet_obj = dict()
+        diff = np.diff(gpst)
         with open(pos, 'r') as pos_file:
             file = pos_file.readlines()
-            for l in file:
-                if l[0] == '%':
-                    file.remove(l)
+            for i in range(len(file))[::-1]:
+                if file[i][0] == '%':
+                    file.remove(file[i])
                     continue
-                time = float(l.split()[0])
-                break
+            week = int(file[0].split()[0])
+            sec = float(file[0].split()[1])
+            time = datetime(1980, 1, 6) + timedelta(seconds=(week * 7 * 86400) + sec)
+            time = time.timestamp()
+            gpst[0] = time
+            gpst[1:] = diff + time
             start = np.argsort(np.absolute(time - gpst))[0]
             if gpst[start] == gpst[-1]:
+                pos_file.close()
+                list_dir = os.listdir(self.files_path)
+                for file in list_dir:
+                    if not os.path.isdir(os.path.join(self.files_path, file)):
+                        os.remove(os.path.join(self.files_path, file))
                 widget.second_label.setText(
                     _('Didn\'t match GPST with time in <b>{}</b> file').format(os.path.basename(second_file)))
                 return
@@ -308,27 +323,19 @@ class CurrentProject(QObject):
             for i, line in enumerate(file):
                 if line[0] == '%':
                     continue
-                # week = int(line[0])
-                # sec = float(line.split()[1])
-                # time = (week * 7 * 86400) + sec
-                time = float(line.split()[0])
+                week = int(line.split()[0])
+                sec = float(line.split()[1])
+                time = datetime(1980, 1, 6) + timedelta(seconds=(week * 7 * 86400) + sec)
+                time = time.timestamp()
                 indices = np.argsort(np.absolute(time - gpst[start: start + 200]))
                 diff = time - gpst[indices[0] + start]
                 if abs(diff) < 0.0015:
                     new_offset = indices[0] + start
-                    # print(indices, abs(time - gpst[indices[0] + start]), start, '\n', line)
                     indices.sort()
-
-                    # gpst[192099 + 120:192099 + 140].tolist() gpst[193099+115:193099+130].tolist()
-
-                    # print(gpst[indices[0]:indices[-1]].tolist())
-                    # print(freq[indices[0]:indices[-1]].tolist())
                     coeff = np.polyfit(gpst[indices[0]+start:indices[-1]+start],
                                        freq[indices[0]+start:indices[-1]+start], 1)
                     poly1d = np.poly1d(coeff)
                     magnet_field = poly1d(time)
-                    # magnet_file.write('{} {} {} {} {}\n'.format(time, line.split()[2], line.split()[1],
-                    #                                             line.split()[3], magnet_field))
 
                     time_arr.append(time)
                     lon_arr.append(line.split()[1])
@@ -339,17 +346,14 @@ class CurrentProject(QObject):
                     widget.progress.setValue((i/length)*99)
                     QApplication.processEvents()
                     start = new_offset
-                    # magnet_len += 1
                 elif diff > 1:
                     start = np.argsort(np.absolute(time - gpst))[0]
                     if time - gpst[start] > 3:
                         break
 
         for file in os.listdir(self.files_path):
-            if os.path.splitext(file)[-1] in ['.pos', '.nav', '.obs', '.magnete'] or \
-                    os.path.isdir(os.path.join(self.files_path, file)):
-                continue
-            os.remove(os.path.join(self.files_path, file))
+            if not os.path.isdir(os.path.join(self.files_path, file)):
+                os.remove(os.path.join(self.files_path, file))
 
         if len(time_arr) == 0:
             widget.progress.setValue(100)

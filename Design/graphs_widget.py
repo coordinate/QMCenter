@@ -110,7 +110,7 @@ class GraphsWidget(QStackedWidget):
         self.lamp_temp_plot.update(lamp_temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.dc_plot.update(dc_current, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
         self.sensor_temp_plot.update(chamber_temp, time, checkbox=self.parent.geoshark_widget.graphs_chbx.isChecked())
-        self.parent.geoshark_widget.deg_num_label.setText(str(lamp_temp[0]/10))
+        self.parent.geoshark_widget.deg_num_label.setText('{:.1f}'.format(lamp_temp[0]/10))
 
     def sync_x(self, check):
         if check == 2:

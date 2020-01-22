@@ -224,40 +224,67 @@ def read_point_cloud(path):
 def parse_mag_file(filepath, progress):
     crc8 = crcmod.predefined.mkCrcFun('crc-8-maxim')
     file = open(filepath, 'rb').read()
-    pattern = bytes([0xFE, 0x0C, 0x00, 0x27]) + b'.{13}'
-    packets = re.findall(pattern, file, flags=re.DOTALL)
-    length = len(packets)
-    gpst_arr = np.empty(length, dtype=np.uint16)
-    freq_arr = np.empty(length, dtype=np.uint32)
-    sig1_arr = np.empty(length, dtype=np.int32)
-    sig2_arr = np.empty(length, dtype=np.int16)
+    gpst_arr = np.zeros(300000, dtype=np.uint64)
+    freq_arr = np.zeros(300000, dtype=np.uint32)
+    sig1_arr = np.zeros(300000, dtype=np.int32)
+    sig2_arr = np.zeros(300000, dtype=np.int16)
     # sens_temp_arr = np.empty(length, dtype=np.uint16)
     # lamp_temp_arr = np.empty(length, dtype=np.uint16)
     # status_arr = np.empty(length, dtype=np.uint8)
     # dc_current_arr = np.empty(length, dtype=np.uint16)
     # board_temp_arr = np.empty(length, dtype=np.int8)
+    length = len(file)
+    position = 0
+    gpst_counter = 0
+    last_timestamp = None
+    low_mask = 0xFFFF
 
-    for i in range(length):
-        magic = packets[i][:2]
-        assert magic == bytes([0xFF])
-        packet_size = struct.unpack('<B', packets[i][1:2])[0]
-        if packets[i][-1] != crc8(packets[i][4:-1]) or packet_size != 12:
-            print("error")
+    while position + 1 < length:
+        if file[position] == 0xFE and position + file[position + 1] + 4 <= length:
+            data_size = file[position + 1]
+            packet = file[position:position+data_size+5]
+            # if packet[-1] != crc8(packet[position+1:-1]):
+            #     if packet[3] == 0x28:
+            #         last_timestamp = None
+            #     position += 1
+            #     continue
+            if packet[3] == 0x27 and last_timestamp:
+                data_layout = '<HHIi'
+                gpst, sig2, frequency, sig1 = struct.unpack(data_layout, packet[4:-1])
 
-        data_layout = '<HHIi'
+                low_timestamp = last_timestamp & low_mask
+                high_timestamp = last_timestamp & ~low_mask
+                high_time = high_timestamp if gpst >= low_timestamp else (high_timestamp + (low_mask + 1))
 
-        gpst, sig2, frequency, sig1 = struct.unpack(data_layout, packets[i][4:-1])
-        gpst_arr[i] = gpst
-        freq_arr[i] = frequency
-        sig1_arr[i] = sig1
-        sig2_arr[i] = sig2
-        # sens_temp_arr[i] = sens_temp
-        # lamp_temp_arr[i] = lamp_temp
-        # status_arr[i] = status
-        # dc_current_arr[i] = dc_current
-        # board_temp_arr[i] = board_temp
-        progress.setValue((i/length) * 99)
-        QApplication.processEvents()
+                last_timestamp = high_time + gpst
+                gpst = high_time + gpst
+
+                if position >= len(gpst_arr):
+                    gpst_arr.resize(len(gpst_arr) + 100000)
+                    freq_arr.resize(len(gpst_arr) + 100000)
+                    sig1_arr.resize(len(gpst_arr) + 100000)
+                    sig2_arr.resize(len(gpst_arr) + 100000)
+
+                gpst_arr[gpst_counter] = gpst
+                freq_arr[gpst_counter] = frequency
+                sig1_arr[gpst_counter] = sig1
+                sig2_arr[gpst_counter] = sig2
+                gpst_counter += 1
+            elif packet[3] == 0x28:
+                data_layout = '<QbbHHHhHh'
+                last_timestamp, version, status, lamp_t, lamp_v, dc_current, chamber_t, chamber_v, main_unit_t = \
+                    struct.unpack(data_layout, packet[4: 4 + 22])
+            position += data_size + 5
+        else:
+            position += 1
+
+            progress.setValue((position / length) * 99)
+            QApplication.processEvents()
+
+    gpst_arr = np.copy(gpst_arr[0:gpst_counter])
+    freq_arr = np.copy(freq_arr[0:gpst_counter])
+    sig1_arr = np.copy(sig1_arr[0:gpst_counter])
+    sig2_arr = np.copy(sig2_arr[0:gpst_counter])
 
     return gpst_arr, freq_arr, sig1_arr, sig2_arr
         # , sens_temp_arr, lamp_temp_arr, status_arr, dc_current_arr, board_temp_arr

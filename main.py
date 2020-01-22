@@ -189,6 +189,10 @@ class MainWindow(QMainWindow, UIForm):
             self.settings_widget.decimate_lineedit.setText(self.app_settings.value('decimate_idx'))
         if self.app_settings.value('path') and os.path.isfile(self.app_settings.value('path')):
             self.project_instance.open_project(self.app_settings.value('path'))
+        if self.app_settings.value('pc_tracked_dir') and os.path.isdir(self.app_settings.value('pc_tracked_dir')):
+            text = self.app_settings.value('pc_tracked_dir')
+            self.settings_widget.left_folder_tracked.setText(text)
+            self.file_manager_widget.left_file_model_auto_sync_label.setText(text)
 
     def write_state(self):
         self.app_settings.setValue('version', '0.8')
@@ -198,6 +202,8 @@ class MainWindow(QMainWindow, UIForm):
             self.app_settings.setValue('path', self.project_instance.project_path)
         else:
             self.app_settings.setValue('path', '')
+
+        self.app_settings.setValue('pc_tracked_dir', self.file_manager_widget.left_file_model_auto_sync_label.text())
 
         left_tab = [self.tabwidget_left.widget(i).name for i in range(self.tabwidget_left.count())]
         self.app_settings.setValue('left_tab', left_tab if len(left_tab) > 0 else '')
