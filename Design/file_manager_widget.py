@@ -44,6 +44,7 @@ class FileManager(QWidget):
         self.file_manager_layout.addWidget(self.left_go_to_btn, 0, 9, 1, 1)
 
         self.lefttableview = QTableView()
+        self.lefttableview.setSelectionBehavior(QTableView.SelectRows)
         self.lefttableview.verticalHeader().hide()
         self.lefttableview.setShowGrid(False)
         self.lefttableview.contextMenuEvent = lambda event: self.left_context(event)
@@ -95,6 +96,7 @@ class FileManager(QWidget):
         self.file_manager_layout.addWidget(self.right_update_btn, 0, 20, 1, 1)
 
         self.righttableview = QTableView()
+        self.righttableview.setSelectionBehavior(QTableView.SelectRows)
         self.righttableview.contextMenuEvent = lambda event: self.right_context(event)
         self.righttableview.verticalHeader().hide()
         self.righttableview.setShowGrid(False)
@@ -260,7 +262,7 @@ class FileManager(QWidget):
         index = self.lefttableview.indexAt(event.pos())
         if index.row() == -1:
             return
-        context_menu[_('Set active directory')] = lambda: self.set_pc_active_directory(index)
+        context_menu[_('Set active directory')] = lambda: self.set_pc_active_directory(self.left_file_model.filePath(index))
         context_menu[_('Remove element')] = lambda: self.delete_file_from_file_model(index)
 
         if not self.left_file_model.isDir(index):
@@ -285,11 +287,12 @@ class FileManager(QWidget):
         if index.row() == -1:
             return
         item = self.right_file_model.itemFromIndex(index)
+        item_row = item.row()
 
         context_menu[_('Set active directory')] = lambda: self.set_active_directory(item)
         context_menu[_('Remove element')] = lambda: self.delete_file_from_file_model(index)
 
-        if item.data(5) != 'directory':
+        if self.right_file_model.item(item_row, 0).data(5) != 'directory':
             del context_menu[_('Set active directory')]
 
         menu = QMenu()
@@ -465,12 +468,14 @@ class FileManager(QWidget):
             return
         if index is None:
             index = selected
+        model = index.model()
+        index_row = index.row()
+        path = model.filePath(index) if hasattr(model, 'filePath') else model.index(index_row, 0).data()
         answer = show_warning_yes_no(_('Remove File warning'),
-                                     _('Do you really want to remove:\n{}').format(index.data()))
+                                     _('Do you really want to remove:\n{}').format(path))
         if answer == QMessageBox.No:
             return
 
-        model = index.model()
         if isinstance(model, QFileSystemModel):
             model.remove(index)
 

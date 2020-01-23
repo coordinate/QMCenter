@@ -466,7 +466,7 @@ class MagnetCreator(QDialog):
         self.setWindowTitle(_('Create Magnetic Field Track'))
         self.layout = QGridLayout(self)
         self.magnet_field_ext = 'mgt'
-        self.gnss_ext = 'mgt'
+        self.gnss_ext = 'ubx'
 
         self.first_page = QWidget()
         self.first_layout = QGridLayout(self.first_page)
